@@ -1,0 +1,727 @@
+{
+    "days": [
+        {
+            "id": 1,
+            "name": "الأحد",
+            "type": "أوفيس",
+            "notes": "",
+            "enabled": true,
+            "tasks": [
+                {
+                    "id": 1,
+                    "time": "4:30 AM - 5:30 AM",
+                    "task": "صلاة الفجر + أذكار",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 2,
+                    "time": "5:30 AM - 6:30 AM",
+                    "task": "ركوب العجلة",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 3,
+                    "time": "6:30 AM - 7:00 AM",
+                    "task": "فطار + قراءه",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 4,
+                    "time": "7:00 AM - 7:30 AM",
+                    "task": "Anki",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 5,
+                    "time": "7:30 AM - 8:15 AM",
+                    "task": "إنجليزي",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 6,
+                    "time": "8:15 AM - 8:45 AM",
+                    "task": "حفظ قرآن",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 8,
+                    "time": "9:00 AM - 10:00 AM",
+                    "task": "تحرك للأوفيس + قرآن سماع",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 9,
+                    "time": "10:00 AM - 12:00 PM",
+                    "task": "API Design (فيديوهين)",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 10,
+                    "time": "12:00 PM - 12:15 PM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 11,
+                    "time": "12:15 PM - 1:00 PM",
+                    "task": "OIC",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 12,
+                    "time": "1:00 PM - 2:00 PM",
+                    "task": "راحة + ظهر",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 13,
+                    "time": "2:00 PM - 3:30 PM",
+                    "task": "OIC",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 14,
+                    "time": "3:30 PM - 3:45 PM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 15,
+                    "time": "3:45 PM - 6:15 PM",
+                    "task": "تحرك للبيت",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 16,
+                    "time": "6:15 PM - 6:45 PM",
+                    "task": "راحة + أكل",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 17,
+                    "time": "6:45 PM - 7:45 PM",
+                    "task": "LH2L",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 18,
+                    "time": "7:45 PM - 8:15 PM",
+                    "task": "مراجعة اليوم + تخطيط بكرا",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 19,
+                    "time": "8:15 PM - 10:00 PM",
+                    "task": "وقت حر / عائلة / قرآن",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 20,
+                    "time": "10:00 PM",
+                    "task": "نوم",
+                    "cat": "highlight",
+                    "recurring": false
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "name": "الاثنين",
+            "type": "بيت",
+            "notes": "",
+            "enabled": true,
+            "tasks": [
+                {
+                    "id": 1,
+                    "time": "4:45 AM - 5:30 AM",
+                    "task": "صلاة الفجر + أذكار",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 2,
+                    "time": "5:30 AM - 6:30 AM",
+                    "task": "ركوب العجلة",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 3,
+                    "time": "6:30 AM - 7:00 AM",
+                    "task": "فطار + قراءه",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 4,
+                    "time": "7:00 AM - 7:30 AM",
+                    "task": "Anki",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 5,
+                    "time": "7:30 AM - 8:00 AM",
+                    "task": "حفظ قرآن",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 6,
+                    "time": "8:00 AM - 8:15 AM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 7,
+                    "time": "8:15 AM - 11:15 AM",
+                    "task": "API Design (3 فيديوهات)",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 8,
+                    "time": "11:15 AM - 11:30 AM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 9,
+                    "time": "11:30 AM - 1:00 PM",
+                    "task": "إنجليزي",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 11,
+                    "time": "1:00 PM - 2:00 PM",
+                    "task": "راحة + ظهر",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 12,
+                    "time": "2:00 PM - 2:15 PM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 13,
+                    "time": "2:15 PM - 4:15 PM",
+                    "task": "OIC تعمق",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 14,
+                    "time": "4:15 PM - 5:15 PM",
+                    "task": "LH2L",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 15,
+                    "time": "5:15 PM - 5:45 PM",
+                    "task": "راحة",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 16,
+                    "time": "5:45 PM - 6:15 PM",
+                    "task": "مراجعة + تخطيط",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 17,
+                    "time": "6:15 PM - 10:00 PM",
+                    "task": "وقت حر / عائلة / قرآن",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 18,
+                    "time": "10:00 PM",
+                    "task": "نوم",
+                    "cat": "highlight",
+                    "recurring": false
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "name": "الثلاثاء",
+            "type": "أوفيس",
+            "notes": "",
+            "enabled": true,
+            "tasks": [
+                {
+                    "id": 1,
+                    "time": "4:45 AM - 5:30 AM",
+                    "task": "صلاة الفجر + أذكار",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 3,
+                    "time": "5:30 AM - 6:00 AM",
+                    "task": "فطار + قراءه",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 4,
+                    "time": "6:00 AM - 6:30 AM",
+                    "task": "Anki",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 5,
+                    "time": "6:30 AM - 7:15 AM",
+                    "task": "إنجليزي",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 8,
+                    "time": "8:45 AM - 10:00 AM",
+                    "task": "تحرك للأوفيس + قرآن سماع",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 9,
+                    "time": "10:15 AM - 10:30 AM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 10,
+                    "time": "10:30 AM - 12:30 PM",
+                    "task": "API Design (فيديوهين)",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 11,
+                    "time": "12:30 PM - 12:45 PM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 12,
+                    "time": "12:45 PM - 1:00 PM",
+                    "task": "OIC",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 13,
+                    "time": "1:00 PM - 2:00 PM",
+                    "task": "راحة + ظهر",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 14,
+                    "time": "2:00 PM - 3:30 PM",
+                    "task": "OIC",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 15,
+                    "time": "3:30 PM - 3:45 PM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 16,
+                    "time": "3:45 PM - 5:00 PM",
+                    "task": "تحرك للبيت + قرآن سماع",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 17,
+                    "time": "5:00 PM - 5:30 PM",
+                    "task": "راحة + أكل",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 18,
+                    "time": "5:30 PM - 6:30 PM",
+                    "task": "LH2L",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 19,
+                    "time": "6:30 PM - 7:00 PM",
+                    "task": "مراجعة + تخطيط",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 20,
+                    "time": "7:00 PM - 9:00 PM",
+                    "task": "وقت حر",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 21,
+                    "time": "9:00 PM - 10:00 PM",
+                    "task": "وقت حر / قرآن",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 22,
+                    "time": "10:00 PM",
+                    "task": "نوم",
+                    "cat": "highlight",
+                    "recurring": false
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "name": "الأربعاء",
+            "type": "بيت",
+            "notes": "",
+            "enabled": true,
+            "tasks": [
+                {
+                    "id": 1,
+                    "time": "4:45 AM - 5:30 AM",
+                    "task": "صلاة الفجر + أذكار",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 2,
+                    "time": "5:30 AM - 6:30 AM",
+                    "task": "ركوب العجلة",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 3,
+                    "time": "6:30 AM - 7:00 AM",
+                    "task": "فطار + قراءه",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 4,
+                    "time": "7:00 AM - 7:30 AM",
+                    "task": "Anki",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 5,
+                    "time": "7:30 AM - 8:00 AM",
+                    "task": "حفظ قرآن",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 6,
+                    "time": "8:00 AM - 8:15 AM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 7,
+                    "time": "8:15 AM - 11:15 AM",
+                    "task": "API Design (3 فيديوهات)",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 8,
+                    "time": "11:15 AM - 11:30 AM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 9,
+                    "time": "11:30 AM - 1:00 PM",
+                    "task": "إنجليزي",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 11,
+                    "time": "1:00 PM - 2:00 PM",
+                    "task": "راحة + ظهر",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 12,
+                    "time": "2:00 PM - 2:15 PM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 13,
+                    "time": "2:15 PM - 4:15 PM",
+                    "task": "OIC تعمق",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 14,
+                    "time": "4:15 PM - 5:15 PM",
+                    "task": "LH2L",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 15,
+                    "time": "5:15 PM - 5:45 PM",
+                    "task": "راحة",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 16,
+                    "time": "5:45 PM - 6:15 PM",
+                    "task": "مراجعة + تخطيط",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 17,
+                    "time": "6:15 PM - 7:00 PM",
+                    "task": "وقت حر",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 18,
+                    "time": "7:00 PM - 9:45 PM",
+                    "task": "تسميع قرآن",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 19,
+                    "time": "9:45 PM - 10:00 PM",
+                    "task": "نوم",
+                    "cat": "highlight",
+                    "recurring": false
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "name": "الخميس",
+            "type": "أوفيس",
+            "notes": "",
+            "enabled": true,
+            "tasks": [
+                {
+                    "id": 1,
+                    "time": "4:45 AM - 5:30 AM",
+                    "task": "صلاة الفجر + أذكار",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 3,
+                    "time": "6:30 AM - 7:00 AM",
+                    "task": "فطار + قراءه",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 4,
+                    "time": "7:00 AM - 7:30 AM",
+                    "task": "Anki",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 5,
+                    "time": "7:30 AM - 8:15 AM",
+                    "task": "إنجليزي",
+                    "cat": "highlight",
+                    "recurring": false
+                },
+                {
+                    "id": 6,
+                    "time": "8:15 AM - 8:45 AM",
+                    "task": "حفظ قرآن",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 7,
+                    "time": "8:45 AM - 9:00 AM",
+                    "task": "تجهيز + شنطة",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 8,
+                    "time": "9:00 AM - 11:30 AM",
+                    "task": "تحرك للأوفيس + قرآن سماع",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 9,
+                    "time": "11:30 AM - 11:45 AM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 10,
+                    "time": "11:45 AM - 12:45 PM",
+                    "task": "API Design (فيديو واحد)",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 11,
+                    "time": "12:45 PM - 1:00 PM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 12,
+                    "time": "1:00 PM - 2:00 PM",
+                    "task": "راحة + ظهر",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 13,
+                    "time": "2:00 PM - 3:30 PM",
+                    "task": "OIC",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 14,
+                    "time": "3:30 PM - 3:45 PM",
+                    "task": "buffer",
+                    "cat": "buffer",
+                    "recurring": false
+                },
+                {
+                    "id": 15,
+                    "time": "3:45 PM - 4:45 PM",
+                    "task": "تحرك للبيت",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 16,
+                    "time": "4:45 PM - 5:15 PM",
+                    "task": "راحة + أكل",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 17,
+                    "time": "5:15 PM - 6:15 PM",
+                    "task": "LH2L",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 18,
+                    "time": "6:15 PM - 7:15 PM",
+                    "task": "مراجعة الأسبوع كامل",
+                    "cat": "",
+                    "recurring": false
+                },
+                {
+                    "id": 19,
+                    "time": "7:15 PM - 10:00 PM",
+                    "task": "وقت حر / عائلة / قرآن",
+                    "cat": "ibadah",
+                    "recurring": false
+                },
+                {
+                    "id": 20,
+                    "time": "10:00 PM",
+                    "task": "نوم",
+                    "cat": "highlight",
+                    "recurring": false
+                }
+            ]
+        },
+        {
+            "id": 6,
+            "name": "الجمعة",
+            "type": "إجازة",
+            "notes": "",
+            "enabled": false,
+            "tasks": []
+        },
+        {
+            "id": 7,
+            "name": "السبت",
+            "type": "إجازة",
+            "notes": "",
+            "enabled": false,
+            "tasks": []
+        }
+    ],
+    "colors": {
+        "header": {
+            "bg": "#1a1a2e",
+            "text": "#ffffff"
+        },
+        "highlight": {
+            "bg": "#fff0f0",
+            "text": "#c0392b"
+        },
+        "ibadah": {
+            "bg": "#f0faf5",
+            "text": "#1e6e45"
+        },
+        "buffer": {
+            "bg": "#fffbeb",
+            "text": "#92680a"
+        }
+    }
+}

@@ -6,9 +6,9 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
     "react": "latest",
-    "react-dom": "latest"
-  },
-  "devDependencies": {}
+    "react-dom": "latest",
+    "react-time-picker": "^8.0.3",
+    "vite": "latest"
+  }
 }
