@@ -49,6 +49,17 @@ function isValidTimeFormat(str) {
   if (parts.length !== 2) return false;
   return parts.every(p => /^\d{1,2}:\d{2}$/.test(p));
 }
+function sortTasksByStartTime(tasks) {
+  return [...tasks].sort((a, b) => {
+    const getStartTime = (task) => {
+      if (!task.time) return 24 * 60; // Empty times go to end
+      const parts = task.time.split("-").map(p => p.trim());
+      const startTimeStr = parts[0];
+      return parseTimeToMin(startTimeStr) ?? 24 * 60;
+    };
+    return getStartTime(a) - getStartTime(b);
+  });
+}
 function calcGoalHours(days) {
   const result = {};
   GOALS.forEach(g => { result[g] = 0; });
@@ -574,6 +585,7 @@ function DayCard({ day, colors, onUpdate, onCopyDay }) {
             <input type="checkbox" checked={day.enabled} onChange={e => onUpdate({ ...day, enabled: e.target.checked })} />
             مفعّل
           </label>
+          <button onClick={e => { e.stopPropagation(); onUpdate({ ...day, tasks: sortTasksByStartTime(day.tasks) }); }} title="ترتيب المهام حسب الوقت" style={{ border: "none", background: "rgba(255,255,255,0.2)", color: hc.text, borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 12 }}>⏱️ ترتيب</button>
           <button onClick={e => { e.stopPropagation(); onCopyDay(day); }} title="نسخ جدول اليوم" style={{ border: "none", background: "rgba(255,255,255,0.2)", color: hc.text, borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontSize: 12 }}>نسخ</button>
           <span style={{ fontSize: 18, transform: collapsed ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>&#9660;</span>
         </div>
