@@ -241,7 +241,7 @@ function usePrintStyle(colors, days) {
         + '<td style="padding:1.5mm 3mm;text-align:center;font-size:8pt;color:' + col + ';white-space:nowrap;">' + t.time + '</td>'
         + '<td style="padding:1.5mm 3mm;text-align:center;font-size:8pt;color:' + col + ';">' + duration + '</td>'
         + '<td style="padding:1.5mm 3mm;text-align:center;">' + (noCheck ? "" : '<div style="width:4.5mm;height:4.5mm;border:1.5px solid #777;border-radius:2px;display:inline-block;"></div>') + '</td>'
-        + '<td style="padding:1.5mm 3mm;">' + (noCheck ? "" : '<div style="border-bottom:1px solid #ccc;height:4mm;"></div>') + '</td>'
+        + '<td style="padding:1.5mm 3mm;font-size:8pt;color:' + col + ';">' + (t.notes || "") + '</td>'
         + '</tr>';
     };
     const pagesHtml = enabledDays.map(day => {
@@ -519,6 +519,11 @@ function TaskRow({ t, idx, colors, conflict, onUpdate, onDelete, onMoveUp, onMov
           {Object.entries(CAT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
       </td>
+      <td style={{ padding: "6px 10px", textAlign: "right", fontSize: 12, color: textColor }}>
+        <input value={t.notes || ""} onChange={e => onUpdate({ notes: e.target.value })}
+          placeholder="لو متمش / ملاحظة..."
+          style={{ border: "1px solid #ddd", background: "transparent", color: textColor, width: "100%", fontFamily: "inherit", fontSize: "inherit", outline: "none", borderRadius: 4, padding: "4px 6px", boxSizing: "border-box" }} />
+      </td>
       <td style={{ padding: "6px 4px", textAlign: "center", whiteSpace: "nowrap" }}>
         <button onClick={onMoveUp} disabled={isFirst} title="لأعلى" style={{ border: "none", background: "none", cursor: isFirst ? "default" : "pointer", opacity: isFirst ? 0.3 : 1, fontSize: 14 }}>&#9650;</button>
         <button onClick={onMoveDown} disabled={isLast} title="لأسفل" style={{ border: "none", background: "none", cursor: isLast ? "default" : "pointer", opacity: isLast ? 0.3 : 1, fontSize: 14 }}>&#9660;</button>
@@ -570,7 +575,7 @@ function DayCard({ day, colors, onUpdate, onCopyDay }) {
     setDragOverId(null);
   };
   const addTask = () => {
-    onUpdate({ ...day, tasks: [...day.tasks, { id: ++nextId, time: "", task: "", cat: "", recurring: false }] });
+    onUpdate({ ...day, tasks: [...day.tasks, { id: ++nextId, time: "", task: "", cat: "", recurring: false, notes: "" }] });
   };
   return (
     <div style={{ marginBottom: 24, borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", border: "1px solid #e5e5e5", opacity: day.enabled ? 1 : 0.5, transition: "opacity 0.3s" }}>
@@ -606,6 +611,7 @@ function DayCard({ day, colors, onUpdate, onCopyDay }) {
                   <th style={{ padding: "8px 10px", textAlign: "center", width: 70 }}>النهاية</th>
                   <th style={{ padding: "8px 10px", textAlign: "center", width: 60 }}>المدة</th>
                   <th style={{ padding: "8px 10px", textAlign: "center", width: 90 }}>التصنيف</th>
+                  <th style={{ padding: "8px 10px", textAlign: "right", width: 150 }}>لو متمش / ملاحظة</th>
                   <th style={{ padding: "8px 10px", textAlign: "center", width: 80 }}>إجراءات</th>
                 </tr>
               </thead>
@@ -970,6 +976,7 @@ export default function App() {
                         <th style={{ padding: 8, textAlign: "right" }}>المهمة</th>
                         <th style={{ padding: 8, textAlign: "center", width: "20%" }}>الوقت</th>
                         <th style={{ padding: 8, textAlign: "center", width: "15%" }}>المدة</th>
+                        <th style={{ padding: 8, textAlign: "right", width: "30%" }}>لو متمش / ملاحظة</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -982,6 +989,7 @@ export default function App() {
                             <td style={{ padding: 8, textAlign: "right", color: col, fontWeight: 600 }}>{t.task}</td>
                             <td style={{ padding: 8, textAlign: "center", color: col, whiteSpace: "nowrap", fontSize: 11 }}>{t.time}</td>
                             <td style={{ padding: 8, textAlign: "center", color: col, fontSize: 11 }}>{calculateDuration(t.time)}</td>
+                            <td style={{ padding: 8, textAlign: "right", color: col, fontSize: 11 }}>{t.notes || ""}</td>
                           </tr>
                        );
                       })}
