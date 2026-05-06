@@ -98,8 +98,26 @@ const GOAL_KEYWORDS = {
 };
 let nextId = 500;
 
+// Helper function to get current week's dates
+function getCurrentWeekDates() {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const sunday = new Date(today);
+  sunday.setDate(today.getDate() - dayOfWeek);
+  
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(sunday);
+    date.setDate(sunday.getDate() + i);
+    dates.push(date.toISOString().split('T')[0]); // YYYY-MM-DD format
+  }
+  return dates;
+}
+
+const weekDates = getCurrentWeekDates();
+
 const INITIAL_DAYS = [
-  { id: 1, name: "الأحد", type: "أوفيس", notes: "", enabled: true, tasks: [
+  { id: 1, name: "الأحد", type: "أوفيس", notes: "", التاريخ: weekDates[0] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
     { id: 1, time: "4:45 - 5:30", task: "صلاة الفجر + أذكار", cat: "ibadah", recurring: false },
     { id: 2, time: "5:30 - 6:30", task: "ركوب العجلة", cat: "highlight", recurring: false },
     { id: 3, time: "6:30 - 7:00", task: "فطار + قهوة", cat: "", recurring: false },
@@ -120,7 +138,7 @@ const INITIAL_DAYS = [
     { id: 19, time: "8:15 - 10:00", task: "وقت حر / عائلة / قرآن", cat: "ibadah", recurring: false },
     { id: 20, time: "10:00", task: "نوم", cat: "highlight", recurring: false },
   ]},
-  { id: 2, name: "الاثنين", type: "بيت", notes: "", enabled: true, tasks: [
+  { id: 2, name: "الاثنين", type: "بيت", notes: "", التاريخ: weekDates[1] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
     { id: 1, time: "4:45 - 5:30", task: "صلاة الفجر + أذكار", cat: "ibadah", recurring: false },
     { id: 2, time: "5:30 - 6:30", task: "ركوب العجلة", cat: "highlight", recurring: false },
     { id: 3, time: "6:30 - 7:00", task: "فطار + قهوة", cat: "", recurring: false },
@@ -139,7 +157,7 @@ const INITIAL_DAYS = [
     { id: 17, time: "6:15 - 10:00", task: "وقت حر / عائلة / قرآن", cat: "ibadah", recurring: false },
     { id: 18, time: "10:00", task: "نوم", cat: "highlight", recurring: false },
   ]},
-  { id: 3, name: "الثلاثاء", type: "أوفيس", notes: "", enabled: true, tasks: [
+  { id: 3, name: "الثلاثاء", type: "أوفيس", notes: "", التاريخ: weekDates[2] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
     { id: 1, time: "4:45 - 5:30", task: "صلاة الفجر + أذكار", cat: "ibadah", recurring: false },
     { id: 3, time: "5:30 - 6:00", task: "فطار + قهوة", cat: "", recurring: false },
     { id: 4, time: "6:00 - 6:30", task: "Anki", cat: "", recurring: false },
@@ -160,7 +178,7 @@ const INITIAL_DAYS = [
     { id: 21, time: "9:00 - 10:00", task: "وقت حر / قرآن", cat: "ibadah", recurring: false },
     { id: 22, time: "10:00", task: "نوم", cat: "highlight", recurring: false },
   ]},
-  { id: 4, name: "الأربعاء", type: "بيت", notes: "", enabled: true, tasks: [
+  { id: 4, name: "الأربعاء", type: "بيت", notes: "", التاريخ: weekDates[3] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
     { id: 1, time: "4:45 - 5:30", task: "صلاة الفجر + أذكار", cat: "ibadah", recurring: false },
     { id: 2, time: "5:30 - 6:30", task: "ركوب العجلة", cat: "highlight", recurring: false },
     { id: 3, time: "6:30 - 7:00", task: "فطار + قهوة", cat: "", recurring: false },
@@ -180,7 +198,7 @@ const INITIAL_DAYS = [
     { id: 18, time: "7:00 - 9:45", task: "تسميع قرآن", cat: "highlight", recurring: false },
     { id: 19, time: "9:45 - 10:00", task: "نوم", cat: "highlight", recurring: false },
   ]},
-  { id: 5, name: "الخميس", type: "أوفيس", notes: "", enabled: true, tasks: [
+  { id: 5, name: "الخميس", type: "أوفيس", notes: "", التاريخ: weekDates[4] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
     { id: 1, time: "4:45 - 5:30", task: "صلاة الفجر + أذكار", cat: "ibadah", recurring: false },
     { id: 3, time: "6:30 - 7:00", task: "فطار + قهوة", cat: "", recurring: false },
     { id: 4, time: "7:00 - 7:30", task: "Anki", cat: "", recurring: false },
@@ -201,8 +219,8 @@ const INITIAL_DAYS = [
     { id: 19, time: "7:15 - 10:00", task: "وقت حر / عائلة / قرآن", cat: "ibadah", recurring: false },
     { id: 20, time: "10:00", task: "نوم", cat: "highlight", recurring: false },
   ]},
-  { id: 6, name: "الجمعة", type: "إجازة", notes: "", enabled: false, tasks: [] },
-  { id: 7, name: "السبت", type: "إجازة", notes: "", enabled: false, tasks: [] },
+  { id: 6, name: "الجمعة", type: "إجازة", notes: "", التاريخ: weekDates[5] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: false, tasks: [] },
+  { id: 7, name: "السبت", type: "إجازة", notes: "", التاريخ: weekDates[6] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: false, tasks: [] },
 ];
 // == Undo/Redo hook ==
 function useUndoRedo(initial, max) {
@@ -254,15 +272,22 @@ function usePrintStyle(colors, days) {
       ).join("");
       const circles5 = Array(5).fill('<div style="width:5.5mm;height:5.5mm;border-radius:50%;border:1.5px solid ' + hc.bg + ';display:inline-block;margin-left:2mm;"></div>').join("");
       const stars5 = Array(5).fill('<span style="font-size:13pt;color:#ccc;margin-left:2mm;">&#9733;</span>').join("");
+      const energyLevel = day.مستوى_الطاقة ? parseInt(day.مستوى_الطاقة) : 0;
+      const dayRating = day.تقييم_اليوم ? parseInt(day.تقييم_اليوم) : 0;
+      const energyEmojis = ["", "😴", "😐", "😊", "😄", "🔥"];
+      const ratingEmojis = ["", "😞", "😕", "😐", "😊", "🌟"];
+      const energyDisplay = energyLevel ? Array(5).fill('<span style="font-size:13pt;margin-left:2mm;">').map((s, i) => s + (i < energyLevel ? '●' : '○') + '</span>').join("") : circles5;
+      const ratingDisplay = dayRating ? Array(5).fill('<span style="font-size:13pt;margin-left:2mm;">').map((s, i) => s + (i < dayRating ? '★' : '☆') + '</span>').join("") : stars5;
       return '<div class="print-page">'
         + '<div style="display:flex;gap:4mm;border-bottom:2px solid ' + hc.bg + ';padding-bottom:3mm;margin-bottom:2mm;">'
         + '<div style="background:' + hc.bg + ';color:' + hc.text + ';border-radius:6px;padding:3mm 6mm;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:28mm;">'
         + '<span style="font-size:19pt;font-weight:900;line-height:1.1;">' + day.name + '</span>'
         + '<span style="font-size:8pt;opacity:0.8;margin-top:1mm;">' + day.type + '</span></div>'
         + '<div style="flex:1;display:flex;flex-direction:column;justify-content:space-around;">'
-        + '<div style="display:flex;align-items:center;gap:3mm;"><span style="font-size:9pt;font-weight:700;white-space:nowrap;">التاريخ:</span><div style="flex:1;border-bottom:1.5px solid #bbb;height:5mm;"></div></div>'
-        + '<div style="display:flex;align-items:center;gap:3mm;margin-top:2mm;"><span style="font-size:9pt;font-weight:700;white-space:nowrap;">مستوى الطاقة:</span>' + circles5 + '</div>'
-        + '<div style="display:flex;align-items:center;gap:3mm;"><span style="font-size:9pt;font-weight:700;white-space:nowrap;">تقييم اليوم:</span>' + stars5 + '</div></div></div>'
+        + '<div style="display:flex;align-items:center;gap:3mm;"><span style="font-size:9pt;font-weight:700;white-space:nowrap;">التاريخ:</span><span style="flex:1;border-bottom:1.5px solid #bbb;height:5mm;font-size:8pt;padding:1mm 2mm;">' + (day.التاريخ || '') + '</span></div>'
+        + '<div style="display:flex;align-items:center;gap:3mm;margin-top:2mm;"><span style="font-size:9pt;font-weight:700;white-space:nowrap;">مستوى الطاقة:</span>' + energyDisplay + (energyEmojis[energyLevel] ? '<span style="margin-right:3mm;">' + energyEmojis[energyLevel] + '</span>' : '') + '</div>'
+        + '<div style="display:flex;align-items:center;gap:3mm;"><span style="font-size:9pt;font-weight:700;white-space:nowrap;">تقييم اليوم:</span>' + ratingDisplay + (ratingEmojis[dayRating] ? '<span style="margin-right:3mm;">' + ratingEmojis[dayRating] + '</span>' : '') + '</div>'
+        + '<div style="display:flex;align-items:center;gap:3mm;"><span style="font-size:9pt;font-weight:700;white-space:nowrap;">ساعات النوم:</span><span style="flex:1;border-bottom:1.5px solid #bbb;height:5mm;font-size:8pt;padding:1mm 2mm;">' + (day.عدد_ساعات_النوم || '') + '</span></div></div></div>'
         + '<table style="width:100%;border-collapse:collapse;font-size:9pt;"><thead><tr style="background:' + hc.bg + ';color:' + hc.text + ';">'
         + '<th style="padding:2mm 3mm;text-align:right;">المهمة</th>'
         + '<th style="padding:2mm 3mm;text-align:center;width:24mm;">الوقت</th>'
@@ -601,6 +626,43 @@ function DayCard({ day, colors, onUpdate, onCopyDay }) {
             <textarea value={day.notes || ""} onChange={e => onUpdate({ ...day, notes: e.target.value })}
               placeholder="ملاحظات اليوم..."
               style={{ width: "100%", minHeight: 40, border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, resize: "vertical", boxSizing: "border-box" }} />
+          </div>
+          <div style={{ padding: "8px 16px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4, textAlign: "right" }}>التاريخ:</label>
+              <input type="date" value={day.التاريخ || ""} onChange={e => onUpdate({ ...day, التاريخ: e.target.value })}
+                style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, boxSizing: "border-box" }} />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4, textAlign: "right" }}>مستوى الطاقة:</label>
+              <select value={day.مستوى_الطاقة || ""} onChange={e => onUpdate({ ...day, مستوى_الطاقة: e.target.value })}
+                style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, boxSizing: "border-box" }}>
+                <option value="">--</option>
+                <option value="1">منخفضة جداً 😴</option>
+                <option value="2">منخفضة 😐</option>
+                <option value="3">متوسطة 😊</option>
+                <option value="4">عالية 😄</option>
+                <option value="5">عالية جداً 🔥</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4, textAlign: "right" }}>تقييم اليوم:</label>
+              <select value={day.تقييم_اليوم || ""} onChange={e => onUpdate({ ...day, تقييم_اليوم: e.target.value })}
+                style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, boxSizing: "border-box" }}>
+                <option value="">--</option>
+                <option value="1">سيء جداً 😞</option>
+                <option value="2">سيء 😕</option>
+                <option value="3">جيد 😐</option>
+                <option value="4">جيد جداً 😊</option>
+                <option value="5">ممتاز 🌟</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4, textAlign: "right" }}>عدد ساعات النوم:</label>
+              <input type="text" value={day.عدد_ساعات_النوم || ""} onChange={e => onUpdate({ ...day, عدد_ساعات_النوم: e.target.value })}
+                placeholder="مثال: 7 ساعات"
+                style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, boxSizing: "border-box" }} />
+            </div>
           </div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
