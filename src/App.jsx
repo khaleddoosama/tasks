@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useGistSync } from "./useGistSync";
+import GistSettingsModal from "./GistSettingsModal";
+import SyncStatusIndicator from "./SyncStatusIndicator";
 
 // == Utilities ==
 function parseTimeToMin(str) {
@@ -720,7 +723,28 @@ export default function App() {
       return false;
     }
   });
+  const [showGistSettings, setShowGistSettings] = useState(false);
   const saveTimeoutRef = useRef(null);
+
+  // Initialize GitHub Gist sync
+  const {
+    syncStatus,
+    lastSyncTime,
+    syncError,
+    pullFromGist,
+    pushToGist,
+    createNewGist,
+    hasCredentials,
+  } = useGistSync(
+    days,
+    colors,
+    (mergedData) => {
+      if (mergedData) {
+        setDays(mergedData.days);
+        setColors(mergedData.colors);
+      }
+    }
+  );
   
   usePrintStyle(colors, days);
   
@@ -814,9 +838,17 @@ export default function App() {
     <div style={{ fontFamily: "Arial, sans-serif", direction: "rtl", background: darkMode ? "#1a1a2e" : "#f9fafb", minHeight: "100vh", padding: "20px", color: darkMode ? "#f0f0f0" : "#1a1a2e", transition: "background 0.3s, color 0.3s" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <span style={{ fontSize: 12, color: getSaveColor(), fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-            {getSaveIndicator()}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 12, color: getSaveColor(), fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+              {getSaveIndicator()}
+            </span>
+            <SyncStatusIndicator
+              syncStatus={syncStatus}
+              lastSyncTime={lastSyncTime}
+              syncError={syncError}
+              onSettingsClick={() => setShowGistSettings(true)}
+            />
+          </div>
           <button onClick={() => setDarkMode(!darkMode)} title="Dark Mode" style={{ background: darkMode ? "#2a2a3e" : "#e0e0e0", color: darkMode ? "#ffd700" : "#ff9800", border: "none", borderRadius: 6, padding: "6px 12px", cursor: "pointer", fontSize: 16, fontWeight: 600, transition: "all 0.2s" }}>
             {darkMode ? '🌙' : '☀️'}
           </button>
@@ -829,6 +861,7 @@ export default function App() {
           <div style={{ marginRight: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <button onClick={undoRedo.undo} disabled={!undoRedo.canUndo} title="Ctrl+Z" style={{ background: "#e3f2fd", color: "#1976d2", border: "1px solid #90caf9", borderRadius: 6, padding: "8px 12px", cursor: undoRedo.canUndo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: undoRedo.canUndo ? 1 : 0.5, transition: "all 0.2s" }}>↶ تراجع</button>
             <button onClick={undoRedo.redo} disabled={!undoRedo.canRedo} title="Ctrl+Y" style={{ background: "#f3e5f5", color: "#7b1fa2", border: "1px solid #ce93d8", borderRadius: 6, padding: "8px 12px", cursor: undoRedo.canRedo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: undoRedo.canRedo ? 1 : 0.5, transition: "all 0.2s" }}>↷ إعادة</button>
+            <button onClick={() => setShowGistSettings(true)} title="GitHub Gist Sync" style={{ background: hasCredentials() ? "#9b59b6" : "#bdc3c7", color: "#fff", border: "none", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>🔗 GitHub</button>
             <button onClick={() => {
               const data = { days, colors, exportDate: new Date().toISOString() };
               const json = JSON.stringify(data, null, 2);
@@ -1063,6 +1096,19 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* GitHub Gist Settings Modal */}
+        <GistSettingsModal
+          isOpen={showGistSettings}
+          onClose={() => setShowGistSettings(false)}
+          syncStatus={syncStatus}
+          lastSyncTime={lastSyncTime}
+          syncError={syncError}
+          onCreateGist={createNewGist}
+          onSave={(config) => {
+            // Settings saved, sync will trigger automatically via the hook
+          }}
+        />
       </div>
     </div>
   );

@@ -1,0 +1,629 @@
+{
+  "days": [
+    {
+      "id": 1,
+      "name": "الأحد",
+      "type": "أوفيس",
+      "notes": "حفظ القرءان\nكورس time management\n",
+      "enabled": true,
+      "tasks": [
+        {
+          "id": 501,
+          "time": "04:30 - 05:30",
+          "task": "صلاة الفجر + أذكار",
+          "cat": "ibadah",
+          "recurring": false
+        },
+        {
+          "id": 502,
+          "time": "05:30 - 06:30",
+          "task": "ركوب العجلة",
+          "cat": "highlight",
+          "recurring": false
+        },
+        {
+          "id": 503,
+          "time": "06:30 - 07:00",
+          "task": "فطار + قراءه",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 504,
+          "time": "07:00 - 07:30",
+          "task": "Anki",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 505,
+          "time": "07:30 - 08:00",
+          "task": "حفظ قرآن",
+          "cat": "highlight",
+          "recurring": false,
+          "notes": "نوم من 7:30 إلي 9:00"
+        },
+        {
+          "id": 506,
+          "time": "08:15 - 08:45",
+          "task": "إنجليزي",
+          "cat": "",
+          "recurring": false,
+          "notes": "لم يتم"
+        },
+        {
+          "id": 507,
+          "time": "09:30 - 10:30",
+          "task": "تحرك للأوفيس + قرآن سماع",
+          "cat": "ibadah",
+          "recurring": false
+        },
+        {
+          "id": 516,
+          "time": "11:00 - 12:30",
+          "task": "بحث عن كورسين soap & plsql",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 508,
+          "time": "12:30 - 13:30",
+          "task": "راحة + ظهر",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 509,
+          "time": "13:30 - 15:30",
+          "task": "OIC",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 510,
+          "time": "15:30 - 18:15",
+          "task": "تحرك للبيت",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 511,
+          "time": "18:15 - 18:45",
+          "task": "راحة + أكل",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 512,
+          "time": "18:45 - 19:45",
+          "task": "LH2L",
+          "cat": "",
+          "recurring": false,
+          "notes": "لم يتم الطاقه كانت قليله"
+        },
+        {
+          "id": 513,
+          "time": "19:45 - 20:15",
+          "task": "مراجعة اليوم + تخطيط بكرا",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 514,
+          "time": "20:15 - 22:00",
+          "task": "وقت حر / عائلة / قرآن",
+          "cat": "ibadah",
+          "recurring": false
+        },
+        {
+          "id": 515,
+          "time": "22:00 - 04:30",
+          "task": "نوم",
+          "cat": "highlight",
+          "recurring": false
+        }
+      ],
+      "التاريخ": "2026-05-03",
+      "مستوى_الطاقة": "2",
+      "تقييم_اليوم": "3",
+      "عدد_ساعات_النوم": "5:15 + 1:30= 6:45"
+    },
+    {
+      "id": 2,
+      "name": "الاثنين",
+      "type": "بيت",
+      "notes": "مراجعه API بالإنجليزي\nكورس الtime management ",
+      "enabled": true,
+      "tasks": [
+        {
+          "id": 1,
+          "time": "04:45 - 05:30",
+          "task": "صلاة الفجر + أذكار",
+          "cat": "ibadah",
+          "recurring": false
+        },
+        {
+          "id": 3,
+          "time": "05:30 - 06:00",
+          "task": "فطار + قراءه",
+          "cat": "",
+          "recurring": false,
+          "notes": "تم ولكن من 8:00 إلي 8:30"
+        },
+        {
+          "id": 4,
+          "time": "06:00 - 06:30",
+          "task": "Anki",
+          "cat": "",
+          "recurring": false,
+          "notes": "تم ولكن من 8:30 إلي 9:00"
+        },
+        {
+          "id": 5,
+          "time": "06:30 - 07:00",
+          "task": "حفظ قرآن + كتابه",
+          "cat": "ibadah",
+          "recurring": false,
+          "notes": "نوم من 5:30 إلي 8:00"
+        },
+        {
+          "id": 502,
+          "time": "07:00 - 08:00",
+          "task": "قهوه + تأمل ",
+          "cat": "",
+          "recurring": false,
+          "notes": "لم يتم"
+        },
+        {
+          "id": 7,
+          "time": "08:00 - 13:00",
+          "task": "API Design (مراجعه بالإنجليزي + كتابيه + claude) ",
+          "cat": "highlight",
+          "recurring": false,
+          "notes": "تم ولكن من 1 إلي 4:30"
+        },
+        {
+          "id": 11,
+          "time": "13:00 - 14:00",
+          "task": "راحة + ظهر",
+          "cat": "",
+          "recurring": false,
+          "notes": "لم يتم"
+        },
+        {
+          "id": 13,
+          "time": "14:00 - 16:30",
+          "task": "OIC تعمق",
+          "cat": "",
+          "recurring": false,
+          "notes": "لم يتم"
+        },
+        {
+          "id": 12,
+          "time": "16:30 - 17:00",
+          "task": "buffer",
+          "cat": "buffer",
+          "recurring": false
+        },
+        {
+          "id": 14,
+          "time": "17:00 - 18:30",
+          "task": "LH2L",
+          "cat": "",
+          "recurring": false,
+          "notes": "لم يتم"
+        },
+        {
+          "id": 16,
+          "time": "18:30 - 19:15",
+          "task": "مراجعة + تخطيط",
+          "cat": "",
+          "recurring": false,
+          "notes": ""
+        },
+        {
+          "id": 501,
+          "time": "19:15 - 22:00",
+          "task": "تسميع قرءان (سوره الجن) ",
+          "cat": "",
+          "recurring": false,
+          "notes": "تم ولكن م سمعتش "
+        },
+        {
+          "id": 18,
+          "time": "22:00 - 04:30",
+          "task": "نوم",
+          "cat": "highlight",
+          "recurring": false,
+          "notes": "تم ولكن من 10:30 إلي 5:45"
+        }
+      ],
+      "التاريخ": "2026-05-04",
+      "مستوى_الطاقة": "1",
+      "تقييم_اليوم": "1",
+      "عدد_ساعات_النوم": "9 متقطعين"
+    },
+    {
+      "id": 3,
+      "name": "الثلاثاء",
+      "type": "أوفيس",
+      "notes": "",
+      "enabled": true,
+      "tasks": [
+        {
+          "id": 1,
+          "time": "04:45 - 05:30",
+          "task": "صلاة الفجر + أذكار",
+          "cat": "ibadah",
+          "recurring": false,
+          "notes": "تم ولكن 5:45 - 6:05"
+        },
+        {
+          "id": 4,
+          "time": "06:30 - 07:00",
+          "task": "Anki",
+          "cat": "",
+          "recurring": false,
+          "notes": "تم ولكن من 6:15 - 6:30"
+        },
+        {
+          "id": 3,
+          "time": "07:30 - 08:00",
+          "task": "فطار + قراءه",
+          "cat": "",
+          "recurring": false,
+          "notes": "تم ولكن 6:30 - 7:00"
+        },
+        {
+          "id": 5,
+          "time": "08:00 - 08:30",
+          "task": "إنجليزي",
+          "cat": "highlight",
+          "recurring": false,
+          "notes": "تم ولكن مع مذاكره Api"
+        },
+        {
+          "id": 8,
+          "time": "09:15 - 10:30",
+          "task": "تحرك للأوفيس + قرآن سماع",
+          "cat": "ibadah",
+          "recurring": false
+        },
+        {
+          "id": 10,
+          "time": "11:00 - 12:00",
+          "task": "API Design مراجعه سريعه ل 12 فيديو",
+          "cat": "highlight",
+          "recurring": false
+        },
+        {
+          "id": 501,
+          "time": "12:00 - 13:00",
+          "task": "API Design مراجعه من 13ل 27",
+          "cat": "highlight",
+          "recurring": false,
+          "notes": "تم من 12:00 ل 1:30"
+        },
+        {
+          "id": 13,
+          "time": "13:00 - 14:00",
+          "task": "راحة + ظهر",
+          "cat": "",
+          "recurring": false,
+          "notes": "لم يتم"
+        },
+        {
+          "id": 14,
+          "time": "14:00 - 15:30",
+          "task": "OIC",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 16,
+          "time": "15:30 - 17:00",
+          "task": "تحرك للبيت + قرآن سماع",
+          "cat": "ibadah",
+          "recurring": false
+        },
+        {
+          "id": 17,
+          "time": "17:00 - 17:30",
+          "task": "راحة + أكل",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 18,
+          "time": "17:30 - 18:30",
+          "task": "LH2L",
+          "cat": "",
+          "recurring": false,
+          "notes": "لم يتم"
+        },
+        {
+          "id": 19,
+          "time": "18:30 - 19:00",
+          "task": "مراجعة + تخطيط",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 21,
+          "time": "19:30 - 21:30",
+          "task": "درس الشيخ اسلام",
+          "cat": "ibadah",
+          "recurring": false
+        },
+        {
+          "id": 22,
+          "time": "22:00 - 05:45",
+          "task": "نوم",
+          "cat": "highlight",
+          "recurring": false
+        }
+      ],
+      "التاريخ": "2026-05-05",
+      "مستوى_الطاقة": "4",
+      "عدد_ساعات_النوم": "7:30 + 1:20 = 8:50",
+      "تقييم_اليوم": "4"
+    },
+    {
+      "id": 4,
+      "name": "الأربعاء",
+      "type": "بيت",
+      "notes": "حساب فلوسي\nمحادثه ROB\nتحسين الموقع ده",
+      "enabled": true,
+      "tasks": [
+        {
+          "id": 1,
+          "time": "05:45 - 06:15",
+          "task": "صلاة الفجر + أذكار",
+          "cat": "ibadah",
+          "recurring": false
+        },
+        {
+          "id": 4,
+          "time": "06:15 - 06:45",
+          "task": "Anki + قراءه ",
+          "cat": "highlight",
+          "recurring": false
+        },
+        {
+          "id": 501,
+          "time": "06:45 - 07:00",
+          "task": "حفظ نصف صفحه قرآن",
+          "cat": "ibadah",
+          "recurring": false,
+          "notes": "لم يتم بسبب نوم من 6:45 ل 9:00"
+        },
+        {
+          "id": 2,
+          "time": "07:00 - 08:00",
+          "task": "ركوب العجلة",
+          "cat": "highlight",
+          "recurring": false,
+          "notes": "لم يتم"
+        },
+        {
+          "id": 3,
+          "time": "08:00 - 08:30",
+          "task": "فطار + قهوه",
+          "cat": "",
+          "recurring": false,
+          "notes": "تم ولكن من 8:00 ل 9:00"
+        },
+        {
+          "id": 7,
+          "time": "08:30 - 12:00",
+          "task": "API Design مراجعه 14 فيديو من 13 ل 27 ثم مراجعه من 27 ل 35 بالانجليزي",
+          "cat": "highlight",
+          "recurring": false,
+          "notes": "تم ولكن من 9:00 ل 12:00"
+        },
+        {
+          "id": 9,
+          "time": "12:00 - 13:00",
+          "task": "إنجليزي (listening)",
+          "cat": "highlight",
+          "recurring": false
+        },
+        {
+          "id": 11,
+          "time": "13:00 - 14:00",
+          "task": "راحة + ظهر",
+          "cat": "",
+          "recurring": false,
+          "notes": "تم ولكن من 1 ل 3"
+        },
+        {
+          "id": 13,
+          "time": "14:00 - 16:15",
+          "task": "OIC ",
+          "cat": "",
+          "recurring": false,
+          "notes": "لم يتم"
+        },
+        {
+          "id": 18,
+          "time": "16:15 - 19:30",
+          "task": "تسميع قرآن",
+          "cat": "highlight",
+          "recurring": false,
+          "notes": "تم ولكن 4:30 إلي 9:00"
+        },
+        {
+          "id": 14,
+          "time": "19:30 - 20:30",
+          "task": "LH2L",
+          "cat": "",
+          "recurring": false,
+          "notes": "لم يتم"
+        },
+        {
+          "id": 16,
+          "time": "20:30 - 21:00",
+          "task": "مراجعة + تخطيط",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 502,
+          "time": "21:00 - 21:45",
+          "task": "أعاده حفظ نصف صفحه قرآن",
+          "cat": "ibadah",
+          "recurring": false,
+          "notes": ""
+        },
+        {
+          "id": 19,
+          "time": "22:15 - 05:45",
+          "task": "نوم",
+          "cat": "highlight",
+          "recurring": false
+        }
+      ],
+      "التاريخ": "2026-05-06",
+      "مستوى_الطاقة": "5",
+      "تقييم_اليوم": "4",
+      "عدد_ساعات_النوم": "7 + 2:15 = 9:15"
+    },
+    {
+      "id": 5,
+      "name": "الخميس",
+      "type": "أوفيس",
+      "notes": "\n",
+      "enabled": false,
+      "tasks": [
+        {
+          "id": 1,
+          "time": "05:45 - 06:15",
+          "task": "صلاة الفجر + أذكار",
+          "cat": "ibadah",
+          "recurring": false
+        },
+        {
+          "id": 4,
+          "time": "06:15 - 06:30",
+          "task": "Anki ",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 6,
+          "time": "06:30 - 06:45",
+          "task": "حفظ قرآن",
+          "cat": "ibadah",
+          "recurring": false
+        },
+        {
+          "id": 501,
+          "time": "06:45 - 10:00",
+          "task": "نوم ",
+          "cat": "",
+          "recurring": false,
+          "notes": ""
+        },
+        {
+          "id": 3,
+          "time": "10:00 - 12:00",
+          "task": "فطار + قهوه",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 503,
+          "time": "12:30 - 13:00",
+          "task": "مشاهده فيديوهات السباحه ",
+          "cat": "",
+          "recurring": false,
+          "notes": ""
+        },
+        {
+          "id": 504,
+          "time": "13:00 - 14:00",
+          "task": " mckinsey + recall mails",
+          "cat": "highlight",
+          "recurring": false,
+          "notes": ""
+        },
+        {
+          "id": 18,
+          "time": "12:00 - 12:30",
+          "task": "مراجعة الأسبوع كامل والتخطيط للاسبوع القادم ",
+          "cat": "",
+          "recurring": false
+        },
+        {
+          "id": 505,
+          "time": "14:00 - 17:00",
+          "task": "تنضيف الشقه",
+          "cat": "",
+          "recurring": false,
+          "notes": ""
+        },
+        {
+          "id": 507,
+          "time": "17:00 - 19:00",
+          "task": "حلاقه ",
+          "cat": "",
+          "recurring": false,
+          "notes": ""
+        },
+        {
+          "id": 506,
+          "time": "18:00 - 21:00",
+          "task": "شغل upwork ",
+          "cat": "highlight",
+          "recurring": false,
+          "notes": ""
+        },
+        {
+          "id": 20,
+          "time": "22:00 - 05:45",
+          "task": "نوم",
+          "cat": "highlight",
+          "recurring": false
+        }
+      ],
+      "التاريخ": "2026-05-07",
+      "مستوى_الطاقة": "4"
+    },
+    {
+      "id": 6,
+      "name": "الجمعة",
+      "type": "إجازة",
+      "notes": "",
+      "enabled": false,
+      "tasks": []
+    },
+    {
+      "id": 7,
+      "name": "السبت",
+      "type": "إجازة",
+      "notes": "",
+      "enabled": false,
+      "tasks": [],
+      "التاريخ": "2026-05-07"
+    }
+  ],
+  "colors": {
+    "header": {
+      "bg": "#1a1a2e",
+      "text": "#ffffff"
+    },
+    "highlight": {
+      "bg": "#fff0f0",
+      "text": "#c0392b"
+    },
+    "ibadah": {
+      "bg": "#f0faf5",
+      "text": "#1e6e45"
+    },
+    "buffer": {
+      "bg": "#fffbeb",
+      "text": "#92680a"
+    }
+  },
+  "exportDate": "2026-05-09T03:37:54.487Z"
+}

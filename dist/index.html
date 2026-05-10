@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>جدول الأسبوع</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 0; }
+      
+      /* Enhanced Animations */
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+          max-height: 0;
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+          max-height: 1000px;
+        }
+      }
+      
+      @keyframes slideUp {
+        from {
+          opacity: 1;
+          transform: translateY(0);
+          max-height: 1000px;
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-10px);
+          max-height: 0;
+        }
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+      
+      @keyframes scaleIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+      }
+      
+      /* Smooth transitions for all interactive elements */
+      button, input, select, textarea {
+        transition: all 0.2s ease;
+      }
+      
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      
+      button:active {
+        transform: translateY(0px);
+      }
+      
+      /* Responsive Design */
+      @media (max-width: 1024px) {
+        body { padding: 12px; }
+      }
+      
+      @media (max-width: 768px) {
+        body { padding: 8px; font-size: 14px; }
+        h1 { font-size: 24px !important; }
+        
+        /* Stack tabs vertically on small screens */
+        [style*="display: flex"][style*="gap: 12"][style*="marginBottom: 24"] {
+          flex-direction: column;
+        }
+        
+        /* Responsive grid for statistics */
+        [style*="gridTemplateColumns: \"repeat(auto-fit, minmax(200px"] {
+          grid-template-columns: 1fr !important;
+        }
+        
+        /* Make task table scrollable */
+        table { font-size: 12px !important; }
+        
+        /* Adjust day card padding */
+        [style*="marginBottom: 24"][style*="borderRadius: 12"][style*="overflow"] {
+          margin-bottom: 16px;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        body { padding: 4px; }
+        h1 { font-size: 20px !important; margin-bottom: 12px !important; }
+        
+        /* Single column layout */
+        [style*="gridTemplateColumns: \"repeat(auto-fit"] {
+          grid-template-columns: 1fr !important;
+        }
+        
+        /* Smaller buttons and inputs */
+        button { padding: 6px 12px !important; font-size: 12px !important; }
+        input, textarea, select { font-size: 14px !important; }
+        
+        /* Task table optimizations */
+        table thead th { padding: 4px !important; font-size: 11px !important; }
+        table td { padding: 4px !important; font-size: 11px !important; }
+        
+        /* Hide less important columns on very small screens */
+        th:last-child, td:last-child { display: none; }
+        
+        /* Flex wrap for action buttons */
+        [style*="display: flex"][style*="textAlign: center"] {
+          flex-wrap: wrap;
+        }
+        
+        /* Adjust color picker grid */
+        [style*="gridTemplateColumns: \"repeat(auto-fit, minmax(250px"] {
+          grid-template-columns: 1fr !important;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-CWe9_ZsM.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
