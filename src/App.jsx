@@ -754,6 +754,163 @@ function DayCard({ day, colors, onUpdate, onCopyDay }) {
 }
 /*MARKER_GOAL_PANEL*/
 
+// == GoalsPanel Component ==
+function GoalsPanel({ currentWeekGoals, goalHours, onUpdateGoal, onDeleteGoal, colors }) {
+  const hc = colors.header;
+  const DEFAULT_TARGET = 20;
+  const colors_legend = ["#e74c3c", "#3498db", "#2ecc71", "#f39c12", "#9b59b6", "#1abc9c"];
+  
+  const goalList = Object.entries(currentWeekGoals).sort((a, b) => {
+    // Show predefined goals first
+    if (a[1].type === 'predefined' && b[1].type !== 'predefined') return -1;
+    if (a[1].type !== 'predefined' && b[1].type === 'predefined') return 1;
+    return a[0].localeCompare(b[0]);
+  });
+  
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+      {goalList.map(([goal, goalData], idx) => {
+        const target = goalData.target || DEFAULT_TARGET;
+        const actual = goalHours[goal] || 0;
+        const percentage = target > 0 ? (actual / target) * 100 : 0;
+        const isOnTrack = percentage >= 80;
+        const isWarning = percentage >= 50 && percentage < 80;
+        const statusColor = isOnTrack ? "#27ae60" : isWarning ? "#f39c12" : "#e74c3c";
+        const statusLabel = isOnTrack ? "✅ على المسار" : isWarning ? "⚠️ تحذير" : "❌ متأخر";
+        const colorIdx = idx % colors_legend.length;
+        const isCustom = goalData.type === 'custom';
+        
+        return (
+          <div key={goal} style={{
+            background: "#fff",
+            borderRadius: 12,
+            padding: 16,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            border: `3px solid ${statusColor}`,
+            transition: "all 0.3s ease",
+            transform: isOnTrack ? "scale(1.02)" : "scale(1)",
+            position: "relative"
+          }}>
+            {isCustom && (
+              <button
+                onClick={() => onDeleteGoal(goal)}
+                title="حذف الهدف"
+                style={{
+                  position: "absolute",
+                  top: 8,
+                  left: 8,
+                  background: "rgba(231, 76, 60, 0.2)",
+                  color: "#e74c3c",
+                  border: "none",
+                  borderRadius: "50%",
+                  width: 24,
+                  height: 24,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.2s"
+                }}
+                onMouseOver={(e) => { e.target.style.background = "#e74c3c"; e.target.style.color = "#fff"; }}
+                onMouseOut={(e) => { e.target.style.background = "rgba(231, 76, 60, 0.2)"; e.target.style.color = "#e74c3c"; }}
+              >
+                ✕
+              </button>
+            )}
+            
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, paddingRight: isCustom ? 24 : 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: colors_legend[colorIdx],
+                  boxShadow: "0 0 8px rgba(0,0,0,0.2)"
+                }}></div>
+                <span style={{ fontSize: 16, fontWeight: 700, color: colors_legend[colorIdx] }}>{goal}</span>
+                {isCustom && <span style={{ fontSize: 10, opacity: 0.5, color: "#999" }}>مخصص</span>}
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 600, color: statusColor, padding: "4px 8px", background: statusColor + "20", borderRadius: 4, whiteSpace: "nowrap" }}>{statusLabel}</span>
+            </div>
+            
+            <div style={{ marginBottom: 12 }}>
+              <div style={{
+                height: 28,
+                background: "#f0f0f0",
+                borderRadius: 8,
+                overflow: "hidden",
+                boxShadow: "inset 0 2px 4px rgba(0,0,0,0.1)"
+              }}>
+                <div style={{
+                  height: "100%",
+                  width: Math.min(percentage, 100) + "%",
+                  background: `linear-gradient(90deg, ${statusColor}, ${statusColor}dd)`,
+                  transition: "width 0.4s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 700
+                }}>
+                  {percentage > 10 && `${Math.round(percentage)}%`}
+                </div>
+              </div>
+              <div style={{ marginTop: 8, display: "flex", justifyContent: "space-between", fontSize: 12, color: "#666" }}>
+                <span>{actual.toFixed(1)}h من {target}h</span>
+                <span style={{ color: statusColor, fontWeight: 700 }}>{(target - actual).toFixed(1)}h متبقية</span>
+              </div>
+            </div>
+            
+            <div style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              padding: 8,
+              background: "#f9f9f9",
+              borderRadius: 6,
+              marginBottom: 12
+            }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: "#666" }}>الهدف:</label>
+              <input
+                type="number"
+                min="0"
+                max="168"
+                step="1"
+                value={target}
+                onChange={(e) => onUpdateGoal(goal, parseFloat(e.target.value) || DEFAULT_TARGET)}
+                style={{
+                  flex: 1,
+                  padding: "6px 8px",
+                  border: `1px solid ${statusColor}`,
+                  borderRadius: 4,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  textAlign: "center"
+                }}
+              />
+              <span style={{ fontSize: 12, color: "#666" }}>ساعة</span>
+            </div>
+            
+            <div style={{
+              padding: 8,
+              background: colors_legend[colorIdx] + "15",
+              borderRadius: 6,
+              fontSize: 11,
+              color: "#333",
+              textAlign: "right"
+            }}>
+              <div>📊 متوسط يومي: {(actual / 7).toFixed(1)}h</div>
+              <div style={{ marginTop: 4 }}>⏱️ التقدم: {percentage > 0 ? percentage.toFixed(0) : 0}%</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // == Main App Component ==
 export default function App() {
   const [days, setDays, undoRedo] = useUndoRedo(INITIAL_DAYS, 30);
@@ -772,6 +929,16 @@ export default function App() {
   });
   const [showGistSettings, setShowGistSettings] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState(getCurrentWeekNumber());
+  const [weeklyGoals, setWeeklyGoals] = useState(() => {
+    try {
+      const saved = localStorage.getItem('weeklyGoals');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [newGoalName, setNewGoalName] = useState('');
+  const [newGoalTarget, setNewGoalTarget] = useState(20);
   const saveTimeoutRef = useRef(null);
 
   // Initialize GitHub Gist sync
@@ -804,6 +971,15 @@ export default function App() {
       console.error('Failed to save dark mode preference:', e);
     }
   }, [darkMode]);
+  
+  // Persist weekly goals
+  useEffect(() => {
+    try {
+      localStorage.setItem('weeklyGoals', JSON.stringify(weeklyGoals));
+    } catch (e) {
+      console.error('Failed to save weekly goals:', e);
+    }
+  }, [weeklyGoals]);
   
   // Auto-save to localStorage with debounce
   useEffect(() => {
@@ -878,6 +1054,59 @@ export default function App() {
     setDays(prev => prev.map(d => d.id === fromDay.id ? { ...d, tasks: newTasks } : d));
   };
   const hc = colors.header;
+  
+  // Get current week's goals with defaults
+  const getCurrentWeekGoals = () => {
+    const weekGoals = weeklyGoals[selectedWeek] || {};
+    // Ensure all predefined goals exist
+    const merged = { ...weekGoals };
+    GOALS.forEach(g => {
+      if (!merged[g]) {
+        merged[g] = { target: 20, type: 'predefined' };
+      }
+    });
+    return merged;
+  };
+  
+  const currentWeekGoals = getCurrentWeekGoals();
+  
+  // Add new goal to current week
+  const addGoal = (goalName, target) => {
+    if (!goalName.trim()) return;
+    setWeeklyGoals(prev => ({
+      ...prev,
+      [selectedWeek]: {
+        ...(prev[selectedWeek] || {}),
+        [goalName]: { target, type: 'custom' }
+      }
+    }));
+    setNewGoalName('');
+    setNewGoalTarget(20);
+  };
+  
+  // Update goal target for current week
+  const updateGoalTarget = (goalName, target) => {
+    setWeeklyGoals(prev => ({
+      ...prev,
+      [selectedWeek]: {
+        ...(prev[selectedWeek] || {}),
+        [goalName]: { ...((prev[selectedWeek] || {})[goalName] || { type: 'predefined' }), target }
+      }
+    }));
+  };
+  
+  // Delete goal from current week
+  const deleteGoal = (goalName) => {
+    setWeeklyGoals(prev => {
+      const newWeekGoals = { ...(prev[selectedWeek] || {}) };
+      delete newWeekGoals[goalName];
+      return {
+        ...prev,
+        [selectedWeek]: newWeekGoals
+      };
+    });
+  };
+  
   const getSaveIndicator = () => {
     if (saveStatus === 'loading' || saveStatus === 'saving') return '💾 جارٍ الحفظ...';
     if (saveStatus === 'error') return '❌ خطأ في الحفظ';
@@ -947,6 +1176,7 @@ export default function App() {
         
         <div style={{ display: "flex", gap: 12, marginBottom: 24, borderBottom: "2px solid #e0e0e0", flexWrap: "wrap", alignItems: "center" }}>
           <button onClick={() => setTab("editor")} style={{ background: tab === "editor" ? hc.bg : "transparent", color: tab === "editor" ? hc.text : "#666", border: "none", borderRadius: "8px 8px 0 0", padding: "10px 20px", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "all 0.2s" }}>✏️ محرّر</button>
+          <button onClick={() => setTab("goals")} style={{ background: tab === "goals" ? hc.bg : "transparent", color: tab === "goals" ? hc.text : "#666", border: "none", borderRadius: "8px 8px 0 0", padding: "10px 20px", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "all 0.2s" }}>🎯 الأهداف</button>
           <button onClick={() => setTab("colors")} style={{ background: tab === "colors" ? hc.bg : "transparent", color: tab === "colors" ? hc.text : "#666", border: "none", borderRadius: "8px 8px 0 0", padding: "10px 20px", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "all 0.2s" }}>🎨 الألوان</button>
           <button onClick={() => setTab("preview")} style={{ background: tab === "preview" ? hc.bg : "transparent", color: tab === "preview" ? hc.text : "#666", border: "none", borderRadius: "8px 8px 0 0", padding: "10px 20px", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "all 0.2s" }}>👁️ معاينة</button>
           <div style={{ marginRight: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -1042,6 +1272,129 @@ export default function App() {
                 <DayCard key={day.id} day={day} colors={colors} onUpdate={patch => updateDay(day.id, patch)} onCopyDay={copyDay} />
               ))}
             </div>
+          </div>
+        )}
+        {tab === "goals" && (
+          <div style={{ padding: 20, background: "#f9fafb", borderRadius: 12 }}>
+            <div style={{ marginBottom: 24 }}>
+              <h2 style={{ textAlign: "right", fontSize: 24, fontWeight: 900, marginBottom: 8, color: hc.bg }}>الأهداف الأسبوعية 🎯</h2>
+              <p style={{ textAlign: "right", fontSize: 13, color: "#666", margin: 0 }}>تتبع تقدمك نحو أهدافك الأسبوعية. عدّل الأهداف حسب احتياجاتك.</p>
+            </div>
+            
+            <div style={{
+              background: hc.bg,
+              color: hc.text,
+              padding: 16,
+              borderRadius: 12,
+              marginBottom: 24,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              gap: 16
+            }}>
+              <div style={{ textAlign: "center", padding: 12 }}>
+                <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>إجمالي الساعات</div>
+                <div style={{ fontSize: 28, fontWeight: 900 }}>{Object.values(goalHours).reduce((a, b) => a + b, 0).toFixed(1)}</div>
+                <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>ساعة مسجلة</div>
+              </div>
+              <div style={{ textAlign: "center", padding: 12 }}>
+                <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>إجمالي الأهداف</div>
+                <div style={{ fontSize: 28, fontWeight: 900 }}>{Object.values(currentWeekGoals).reduce((sum, g) => sum + (g.target || 20), 0)}</div>
+                <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>ساعة مستهدفة</div>
+              </div>
+              <div style={{ textAlign: "center", padding: 12 }}>
+                <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>معدل الإنجاز</div>
+                <div style={{ fontSize: 28, fontWeight: 900 }}>{Object.values(currentWeekGoals).reduce((sum, g) => sum + (g.target || 20), 0) > 0 ? Math.round((Object.values(goalHours).reduce((a, b) => a + b, 0) / Object.values(currentWeekGoals).reduce((sum, g) => sum + (g.target || 20), 0)) * 100) : 0}%</div>
+                <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>نسبة التقدم</div>
+              </div>
+              <div style={{ textAlign: "center", padding: 12 }}>
+                <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>عدد الأيام</div>
+                <div style={{ fontSize: 28, fontWeight: 900 }}>{days.filter(d => d.enabled).length}</div>
+                <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>أيام نشطة</div>
+              </div>
+            </div>
+            
+            {/* Add New Goal Form */}
+            <div style={{
+              background: "#fff",
+              padding: 16,
+              borderRadius: 12,
+              marginBottom: 24,
+              border: "2px dashed " + hc.bg,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+            }}>
+              <h3 style={{ textAlign: "right", marginTop: 0, marginBottom: 12, fontSize: 14, fontWeight: 700, color: hc.bg }}>➕ إضافة هدف جديد</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 80px", gap: 12, alignItems: "flex-end" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, textAlign: "right" }}>اسم الهدف</label>
+                  <input
+                    type="text"
+                    value={newGoalName}
+                    onChange={(e) => setNewGoalName(e.target.value)}
+                    placeholder="مثال: دراسة لغة جديدة"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        addGoal(newGoalName, newGoalTarget);
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "8px 10px",
+                      border: "1px solid #ddd",
+                      borderRadius: 6,
+                      fontSize: 13,
+                      fontFamily: "inherit",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 6, textAlign: "right" }}>الهدف (ساعة)</label>
+                  <input
+                    type="number"
+                    value={newGoalTarget}
+                    onChange={(e) => setNewGoalTarget(parseFloat(e.target.value) || 20)}
+                    min="1"
+                    max="168"
+                    style={{
+                      width: "100%",
+                      padding: "8px 6px",
+                      border: "1px solid #ddd",
+                      borderRadius: 6,
+                      fontSize: 13,
+                      textAlign: "center",
+                      boxSizing: "border-box"
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={() => addGoal(newGoalName, newGoalTarget)}
+                  style={{
+                    background: hc.bg,
+                    color: hc.text,
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "8px 12px",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    transition: "all 0.2s"
+                  }}
+                  onMouseOver={(e) => { e.target.style.opacity = "0.9"; e.target.style.transform = "scale(1.05)"; }}
+                  onMouseOut={(e) => { e.target.style.opacity = "1"; e.target.style.transform = "scale(1)"; }}
+                >
+                  إضافة
+                </button>
+              </div>
+            </div>
+            
+            {/* Goals Grid */}
+            <GoalsPanel
+              currentWeekGoals={currentWeekGoals}
+              goalHours={goalHours}
+              onUpdateGoal={updateGoalTarget}
+              onDeleteGoal={deleteGoal}
+              colors={colors}
+            />
           </div>
         )}
         {tab === "colors" && (
