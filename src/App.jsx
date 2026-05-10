@@ -101,26 +101,74 @@ const GOAL_KEYWORDS = {
 };
 let nextId = 500;
 
-// Helper function to get current week's dates
-function getCurrentWeekDates() {
-  const today = new Date();
-  const dayOfWeek = today.getDay();
-  const sunday = new Date(today);
-  sunday.setDate(today.getDate() - dayOfWeek);
+// Helper function to get week dates starting from Saturday for a given week number
+function getWeekDates(weekNumber = null) {
+  let startDate;
+  
+  if (weekNumber === null) {
+    // Current week
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    // Saturday is day 6, so calculate Saturday of current week
+    const daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
+    startDate = new Date(today);
+    startDate.setDate(today.getDate() + (daysUntilSaturday === 0 ? 0 : daysUntilSaturday - 7));
+  } else {
+    // Calculate Saturday for the given week number
+    // Reference: Week 1 starts on the first Saturday of the year
+    const year = new Date().getFullYear();
+    const jan1 = new Date(year, 0, 1);
+    
+    // Find the first Saturday of the year
+    const jan1DayOfWeek = jan1.getDay();
+    const daysToFirstSaturday = (6 - jan1DayOfWeek + 7) % 7;
+    const firstSaturday = new Date(year, 0, 1 + (daysToFirstSaturday === 0 ? 0 : daysToFirstSaturday));
+    
+    // Calculate the Saturday for the requested week
+    startDate = new Date(firstSaturday);
+    startDate.setDate(firstSaturday.getDate() + (weekNumber - 1) * 7);
+  }
   
   const dates = [];
   for (let i = 0; i < 7; i++) {
-    const date = new Date(sunday);
-    date.setDate(sunday.getDate() + i);
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
     dates.push(date.toISOString().split('T')[0]); // YYYY-MM-DD format
   }
   return dates;
 }
 
-const weekDates = getCurrentWeekDates();
+// Helper function to format date as DD/M/YYYY for display
+function formatDateDisplay(dateStr) {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-');
+  return `${day}/${parseInt(month)}/${year}`;
+}
+
+// Helper function to get current week number
+function getCurrentWeekNumber() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const jan1 = new Date(year, 0, 1);
+  const firstSaturday = new Date(year, 0, 1 + ((6 - jan1.getDay() + 7) % 7));
+  
+  // Find Saturday of current week
+  const dayOfWeek = today.getDay();
+  const daysUntilSaturday = (6 - dayOfWeek + 7) % 7;
+  const currentSaturday = new Date(today);
+  currentSaturday.setDate(today.getDate() + (daysUntilSaturday === 0 ? 0 : daysUntilSaturday - 7));
+  
+  // Calculate week number
+  const diffTime = currentSaturday - firstSaturday;
+  const diffWeeks = Math.floor(diffTime / (7 * 24 * 60 * 60 * 1000));
+  return diffWeeks + 1;
+}
+
+const weekDates = getWeekDates();
 
 const INITIAL_DAYS = [
-  { id: 1, name: "الأحد", type: "أوفيس", notes: "", التاريخ: weekDates[0] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
+  { id: 7, name: "السبت", type: "إجازة", notes: "", التاريخ: weekDates[0] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: false, tasks: [] },
+  { id: 1, name: "الأحد", type: "أوفيس", notes: "", التاريخ: weekDates[1] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
     { id: 1, time: "4:45 - 5:30", task: "صلاة الفجر + أذكار", cat: "ibadah", recurring: false },
     { id: 2, time: "5:30 - 6:30", task: "ركوب العجلة", cat: "highlight", recurring: false },
     { id: 3, time: "6:30 - 7:00", task: "فطار + قهوة", cat: "", recurring: false },
@@ -141,7 +189,7 @@ const INITIAL_DAYS = [
     { id: 19, time: "8:15 - 10:00", task: "وقت حر / عائلة / قرآن", cat: "ibadah", recurring: false },
     { id: 20, time: "10:00", task: "نوم", cat: "highlight", recurring: false },
   ]},
-  { id: 2, name: "الاثنين", type: "بيت", notes: "", التاريخ: weekDates[1] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
+  { id: 2, name: "الاثنين", type: "بيت", notes: "", التاريخ: weekDates[2] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
     { id: 1, time: "4:45 - 5:30", task: "صلاة الفجر + أذكار", cat: "ibadah", recurring: false },
     { id: 2, time: "5:30 - 6:30", task: "ركوب العجلة", cat: "highlight", recurring: false },
     { id: 3, time: "6:30 - 7:00", task: "فطار + قهوة", cat: "", recurring: false },
@@ -160,7 +208,7 @@ const INITIAL_DAYS = [
     { id: 17, time: "6:15 - 10:00", task: "وقت حر / عائلة / قرآن", cat: "ibadah", recurring: false },
     { id: 18, time: "10:00", task: "نوم", cat: "highlight", recurring: false },
   ]},
-  { id: 3, name: "الثلاثاء", type: "أوفيس", notes: "", التاريخ: weekDates[2] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
+  { id: 3, name: "الثلاثاء", type: "أوفيس", notes: "", التاريخ: weekDates[3] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
     { id: 1, time: "4:45 - 5:30", task: "صلاة الفجر + أذكار", cat: "ibadah", recurring: false },
     { id: 3, time: "5:30 - 6:00", task: "فطار + قهوة", cat: "", recurring: false },
     { id: 4, time: "6:00 - 6:30", task: "Anki", cat: "", recurring: false },
@@ -181,7 +229,7 @@ const INITIAL_DAYS = [
     { id: 21, time: "9:00 - 10:00", task: "وقت حر / قرآن", cat: "ibadah", recurring: false },
     { id: 22, time: "10:00", task: "نوم", cat: "highlight", recurring: false },
   ]},
-  { id: 4, name: "الأربعاء", type: "بيت", notes: "", التاريخ: weekDates[3] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
+  { id: 4, name: "الأربعاء", type: "بيت", notes: "", التاريخ: weekDates[4] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
     { id: 1, time: "4:45 - 5:30", task: "صلاة الفجر + أذكار", cat: "ibadah", recurring: false },
     { id: 2, time: "5:30 - 6:30", task: "ركوب العجلة", cat: "highlight", recurring: false },
     { id: 3, time: "6:30 - 7:00", task: "فطار + قهوة", cat: "", recurring: false },
@@ -201,7 +249,7 @@ const INITIAL_DAYS = [
     { id: 18, time: "7:00 - 9:45", task: "تسميع قرآن", cat: "highlight", recurring: false },
     { id: 19, time: "9:45 - 10:00", task: "نوم", cat: "highlight", recurring: false },
   ]},
-  { id: 5, name: "الخميس", type: "أوفيس", notes: "", التاريخ: weekDates[4] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
+  { id: 5, name: "الخميس", type: "أوفيس", notes: "", التاريخ: weekDates[5] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: true, tasks: [
     { id: 1, time: "4:45 - 5:30", task: "صلاة الفجر + أذكار", cat: "ibadah", recurring: false },
     { id: 3, time: "6:30 - 7:00", task: "فطار + قهوة", cat: "", recurring: false },
     { id: 4, time: "7:00 - 7:30", task: "Anki", cat: "", recurring: false },
@@ -222,8 +270,7 @@ const INITIAL_DAYS = [
     { id: 19, time: "7:15 - 10:00", task: "وقت حر / عائلة / قرآن", cat: "ibadah", recurring: false },
     { id: 20, time: "10:00", task: "نوم", cat: "highlight", recurring: false },
   ]},
-  { id: 6, name: "الجمعة", type: "إجازة", notes: "", التاريخ: weekDates[5] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: false, tasks: [] },
-  { id: 7, name: "السبت", type: "إجازة", notes: "", التاريخ: weekDates[6] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: false, tasks: [] },
+  { id: 6, name: "الجمعة", type: "إجازة", notes: "", التاريخ: weekDates[6] || "", مستوى_الطاقة: "", تقييم_اليوم: "", عدد_ساعات_النوم: "", enabled: false, tasks: [] },
 ];
 // == Undo/Redo hook ==
 function useUndoRedo(initial, max) {
@@ -724,6 +771,7 @@ export default function App() {
     }
   });
   const [showGistSettings, setShowGistSettings] = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState(getCurrentWeekNumber());
   const saveTimeoutRef = useRef(null);
 
   // Initialize GitHub Gist sync
@@ -798,6 +846,15 @@ export default function App() {
     }
   }, []);
   
+  // Update day dates when week changes
+  useEffect(() => {
+    const weekDates = getWeekDates(selectedWeek);
+    setDays(prev => prev.map((day, idx) => ({
+      ...day,
+      التاريخ: weekDates[idx] || ''
+    })));
+  }, [selectedWeek]);
+  
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -854,6 +911,40 @@ export default function App() {
           </button>
         </div>
         <h1 style={{ textAlign: "center", fontSize: 32, fontWeight: 900, marginBottom: 24, color: hc.bg }}>جدول الأسبوع 📅</h1>
+        
+        {/* Week Selector */}
+        <div style={{ background: darkMode ? "#2a2a3e" : "#f0f5ff", border: `2px solid ${hc.bg}`, borderRadius: 8, padding: 16, marginBottom: 24, display: "flex", gap: 12, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+          <label style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap" }}>📆 اختر الأسبوع:</label>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <button onClick={() => setSelectedWeek(Math.max(1, selectedWeek - 1))} title="Previous Week" style={{ background: hc.bg, color: hc.text, border: "none", borderRadius: 4, padding: "6px 10px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>←</button>
+            <input 
+              type="number" 
+              value={selectedWeek} 
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (val >= 1 && val <= 52) setSelectedWeek(val);
+              }}
+              min="1" 
+              max="52"
+              style={{ width: 60, padding: "6px 8px", border: `2px solid ${hc.bg}`, borderRadius: 4, textAlign: "center", fontSize: 14, fontWeight: 600 }}
+              title="Week Number (1-52)"
+            />
+            <span style={{ fontSize: 13, fontWeight: 600, color: darkMode ? "#aaa" : "#666" }}>w</span>
+            <button onClick={() => setSelectedWeek(Math.min(52, selectedWeek + 1))} title="Next Week" style={{ background: hc.bg, color: hc.text, border: "none", borderRadius: 4, padding: "6px 10px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>→</button>
+            <select 
+              value={selectedWeek} 
+              onChange={(e) => setSelectedWeek(parseInt(e.target.value, 10))}
+              style={{ padding: "6px 8px", border: `1px solid ${hc.bg}`, borderRadius: 4, fontSize: 13, background: darkMode ? "#1a1a2e" : "#fff", color: darkMode ? "#f0f0f0" : "#1a1a2e", cursor: "pointer" }}>
+              {Array.from({ length: 52 }, (_, i) => i + 1).map(week => (
+                <option key={week} value={week}>الأسبوع {week}</option>
+              ))}
+            </select>
+            <span style={{ fontSize: 12, color: darkMode ? "#999" : "#999", marginLeft: 12, whiteSpace: "nowrap" }}>
+              من {formatDateDisplay(getWeekDates(selectedWeek)[0])} إلى {formatDateDisplay(getWeekDates(selectedWeek)[6])}
+            </span>
+          </div>
+        </div>
+        
         <div style={{ display: "flex", gap: 12, marginBottom: 24, borderBottom: "2px solid #e0e0e0", flexWrap: "wrap", alignItems: "center" }}>
           <button onClick={() => setTab("editor")} style={{ background: tab === "editor" ? hc.bg : "transparent", color: tab === "editor" ? hc.text : "#666", border: "none", borderRadius: "8px 8px 0 0", padding: "10px 20px", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "all 0.2s" }}>✏️ محرّر</button>
           <button onClick={() => setTab("colors")} style={{ background: tab === "colors" ? hc.bg : "transparent", color: tab === "colors" ? hc.text : "#666", border: "none", borderRadius: "8px 8px 0 0", padding: "10px 20px", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "all 0.2s" }}>🎨 الألوان</button>
@@ -863,7 +954,7 @@ export default function App() {
             <button onClick={undoRedo.redo} disabled={!undoRedo.canRedo} title="Ctrl+Y" style={{ background: "#f3e5f5", color: "#7b1fa2", border: "1px solid #ce93d8", borderRadius: 6, padding: "8px 12px", cursor: undoRedo.canRedo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: undoRedo.canRedo ? 1 : 0.5, transition: "all 0.2s" }}>↷ إعادة</button>
             <button onClick={() => setShowGistSettings(true)} title="GitHub Gist Sync" style={{ background: hasCredentials() ? "#9b59b6" : "#bdc3c7", color: "#fff", border: "none", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>🔗 GitHub</button>
             <button onClick={() => {
-              const data = { days, colors, exportDate: new Date().toISOString() };
+              const data = { days, colors, selectedWeek, exportDate: new Date().toISOString() };
               const json = JSON.stringify(data, null, 2);
               const blob = new Blob([json], { type: 'application/json' });
               const url = URL.createObjectURL(blob);
@@ -927,6 +1018,7 @@ export default function App() {
                         
                         setDays(convertedDays);
                         if (imported.colors) setColors(imported.colors);
+                        if (imported.selectedWeek) setSelectedWeek(imported.selectedWeek);
                         alert('✅ تم استيراد البيانات بنجاح!');
                       } else {
                         alert('❌ صيغة الملف غير صحيحة');
