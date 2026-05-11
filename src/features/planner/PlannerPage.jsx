@@ -165,6 +165,7 @@ export default function PlannerPage() {
                 key={day.id}
                 day={day}
                 colors={planner.colors}
+                goalOptions={planner.taskGoalOptions}
                 onChange={(patch) => planner.updateDay(day.id, patch)}
                 onCopyDay={planner.copyDay}
                 createTaskId={planner.createTaskId}
@@ -176,17 +177,17 @@ export default function PlannerPage() {
         {planner.tab === "goals" && (
           <GoalsTab
             colors={planner.colors}
-            goalHours={planner.goalHours}
+            monthLabel={planner.monthLabel}
+            weekRangeLabel={planner.weekRangeLabel}
+            currentMonthGoals={planner.currentMonthGoals}
             currentWeekGoals={planner.currentWeekGoals}
-            goalsSummary={planner.goalsSummary}
-            days={planner.days}
-            newGoalName={planner.newGoalName}
-            newGoalTarget={planner.newGoalTarget}
-            onNewGoalNameChange={planner.setNewGoalName}
-            onNewGoalTargetChange={planner.setNewGoalTarget}
-            onAddGoal={planner.addGoal}
-            onUpdateGoal={planner.updateGoalTarget}
-            onDeleteGoal={planner.deleteGoal}
+            monthlySummary={planner.monthlySummary}
+            onAddMonthlyGoal={planner.addMonthlyGoal}
+            onUpdateMonthlyGoalTitle={planner.updateMonthlyGoalTitle}
+            onAddWeeklyGoal={planner.addWeeklyGoal}
+            onUpdateWeeklyGoalTitle={planner.updateWeeklyGoalTitle}
+            onDeleteMonthlyGoal={planner.deleteMonthlyGoal}
+            onDeleteWeeklyGoal={planner.deleteWeeklyGoal}
           />
         )}
 
@@ -196,7 +197,9 @@ export default function PlannerPage() {
           <PreviewTab
             colors={planner.colors}
             days={planner.days}
-            goalHours={planner.goalHours}
+            currentWeekGoals={planner.currentWeekGoals}
+            monthLabel={planner.monthLabel}
+            monthlySummary={planner.monthlySummary}
             printZoom={planner.printZoom}
             onZoomOut={planner.zoomOut}
             onZoomIn={planner.zoomIn}

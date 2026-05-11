@@ -11,8 +11,13 @@ export function createEmptyTask(id) {
     time: "",
     task: "",
     cat: "",
+    done: false,
     recurring: false,
     notes: "",
+    linkedWeeklyGoalId: "",
+    linkedMonthlyGoalId: "",
+    linkedGoalType: "",
+    linkedGoalId: "",
   };
 }
 

@@ -7,6 +7,7 @@ export default function TaskRow({
   index,
   colors,
   conflict,
+  goalOptions,
   onUpdate,
   onDelete,
   onMoveUp,
@@ -23,6 +24,10 @@ export default function TaskRow({
   const textColor = categoryColor ? categoryColor.text : "#1a1a2e";
   const duration = calculateDuration(task.time);
   const { start, end } = splitTimeRange(task.time);
+  const weeklyGoals = goalOptions?.weeklyGoals || [];
+  const monthlyGoals = goalOptions?.monthlyGoals || [];
+  const linkedGoalValue =
+    task.linkedGoalType && task.linkedGoalId ? `${task.linkedGoalType}:${task.linkedGoalId}` : "";
 
   const updateTime = (nextStart, nextEnd) => {
     const startValue = nextStart ?? start;
@@ -33,10 +38,34 @@ export default function TaskRow({
     });
   };
 
+  const applyGoalLink = (type, goalId) => {
+    onUpdate({
+      linkedWeeklyGoalId: type === "weekly" ? goalId : "",
+      linkedMonthlyGoalId: type === "monthly" ? goalId : "",
+      linkedGoalType: type,
+      linkedGoalId: goalId,
+    });
+  };
+
+  const handleGoalChange = (event) => {
+    const { value } = event.target;
+
+    if (!value) {
+      onUpdate({
+        linkedWeeklyGoalId: "",
+        linkedMonthlyGoalId: "",
+        linkedGoalType: "",
+        linkedGoalId: "",
+      });
+      return;
+    }
+
+    const [type, goalId] = value.split(":");
+    applyGoalLink(type, goalId);
+  };
+
   return (
     <tr
-      draggable
-      onDragStart={() => onDragStart(task.id)}
       onDragOver={(event) => {
         event.preventDefault();
         onDragOver(task.id);
@@ -47,9 +76,16 @@ export default function TaskRow({
         borderBottom: "1px solid #e5e5e5",
         transition: "background 0.2s, opacity 0.2s",
         opacity: isDragging ? 0.6 : 1,
-        cursor: "move",
       }}
     >
+      <td style={{ padding: "6px 8px", textAlign: "center" }}>
+        <input
+          type="checkbox"
+          checked={Boolean(task.done)}
+          onChange={(event) => onUpdate({ done: event.target.checked })}
+          title="تم التنفيذ"
+        />
+      </td>
       <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 700, color: textColor }}>
         {conflict && (
           <span title="تعارض في الوقت" style={{ color: "#e74c3c", marginLeft: 4, fontSize: 14 }}>
@@ -68,6 +104,8 @@ export default function TaskRow({
             fontFamily: "inherit",
             fontSize: "inherit",
             outline: "none",
+            textDecoration: task.done ? "line-through" : "none",
+            opacity: task.done ? 0.75 : 1,
           }}
         />
       </td>
@@ -99,6 +137,44 @@ export default function TaskRow({
           ))}
         </select>
       </td>
+      <td style={{ padding: "6px 10px", textAlign: "right", width: 260 }}>
+        {weeklyGoals.length === 0 && monthlyGoals.length === 0 ? (
+          <span style={{ fontSize: 11, color: "#94a3b8" }}>لا توجد أهداف متاحة للربط</span>
+        ) : (
+          <select
+            value={linkedGoalValue}
+            onChange={handleGoalChange}
+            style={{
+              width: "100%",
+              border: "1px solid #ddd",
+              borderRadius: 4,
+              padding: "6px 8px",
+              fontSize: 12,
+              background: "#fff",
+            }}
+          >
+            <option value="">بدون ربط</option>
+            {weeklyGoals.length > 0 && (
+              <optgroup label="الأهداف الأسبوعية">
+                {weeklyGoals.map((goal) => (
+                  <option key={goal.id} value={`weekly:${goal.id}`}>
+                    {goal.title}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {monthlyGoals.length > 0 && (
+              <optgroup label="أهداف شهرية بدون تقسيم أسبوعي">
+                {monthlyGoals.map((goal) => (
+                  <option key={goal.id} value={`monthly:${goal.id}`}>
+                    {goal.title}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+        )}
+      </td>
       <td style={{ padding: "6px 10px", textAlign: "right", fontSize: 12, color: textColor }}>
         <input
           value={task.notes || ""}
@@ -119,6 +195,21 @@ export default function TaskRow({
         />
       </td>
       <td style={{ padding: "6px 4px", textAlign: "center", whiteSpace: "nowrap" }}>
+        <span
+          draggable
+          onDragStart={() => onDragStart(task.id)}
+          title="اسحب لإعادة الترتيب"
+          style={{
+            display: "inline-block",
+            cursor: "grab",
+            fontSize: 14,
+            color: "#64748b",
+            marginLeft: 4,
+            userSelect: "none",
+          }}
+        >
+          ⋮⋮
+        </span>
         <button
           onClick={onMoveUp}
           disabled={isFirst}

@@ -1,87 +1,70 @@
-import { GOALS, GOAL_COLORS } from "../../domain/schedule/constants";
 import { calculateDuration } from "../../domain/schedule/time";
 
-export default function PreviewTab({ colors, days, goalHours, printZoom, onZoomOut, onZoomIn }) {
+export default function PreviewTab({
+  colors,
+  days,
+  currentWeekGoals,
+  monthLabel,
+  monthlySummary,
+  printZoom,
+  onZoomOut,
+  onZoomIn,
+}) {
   const headerColor = colors.header;
   const enabledDays = days.filter((day) => day.enabled);
-  const totalHours = Object.values(goalHours).reduce((sum, value) => sum + value, 0);
 
   return (
     <div style={{ background: "#fff", padding: 20, borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", minHeight: 400 }}>
       <div style={{ marginBottom: 24, padding: 16, background: headerColor.bg, color: headerColor.text, borderRadius: 8 }}>
-        <h3 style={{ margin: "0 0 12px 0", fontSize: 16, fontWeight: 700 }}>📈 إحصائيات متقدمة</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "center" }}>
-          <svg viewBox="0 0 120 120" style={{ width: "100%", maxWidth: 200 }}>
-            {GOALS.map((goal, index) => {
-              if (totalHours === 0) return null;
-
-              const percentage = totalHours > 0 ? (goalHours[goal] / totalHours) * 100 : 0;
-              const startAngle = (GOALS.slice(0, index).reduce((sum, item) => sum + (goalHours[item] || 0), 0) / totalHours) * 360;
-              const endAngle = startAngle + (percentage * 360) / 100;
-              const largeArc = percentage > 50 ? 1 : 0;
-              const radius = 40;
-              const centerX = 60;
-              const centerY = 60;
-              const start = {
-                x: centerX + radius * Math.cos(((startAngle - 90) * Math.PI) / 180),
-                y: centerY + radius * Math.sin(((startAngle - 90) * Math.PI) / 180),
-              };
-              const end = {
-                x: centerX + radius * Math.cos(((endAngle - 90) * Math.PI) / 180),
-                y: centerY + radius * Math.sin(((endAngle - 90) * Math.PI) / 180),
-              };
-              const pathData = `M ${centerX} ${centerY} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
-
-              return <path key={goal} d={pathData} fill={GOAL_COLORS[index]} />;
-            })}
-          </svg>
-
-          <div>
-            <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 600 }}>ملخص الأهداف:</div>
-            {GOALS.map((goal, index) => {
-              const percentage = totalHours > 0 ? (goalHours[goal] / totalHours) * 100 : 0;
-              return (
-                <div key={goal} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginBottom: 4 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: GOAL_COLORS[index] }} />
-                  <span style={{ flex: 1 }}>{goal}</span>
-                  <span style={{ fontWeight: 700 }}>{goalHours[goal]}h ({Math.round(percentage)}%)</span>
-                </div>
-              );
-            })}
+        <h3 style={{ margin: "0 0 12px 0", fontSize: 16, fontWeight: 700 }}>ملخص الأهداف المرتبطة</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+          <div style={{ background: "rgba(255,255,255,0.1)", padding: 12, borderRadius: 8 }}>
+            <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>الشهر</div>
+            <div style={{ fontSize: 20, fontWeight: 900 }}>{monthLabel}</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.1)", padding: 12, borderRadius: 8 }}>
+            <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>الأهداف الشهرية</div>
+            <div style={{ fontSize: 20, fontWeight: 900 }}>{monthlySummary.totalGoals}</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.1)", padding: 12, borderRadius: 8 }}>
+            <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>المهام المنجزة</div>
+            <div style={{ fontSize: 20, fontWeight: 900 }}>
+              {monthlySummary.doneTasks}/{monthlySummary.totalTasks}
+            </div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.1)", padding: 12, borderRadius: 8 }}>
+            <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>نسبة الإنجاز</div>
+            <div style={{ fontSize: 20, fontWeight: 900 }}>{monthlySummary.completionRate}%</div>
           </div>
         </div>
       </div>
 
-      <div style={{ marginBottom: 24, padding: 16, background: headerColor.bg, color: headerColor.text, borderRadius: 8 }}>
-        <h3 style={{ margin: "0 0 12px 0", fontSize: 16, fontWeight: 700 }}>ملخص الأهداف الأسبوعية 📊</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
-          {GOALS.map((goal) => {
-            const maxHours = 20;
-            const percentage = Math.min((goalHours[goal] / maxHours) * 100, 100);
-            const barColor = percentage < 33 ? "#e74c3c" : percentage < 66 ? "#f39c12" : "#27ae60";
-
-            return (
-              <div key={goal} style={{ background: "rgba(255,255,255,0.1)", padding: 12, borderRadius: 6 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, textAlign: "right" }}>{goal}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ flex: 1, height: 20, background: "rgba(255,255,255,0.2)", borderRadius: 10, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${percentage}%`, background: barColor, transition: "width 0.3s ease" }} />
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 900, minWidth: "40px", textAlign: "center" }}>{goalHours[goal]}h</div>
+      <div style={{ marginBottom: 24, padding: 16, background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+        <h3 style={{ margin: "0 0 12px 0", fontSize: 16, fontWeight: 700, textAlign: "right" }}>أهداف الأسبوع الحالية</h3>
+        <div style={{ display: "grid", gap: 10 }}>
+          {currentWeekGoals.length > 0 ? (
+            currentWeekGoals.map((goal) => (
+              <div key={goal.id} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 12, alignItems: "center", background: "#fff", borderRadius: 10, padding: 12, border: "1px solid #e2e8f0" }}>
+                <div style={{ fontWeight: 700, textAlign: "right" }}>{goal.title}</div>
+                <div style={{ fontSize: 12, color: "#64748b" }}>
+                  {goal.progress.doneTasks}/{goal.progress.totalTasks} مهمة
                 </div>
-                <div style={{ fontSize: 10, marginTop: 4, opacity: 0.8 }}>{Math.round(percentage)}%</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: goal.progress.completionRate >= 80 ? "#16a34a" : goal.progress.completionRate >= 40 ? "#f59e0b" : "#ef4444" }}>
+                  {goal.progress.completionRate}%
+                </div>
               </div>
-            );
-          })}
-        </div>
-        <div style={{ marginTop: 16, padding: 12, background: "rgba(255,255,255,0.1)", borderRadius: 6, fontSize: 12 }}>
-          <strong>الإجمالي:</strong> {totalHours.toFixed(1)} ساعة من {GOALS.length * 20} ساعة مستهدفة
+            ))
+          ) : (
+            <div style={{ color: "#64748b", fontSize: 13, textAlign: "right" }}>
+              لا توجد أهداف أسبوعية في هذا الأسبوع بعد.
+            </div>
+          )}
         </div>
       </div>
 
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, padding: 12, background: "#f0f0f0", borderRadius: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 600 }}>🔍 أدوات المعاينة:</span>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>أدوات المعاينة:</span>
           <button onClick={onZoomOut} style={{ padding: "6px 12px", background: "#fff", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", fontSize: 12 }}>− صغّر</button>
           <span style={{ fontSize: 12, fontWeight: 600, minWidth: "50px", textAlign: "center" }}>{printZoom}%</span>
           <button onClick={onZoomIn} style={{ padding: "6px 12px", background: "#fff", border: "1px solid #ddd", borderRadius: 4, cursor: "pointer", fontSize: 12 }}>+ كبّر</button>
@@ -104,6 +87,7 @@ export default function PreviewTab({ colors, days, goalHours, printZoom, onZoomO
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
                   <tr style={{ background: headerColor.bg, color: headerColor.text }}>
+                    <th style={{ padding: 8, textAlign: "center", width: "8%" }}>تم</th>
                     <th style={{ padding: 8, textAlign: "right" }}>المهمة</th>
                     <th style={{ padding: 8, textAlign: "center", width: "20%" }}>الوقت</th>
                     <th style={{ padding: 8, textAlign: "center", width: "15%" }}>المدة</th>
@@ -118,7 +102,8 @@ export default function PreviewTab({ colors, days, goalHours, printZoom, onZoomO
 
                     return (
                       <tr key={task.id} style={{ background, borderBottom: "1px solid #e5e5e5" }}>
-                        <td style={{ padding: 8, textAlign: "right", color: textColor, fontWeight: 600 }}>{task.task}</td>
+                        <td style={{ padding: 8, textAlign: "center", color: textColor }}>{task.done ? "✓" : "◻"}</td>
+                        <td style={{ padding: 8, textAlign: "right", color: textColor, fontWeight: 600, textDecoration: task.done ? "line-through" : "none" }}>{task.task}</td>
                         <td style={{ padding: 8, textAlign: "center", color: textColor, whiteSpace: "nowrap", fontSize: 11 }}>{task.time}</td>
                         <td style={{ padding: 8, textAlign: "center", color: textColor, fontSize: 11 }}>{calculateDuration(task.time)}</td>
                         <td style={{ padding: 8, textAlign: "right", color: textColor, fontSize: 11 }}>{task.notes || ""}</td>

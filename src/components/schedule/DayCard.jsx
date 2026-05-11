@@ -3,7 +3,7 @@ import { createEmptyTask } from "../../domain/schedule/ids";
 import { calculateDurationMin, detectConflicts, sortTasksByStartTime } from "../../domain/schedule/time";
 import TaskRow from "./TaskRow";
 
-export default function DayCard({ day, colors, onChange, onCopyDay, createTaskId }) {
+export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay, createTaskId }) {
   const [collapsed, setCollapsed] = useState(false);
   const [draggedId, setDraggedId] = useState(null);
   const conflicts = useMemo(() => detectConflicts(day.tasks), [day.tasks]);
@@ -58,6 +58,10 @@ export default function DayCard({ day, colors, onChange, onCopyDay, createTaskId
     setDraggedId(null);
   };
 
+  const sortCurrentDayTasks = () => {
+    updateTasks(sortTasksByStartTime(day.tasks));
+  };
+
   return (
     <div
       style={{
@@ -105,7 +109,7 @@ export default function DayCard({ day, colors, onChange, onCopyDay, createTaskId
           <button
             onClick={(event) => {
               event.stopPropagation();
-              updateTasks(sortTasksByStartTime(day.tasks));
+              sortCurrentDayTasks();
             }}
             title="ترتيب المهام حسب الوقت"
             style={{
@@ -224,11 +228,13 @@ export default function DayCard({ day, colors, onChange, onCopyDay, createTaskId
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
               <thead>
                 <tr style={{ background: headerColor.bg, color: headerColor.text }}>
+                  <th style={{ padding: "8px 10px", textAlign: "center", width: 55 }}>تم</th>
                   <th style={{ padding: "8px 10px", textAlign: "right" }}>المهمة</th>
                   <th style={{ padding: "8px 10px", textAlign: "center", width: 70 }}>البداية</th>
                   <th style={{ padding: "8px 10px", textAlign: "center", width: 70 }}>النهاية</th>
                   <th style={{ padding: "8px 10px", textAlign: "center", width: 60 }}>المدة</th>
                   <th style={{ padding: "8px 10px", textAlign: "center", width: 180 }}>التصنيف</th>
+                  <th style={{ padding: "8px 10px", textAlign: "right", width: 260 }}>الهدف المرتبط</th>
                   <th style={{ padding: "8px 10px", textAlign: "right", width: 150 }}>لو متمش / ملاحظة</th>
                   <th style={{ padding: "8px 10px", textAlign: "center", width: 80 }}>إجراءات</th>
                 </tr>
@@ -241,6 +247,7 @@ export default function DayCard({ day, colors, onChange, onCopyDay, createTaskId
                     index={index}
                     colors={colors}
                     conflict={conflicts.has(task.id)}
+                    goalOptions={goalOptions}
                     onUpdate={(patch) => updateTask(task.id, patch)}
                     onDelete={() => deleteTask(task.id)}
                     onMoveUp={() => moveTask(task.id, -1)}
@@ -256,7 +263,22 @@ export default function DayCard({ day, colors, onChange, onCopyDay, createTaskId
               </tbody>
             </table>
           </div>
-          <div style={{ padding: "8px 16px", textAlign: "center" }}>
+          <div style={{ padding: "8px 16px", display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+            <button
+              onClick={sortCurrentDayTasks}
+              style={{
+                background: "#eef4ff",
+                color: headerColor.bg,
+                border: `1px solid ${headerColor.bg}`,
+                borderRadius: 6,
+                padding: "6px 16px",
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              ترتيب
+            </button>
             <button
               onClick={() => updateTasks((tasks) => [...tasks, createEmptyTask(createTaskId())])}
               style={{

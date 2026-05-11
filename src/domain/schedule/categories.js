@@ -53,9 +53,20 @@ export function normalizeTaskCategory(task = {}) {
 }
 
 export function normalizeTask(task = {}) {
+  const linkedWeeklyGoalId =
+    task.linkedWeeklyGoalId || (task.linkedGoalType === "weekly" ? task.linkedGoalId || "" : "");
+  const linkedMonthlyGoalId =
+    task.linkedMonthlyGoalId || (task.linkedGoalType === "monthly" ? task.linkedGoalId || "" : "");
+
   return {
     ...task,
     cat: normalizeTaskCategory(task),
+    done: Boolean(task.done),
+    linkedWeeklyGoalId,
+    linkedMonthlyGoalId,
+    linkedGoalType: linkedWeeklyGoalId ? "weekly" : linkedMonthlyGoalId ? "monthly" : "",
+    linkedGoalId: linkedWeeklyGoalId || linkedMonthlyGoalId || "",
+    notes: task.notes || "",
   };
 }
 

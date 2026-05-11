@@ -1,4 +1,4 @@
-import { CATEGORY_CHECKBOX_EXCLUSIONS, GOALS } from "./constants";
+import { CATEGORY_CHECKBOX_EXCLUSIONS } from "./constants";
 import { calculateDuration } from "./time";
 
 export const PRINT_STYLE_TEXT =
@@ -20,7 +20,9 @@ export function buildPrintHtml(colors, days) {
       `<td style="padding:1.5mm 3mm;text-align:center;font-size:8pt;color:${textColor};">${calculateDuration(task.time)}</td>` +
       `<td style="padding:1.5mm 3mm;text-align:center;">${
         showCheckbox
-          ? '<div style="width:4.5mm;height:4.5mm;border:1.5px solid #777;border-radius:2px;display:inline-block;"></div>'
+          ? task.done
+            ? '<div style="width:4.5mm;height:4.5mm;border:1.5px solid #777;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;font-size:8pt;font-weight:700;">✓</div>'
+            : '<div style="width:4.5mm;height:4.5mm;border:1.5px solid #777;border-radius:2px;display:inline-block;"></div>'
           : ""
       }</td>` +
       `<td style="padding:1.5mm 3mm;font-size:8pt;color:${textColor};">${task.notes || ""}</td>` +
@@ -32,12 +34,13 @@ export function buildPrintHtml(colors, days) {
     .map((day) => {
       const headerColor = colors.header;
       const rows = day.tasks.map(buildRow).join("");
-      const goals = GOALS.map(
-        (goal) =>
-          '<div style="display:flex;align-items:center;gap:2mm;font-size:9pt;padding:1mm 0;border-bottom:1px solid #f0f0f0;">' +
-          `<span style="flex:1;">${goal}</span>` +
-          '<div style="width:4.5mm;height:4.5mm;border:1.5px solid #777;border-radius:2px;"></div></div>',
-      ).join("");
+      const goals = Array(6)
+        .fill(
+          '<div style="display:flex;align-items:center;gap:2mm;font-size:9pt;padding:2mm 0;border-bottom:1px solid #f0f0f0;">' +
+            '<span style="flex:1;border-bottom:1px dashed #d4d4d8;height:5mm;"></span>' +
+          "</div>",
+        )
+        .join("");
       const circles5 = Array(5)
         .fill(
           `<div style="width:5.5mm;height:5.5mm;border-radius:50%;border:1.5px solid ${headerColor.bg};display:inline-block;margin-left:2mm;"></div>`,
@@ -87,7 +90,7 @@ export function buildPrintHtml(colors, days) {
         Array(5).fill('<div style="border-bottom:1px solid #ddd;height:7mm;margin-bottom:1mm;"></div>').join("") +
         "</div>" +
         `<div style="width:50mm;border:1.5px solid ${headerColor.bg};border-radius:6px;padding:3mm 4mm;">` +
-        '<div style="font-size:9pt;font-weight:700;border-bottom:1px solid #ccc;padding-bottom:1mm;margin-bottom:2mm;">ملخص الأهداف</div>' +
+        '<div style="font-size:9pt;font-weight:700;border-bottom:1px solid #ccc;padding-bottom:1mm;margin-bottom:2mm;">الأهداف / المخرجات</div>' +
         `${goals}</div></div></div>`
       );
     })

@@ -1,19 +1,35 @@
 import { useEffect, useRef, useState } from "react";
 
-export function useSchedulePersistence({ storageKey, days, colors, onRestore, debounceMs = 500 }) {
+export function useSchedulePersistence({
+  storageKey,
+  payload,
+  onRestore,
+  isRestorable = (parsed) => Boolean(parsed),
+  debounceMs = 500,
+}) {
   const [lastSaved, setLastSaved] = useState(() => new Date());
   const [saveStatus, setSaveStatus] = useState("saved");
   const hydratedRef = useRef(false);
   const saveTimeoutRef = useRef(null);
   const statusTimeoutRef = useRef(null);
+  const onRestoreRef = useRef(onRestore);
+  const isRestorableRef = useRef(isRestorable);
+
+  useEffect(() => {
+    onRestoreRef.current = onRestore;
+  }, [onRestore]);
+
+  useEffect(() => {
+    isRestorableRef.current = isRestorable;
+  }, [isRestorable]);
 
   useEffect(() => {
     try {
       const savedState = localStorage.getItem(storageKey);
       if (savedState) {
         const parsed = JSON.parse(savedState);
-        if (parsed.days && Array.isArray(parsed.days)) {
-          onRestore(parsed);
+        if (isRestorableRef.current(parsed)) {
+          onRestoreRef.current(parsed);
           setSaveStatus("loaded");
           statusTimeoutRef.current = setTimeout(() => setSaveStatus("saved"), 2000);
         }
@@ -29,7 +45,7 @@ export function useSchedulePersistence({ storageKey, days, colors, onRestore, de
         clearTimeout(statusTimeoutRef.current);
       }
     };
-  }, [onRestore, storageKey]);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!hydratedRef.current) return undefined;
@@ -42,7 +58,7 @@ export function useSchedulePersistence({ storageKey, days, colors, onRestore, de
 
     saveTimeoutRef.current = setTimeout(() => {
       try {
-        localStorage.setItem(storageKey, JSON.stringify({ days, colors }));
+        localStorage.setItem(storageKey, JSON.stringify(payload));
         setLastSaved(new Date());
         setSaveStatus("saved");
       } catch (error) {
@@ -57,7 +73,7 @@ export function useSchedulePersistence({ storageKey, days, colors, onRestore, de
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [colors, days, debounceMs, storageKey]);
+  }, [debounceMs, payload, storageKey]);
 
   return { lastSaved, saveStatus };
 }

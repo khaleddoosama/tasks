@@ -1,6 +1,8 @@
 export const LS_KEY = "weekScheduleV2";
+export const WEEK_SCHEDULES_KEY = "weekSchedulesV1";
 export const DARK_MODE_KEY = "darkMode";
 export const WEEKLY_GOALS_KEY = "weeklyGoals";
+export const MONTHLY_GOALS_KEY = "monthlyGoals";
 export const DEFAULT_GOAL_TARGET = 20;
 
 export const CATEGORY_META = {

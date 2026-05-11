@@ -3,15 +3,36 @@ import { useGistSync } from "../../useGistSync";
 import {
   DARK_MODE_KEY,
   DEFAULT_COLORS,
-  DEFAULT_GOAL_TARGET,
   LS_KEY,
+  MONTHLY_GOALS_KEY,
   WEEKLY_GOALS_KEY,
 } from "../../domain/schedule/constants";
 import { normalizeColors, normalizeDaysCategories } from "../../domain/schedule/categories";
-import { buildCurrentWeekGoals, calcGoalHours, calculateGoalsSummary } from "../../domain/schedule/goals";
+import {
+  calculateMonthSummary,
+  calculateMonthlyGoalProgress,
+  calculateWeeklyGoalProgress,
+  clearGoalLinksFromDays,
+  clearGoalLinksFromSchedules,
+  createGoalId,
+  getMonthGoalsForMonth,
+  getTaskGoalOptions,
+  getWeekGoalsForWeek,
+  normalizeMonthlyGoalsStore,
+  normalizeWeeklyGoalsStore,
+} from "../../domain/schedule/goals";
 import { cloneTasksWithNewIds, getNextTaskIdSeed } from "../../domain/schedule/ids";
 import { createInitialDays } from "../../domain/schedule/seedData";
-import { formatDateDisplay, getCurrentWeekNumber, getWeekDates } from "../../domain/schedule/week";
+import {
+  formatDateDisplay,
+  formatMonthDisplay,
+  getCurrentWeekNumber,
+  getCurrentYear,
+  getMonthKey,
+  getPrimaryWeekDate,
+  getWeekDates,
+  getWeekKey,
+} from "../../domain/schedule/week";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { useLocalStorageState } from "../../hooks/useLocalStorageState";
 import { usePrintStyle } from "../../hooks/usePrintStyle";
@@ -20,7 +41,7 @@ import { useUndoRedo } from "../../hooks/useUndoRedo";
 import { exportScheduleBackup, importScheduleFromFile } from "../../services/scheduleTransfer";
 
 function getSaveIndicator(saveStatus, lastSaved) {
-  if (saveStatus === "saving") return "💾 جارٍ الحفظ...";
+  if (saveStatus === "saving") return "💾 جاري الحفظ...";
   if (saveStatus === "error") return "❌ خطأ في الحفظ";
   if (saveStatus === "loaded") return "✅ تم تحميل البيانات";
   return `✅ محفوظ ${lastSaved.toLocaleTimeString()}`;
@@ -32,22 +53,87 @@ function getSaveColor(saveStatus) {
   return "#27ae60";
 }
 
+function normalizeWeekSchedules(weekSchedules = {}) {
+  return Object.fromEntries(
+    Object.entries(weekSchedules).map(([weekKey, days]) => [weekKey, normalizeDaysCategories(days)]),
+  );
+}
+
+function ensureWeekGoalBucket(goalStore, weekKey) {
+  return {
+    ...goalStore,
+    [weekKey]: {
+      ...(goalStore[weekKey] || {}),
+    },
+  };
+}
+
+function ensureMonthGoalBucket(goalStore, monthKey) {
+  return {
+    ...goalStore,
+    [monthKey]: {
+      ...(goalStore[monthKey] || {}),
+    },
+  };
+}
+
+function buildProgressItems(goals, progressMap) {
+  return goals.map((goal) => ({
+    ...goal,
+    progress: progressMap[goal.id] || {
+      goalId: goal.id,
+      title: goal.title,
+      totalTasks: 0,
+      doneTasks: 0,
+      completionRate: 0,
+      linkedTaskIds: [],
+    },
+  }));
+}
+
 export function usePlannerState() {
+  const currentYear = getCurrentYear();
+  const initialWeek = getCurrentWeekNumber();
+  const [selectedWeekValue, setSelectedWeekValue] = useState(initialWeek);
   const [days, setDays, undoRedo] = useUndoRedo(
-    normalizeDaysCategories(createInitialDays(getCurrentWeekNumber())),
+    normalizeDaysCategories(createInitialDays(initialWeek)),
     30,
   );
   const [colors, setColors] = useState(DEFAULT_COLORS);
   const [tab, setTab] = useState("editor");
   const [printZoom, setPrintZoom] = useState(100);
   const [showGistSettings, setShowGistSettings] = useState(false);
-  const [selectedWeek, setSelectedWeek] = useState(getCurrentWeekNumber());
   const [darkMode, setDarkMode] = useLocalStorageState(DARK_MODE_KEY, false);
-  const [weeklyGoals, setWeeklyGoals] = useLocalStorageState(WEEKLY_GOALS_KEY, {});
-  const [newGoalName, setNewGoalName] = useState("");
-  const [newGoalTarget, setNewGoalTarget] = useState(DEFAULT_GOAL_TARGET);
+  const [monthlyGoalsStore, setMonthlyGoalsStore] = useLocalStorageState(MONTHLY_GOALS_KEY, {});
+  const [weeklyGoalsStore, setWeeklyGoalsStore] = useLocalStorageState(WEEKLY_GOALS_KEY, {});
+  const [weekSchedules, setWeekSchedulesState] = useState({});
+  const weekSchedulesRef = useRef({});
   const nextTaskIdRef = useRef(getNextTaskIdSeed(days));
   const { undo, redo, replace, canUndo, canRedo } = undoRedo;
+
+  const updateWeekSchedules = useCallback((updater) => {
+    setWeekSchedulesState((currentState) => {
+      const nextState = typeof updater === "function" ? updater(currentState) : updater;
+      weekSchedulesRef.current = nextState;
+      return nextState;
+    });
+  }, []);
+
+  const selectedWeek = selectedWeekValue;
+  const weekKey = useMemo(() => getWeekKey(selectedWeek, currentYear), [currentYear, selectedWeek]);
+  const weekDates = useMemo(() => getWeekDates(selectedWeek, currentYear), [currentYear, selectedWeek]);
+  const monthKey = useMemo(() => getMonthKey(getPrimaryWeekDate(weekDates)), [weekDates]);
+  const effectiveWeekSchedules = useMemo(
+    () => (weekSchedules[weekKey] === days ? weekSchedules : { ...weekSchedules, [weekKey]: days }),
+    [days, weekKey, weekSchedules],
+  );
+  const persistencePayload = useMemo(
+    () => ({
+      weekSchedules: effectiveWeekSchedules,
+      colors,
+    }),
+    [colors, effectiveWeekSchedules],
+  );
 
   useEffect(() => {
     nextTaskIdRef.current = Math.max(nextTaskIdRef.current, getNextTaskIdSeed(days));
@@ -60,22 +146,60 @@ export function usePlannerState() {
 
   const restoreSchedule = useCallback(
     (persistedState) => {
-      if (persistedState.days) {
-        replace(normalizeDaysCategories(persistedState.days));
+      let restoredWeekSchedules = {};
+
+      if (persistedState.weekSchedules) {
+        restoredWeekSchedules = normalizeWeekSchedules(persistedState.weekSchedules);
+      } else if (persistedState.days) {
+        restoredWeekSchedules = {
+          [weekKey]: normalizeDaysCategories(persistedState.days),
+        };
       }
+
+      if (Object.keys(restoredWeekSchedules).length > 0) {
+        updateWeekSchedules(restoredWeekSchedules);
+        replace(restoredWeekSchedules[weekKey] || normalizeDaysCategories(createInitialDays(selectedWeek)));
+      }
+
       if (persistedState.colors) {
         setColors(normalizeColors(persistedState.colors));
       }
     },
-    [replace],
+    [replace, selectedWeek, updateWeekSchedules, weekKey],
   );
 
   const { lastSaved, saveStatus } = useSchedulePersistence({
     storageKey: LS_KEY,
-    days,
-    colors,
+    payload: persistencePayload,
     onRestore: restoreSchedule,
+    isRestorable: (parsed) => Boolean(parsed?.weekSchedules || parsed?.days),
   });
+
+  useEffect(() => {
+    updateWeekSchedules((currentSchedules) =>
+      currentSchedules[weekKey] === days ? currentSchedules : { ...currentSchedules, [weekKey]: days },
+    );
+  }, [days, updateWeekSchedules, weekKey]);
+
+  const changeSelectedWeek = useCallback(
+    (nextWeek) => {
+      if (!Number.isFinite(nextWeek) || nextWeek < 1 || nextWeek > 52 || nextWeek === selectedWeek) {
+        return;
+      }
+
+      updateWeekSchedules((currentSchedules) =>
+        currentSchedules[weekKey] === days ? currentSchedules : { ...currentSchedules, [weekKey]: days },
+      );
+
+      const nextWeekKey = getWeekKey(nextWeek, currentYear);
+      const nextDays =
+        weekSchedulesRef.current[nextWeekKey] || normalizeDaysCategories(createInitialDays(nextWeek));
+
+      setSelectedWeekValue(nextWeek);
+      replace(normalizeDaysCategories(nextDays));
+    },
+    [currentYear, days, replace, selectedWeek, updateWeekSchedules, weekKey],
+  );
 
   usePrintStyle(colors, days);
   useKeyboardShortcuts({ undo, redo, lastSaved });
@@ -93,26 +217,61 @@ export function usePlannerState() {
     restoreSchedule(mergedData);
   });
 
-  useEffect(() => {
-    const weekDates = getWeekDates(selectedWeek);
-    setDays((currentDays) =>
-      currentDays.map((day, index) => ({
-        ...day,
-        التاريخ: weekDates[index] || "",
-      })),
-    );
-  }, [selectedWeek, setDays]);
+  const normalizedMonthlyGoals = useMemo(
+    () => normalizeMonthlyGoalsStore(monthlyGoalsStore),
+    [monthlyGoalsStore],
+  );
+  const normalizedWeeklyGoals = useMemo(
+    () => normalizeWeeklyGoalsStore(weeklyGoalsStore),
+    [weeklyGoalsStore],
+  );
 
-  const goalHours = useMemo(() => calcGoalHours(days), [days]);
+  const currentMonthGoals = useMemo(
+    () => getMonthGoalsForMonth(normalizedMonthlyGoals, monthKey),
+    [monthKey, normalizedMonthlyGoals],
+  );
   const currentWeekGoals = useMemo(
-    () => buildCurrentWeekGoals(weeklyGoals, selectedWeek),
-    [selectedWeek, weeklyGoals],
+    () => getWeekGoalsForWeek(normalizedWeeklyGoals, weekKey),
+    [normalizedWeeklyGoals, weekKey],
   );
-  const goalsSummary = useMemo(
-    () => calculateGoalsSummary(goalHours, currentWeekGoals, days),
-    [currentWeekGoals, days, goalHours],
+
+  const taskGoalOptions = useMemo(
+    () =>
+      getTaskGoalOptions({
+        monthGoals: currentMonthGoals,
+        weekGoals: currentWeekGoals,
+        weeklyGoalsStore: normalizedWeeklyGoals,
+      }),
+    [currentMonthGoals, currentWeekGoals, normalizedWeeklyGoals],
   );
-  const weekDates = useMemo(() => getWeekDates(selectedWeek), [selectedWeek]);
+
+  const weeklyGoalProgress = useMemo(
+    () => calculateWeeklyGoalProgress(days, currentWeekGoals),
+    [currentWeekGoals, days],
+  );
+  const monthlyGoalProgress = useMemo(
+    () =>
+      calculateMonthlyGoalProgress(
+        effectiveWeekSchedules,
+        currentMonthGoals,
+        normalizedWeeklyGoals,
+        monthKey,
+      ),
+    [currentMonthGoals, effectiveWeekSchedules, monthKey, normalizedWeeklyGoals],
+  );
+  const monthlySummary = useMemo(
+    () => calculateMonthSummary(monthlyGoalProgress),
+    [monthlyGoalProgress],
+  );
+
+  const currentWeekGoalItems = useMemo(
+    () => buildProgressItems(currentWeekGoals, weeklyGoalProgress),
+    [currentWeekGoals, weeklyGoalProgress],
+  );
+  const currentMonthGoalItems = useMemo(
+    () => buildProgressItems(currentMonthGoals, monthlyGoalProgress),
+    [currentMonthGoals, monthlyGoalProgress],
+  );
 
   const updateDay = useCallback(
     (dayId, patch) => {
@@ -136,50 +295,137 @@ export function usePlannerState() {
     [createTaskId, setDays],
   );
 
-  const addGoal = useCallback(() => {
-    if (!newGoalName.trim()) return;
+  const addMonthlyGoal = useCallback(
+    (title) => {
+      const trimmedTitle = title.trim();
+      if (!trimmedTitle) return;
 
-    setWeeklyGoals((currentGoals) => ({
-      ...currentGoals,
-      [selectedWeek]: {
-        ...(currentGoals[selectedWeek] || {}),
-        [newGoalName]: { target: newGoalTarget, type: "custom" },
-      },
-    }));
+      const goalId = createGoalId("monthly-goal");
+      const createdAt = new Date().toISOString();
 
-    setNewGoalName("");
-    setNewGoalTarget(DEFAULT_GOAL_TARGET);
-  }, [newGoalName, newGoalTarget, selectedWeek, setWeeklyGoals]);
-
-  const updateGoalTarget = useCallback(
-    (goalName, target) => {
-      setWeeklyGoals((currentGoals) => ({
-        ...currentGoals,
-        [selectedWeek]: {
-          ...(currentGoals[selectedWeek] || {}),
-          [goalName]: {
-            ...((currentGoals[selectedWeek] || {})[goalName] || { type: "predefined" }),
-            target,
-          },
-        },
-      }));
-    },
-    [selectedWeek, setWeeklyGoals],
-  );
-
-  const deleteGoal = useCallback(
-    (goalName) => {
-      setWeeklyGoals((currentGoals) => {
-        const nextWeekGoals = { ...(currentGoals[selectedWeek] || {}) };
-        delete nextWeekGoals[goalName];
-
-        return {
-          ...currentGoals,
-          [selectedWeek]: nextWeekGoals,
+      setMonthlyGoalsStore((currentStore) => {
+        const nextStore = ensureMonthGoalBucket(currentStore, monthKey);
+        nextStore[monthKey][goalId] = {
+          id: goalId,
+          title: trimmedTitle,
+          status: "active",
+          createdAt,
         };
+        return nextStore;
       });
     },
-    [selectedWeek, setWeeklyGoals],
+    [monthKey, setMonthlyGoalsStore],
+  );
+
+  const updateMonthlyGoalTitle = useCallback(
+    (goalId, title) => {
+      setMonthlyGoalsStore((currentStore) => {
+        const nextStore = ensureMonthGoalBucket(currentStore, monthKey);
+        if (!nextStore[monthKey][goalId]) return currentStore;
+        nextStore[monthKey][goalId] = {
+          ...nextStore[monthKey][goalId],
+          title,
+        };
+        return nextStore;
+      });
+    },
+    [monthKey, setMonthlyGoalsStore],
+  );
+
+  const addWeeklyGoal = useCallback(
+    (monthlyGoalId, title) => {
+      const trimmedTitle = title.trim();
+      if (!trimmedTitle) return;
+
+      const goalId = createGoalId("weekly-goal");
+      const createdAt = new Date().toISOString();
+
+      setWeeklyGoalsStore((currentStore) => {
+        const nextStore = ensureWeekGoalBucket(currentStore, weekKey);
+        nextStore[weekKey][goalId] = {
+          id: goalId,
+          title: trimmedTitle,
+          monthlyGoalId,
+          status: "active",
+          createdAt,
+        };
+        return nextStore;
+      });
+    },
+    [setWeeklyGoalsStore, weekKey],
+  );
+
+  const updateWeeklyGoalTitle = useCallback(
+    (goalId, title) => {
+      setWeeklyGoalsStore((currentStore) => {
+        const nextStore = ensureWeekGoalBucket(currentStore, weekKey);
+        if (!nextStore[weekKey][goalId]) return currentStore;
+        nextStore[weekKey][goalId] = {
+          ...nextStore[weekKey][goalId],
+          title,
+        };
+        return nextStore;
+      });
+    },
+    [setWeeklyGoalsStore, weekKey],
+  );
+
+  const deleteWeeklyGoal = useCallback(
+    (goalId) => {
+      setWeeklyGoalsStore((currentStore) => {
+        const nextStore = ensureWeekGoalBucket(currentStore, weekKey);
+        delete nextStore[weekKey][goalId];
+        return nextStore;
+      });
+
+      setDays((currentDays) => clearGoalLinksFromDays(currentDays, [goalId], "weekly"));
+      updateWeekSchedules((currentSchedules) =>
+        clearGoalLinksFromSchedules(currentSchedules, [goalId], "weekly"),
+      );
+    },
+    [setWeeklyGoalsStore, updateWeekSchedules, weekKey],
+  );
+
+  const deleteMonthlyGoal = useCallback(
+    (goalId) => {
+      const childWeeklyGoalIds = Object.values(normalizedWeeklyGoals)
+        .flatMap((goals) => Object.values(goals))
+        .filter((goal) => goal.monthlyGoalId === goalId)
+        .map((goal) => goal.id);
+
+      setMonthlyGoalsStore((currentStore) => {
+        const nextStore = ensureMonthGoalBucket(currentStore, monthKey);
+        delete nextStore[monthKey][goalId];
+        return nextStore;
+      });
+
+      setWeeklyGoalsStore((currentStore) =>
+        Object.fromEntries(
+          Object.entries(currentStore).map(([storedWeekKey, goals]) => {
+            const nextGoals = { ...(goals || {}) };
+            childWeeklyGoalIds.forEach((childGoalId) => delete nextGoals[childGoalId]);
+            return [storedWeekKey, nextGoals];
+          }),
+        ),
+      );
+
+      setDays((currentDays) =>
+        clearGoalLinksFromDays(
+          clearGoalLinksFromDays(currentDays, childWeeklyGoalIds, "weekly"),
+          [goalId],
+          "monthly",
+        ),
+      );
+
+      updateWeekSchedules((currentSchedules) =>
+        clearGoalLinksFromSchedules(
+          clearGoalLinksFromSchedules(currentSchedules, childWeeklyGoalIds, "weekly"),
+          [goalId],
+          "monthly",
+        ),
+      );
+    },
+    [monthKey, normalizedWeeklyGoals, setMonthlyGoalsStore, setWeeklyGoalsStore, updateWeekSchedules],
   );
 
   const changeColor = useCallback((section, field, value) => {
@@ -193,37 +439,70 @@ export function usePlannerState() {
   }, []);
 
   const exportSchedule = useCallback(() => {
-    exportScheduleBackup({ days, colors, selectedWeek });
-  }, [colors, days, selectedWeek]);
+    exportScheduleBackup({
+      weekSchedules: effectiveWeekSchedules,
+      days,
+      colors,
+      selectedWeek,
+      monthlyGoals: monthlyGoalsStore,
+      weeklyGoals: weeklyGoalsStore,
+    });
+  }, [colors, days, effectiveWeekSchedules, monthlyGoalsStore, selectedWeek, weeklyGoalsStore]);
 
   const importSchedule = useCallback(
     async (file) => {
       const imported = await importScheduleFromFile(file);
-      replace(normalizeDaysCategories(imported.days));
+      const importedWeekSchedules = imported.weekSchedules
+        ? normalizeWeekSchedules(imported.weekSchedules)
+        : imported.days
+          ? { [weekKey]: normalizeDaysCategories(imported.days) }
+          : {};
+
+      if (Object.keys(importedWeekSchedules).length > 0) {
+        updateWeekSchedules(importedWeekSchedules);
+        replace(importedWeekSchedules[weekKey] || normalizeDaysCategories(createInitialDays(selectedWeek)));
+      }
 
       if (imported.colors) {
         setColors(normalizeColors(imported.colors));
       }
 
       if (imported.selectedWeek) {
-        setSelectedWeek(imported.selectedWeek);
+        changeSelectedWeek(imported.selectedWeek);
+      }
+
+      if (imported.monthlyGoals) {
+        setMonthlyGoalsStore(imported.monthlyGoals);
+      }
+
+      if (imported.weeklyGoals) {
+        setWeeklyGoalsStore(imported.weeklyGoals);
       }
     },
-    [replace],
+    [
+      changeSelectedWeek,
+      replace,
+      selectedWeek,
+      setMonthlyGoalsStore,
+      setWeeklyGoalsStore,
+      updateWeekSchedules,
+      weekKey,
+    ],
   );
 
   const resetPlanner = useCallback(() => {
-    const confirmed = window.confirm("هل تريد إعادة ضبط الجدول والألوان لهذا الأسبوع إلى الحالة الافتراضية؟");
+    const confirmed = window.confirm("هل تريد إعادة ضبط جدول هذا الأسبوع فقط إلى الحالة الافتراضية؟");
     if (!confirmed) return;
 
-    replace(normalizeDaysCategories(createInitialDays(selectedWeek)));
-    setColors(DEFAULT_COLORS);
+    const nextDays = normalizeDaysCategories(createInitialDays(selectedWeek));
+    replace(nextDays);
+    updateWeekSchedules((currentSchedules) => ({ ...currentSchedules, [weekKey]: nextDays }));
     setTab("editor");
     setPrintZoom(100);
-  }, [replace, selectedWeek]);
+  }, [replace, selectedWeek, updateWeekSchedules, weekKey]);
 
-  const incrementWeek = useCallback(() => setSelectedWeek((value) => Math.min(52, value + 1)), []);
-  const decrementWeek = useCallback(() => setSelectedWeek((value) => Math.max(1, value - 1)), []);
+  const incrementWeek = useCallback(() => changeSelectedWeek(Math.min(52, selectedWeek + 1)), [changeSelectedWeek, selectedWeek]);
+  const decrementWeek = useCallback(() => changeSelectedWeek(Math.max(1, selectedWeek - 1)), [changeSelectedWeek, selectedWeek]);
   const zoomIn = useCallback(() => setPrintZoom((value) => Math.min(150, value + 10)), []);
   const zoomOut = useCallback(() => setPrintZoom((value) => Math.max(50, value - 10)), []);
 
@@ -235,11 +514,13 @@ export function usePlannerState() {
     darkMode,
     selectedWeek,
     showGistSettings,
-    currentWeekGoals,
-    goalHours,
-    goalsSummary,
-    newGoalName,
-    newGoalTarget,
+    taskGoalOptions,
+    currentMonthGoals: currentMonthGoalItems,
+    currentWeekGoals: currentWeekGoalItems,
+    monthlySummary,
+    monthKey,
+    monthLabel: formatMonthDisplay(monthKey),
+    weekKey,
     saveIndicator: getSaveIndicator(saveStatus, lastSaved),
     saveColor: getSaveColor(saveStatus),
     weekRangeLabel: `من ${formatDateDisplay(weekDates[0])} إلى ${formatDateDisplay(weekDates[6])}`,
@@ -259,16 +540,17 @@ export function usePlannerState() {
     hasCredentials,
     setTab,
     setDarkMode,
-    setSelectedWeek,
+    setSelectedWeek: changeSelectedWeek,
     setShowGistSettings,
-    setNewGoalName,
-    setNewGoalTarget,
     updateDay,
     copyDay,
     createTaskId,
-    addGoal,
-    updateGoalTarget,
-    deleteGoal,
+    addMonthlyGoal,
+    updateMonthlyGoalTitle,
+    addWeeklyGoal,
+    updateWeeklyGoalTitle,
+    deleteMonthlyGoal,
+    deleteWeeklyGoal,
     changeColor,
     exportSchedule,
     importSchedule,

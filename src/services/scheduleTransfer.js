@@ -31,11 +31,26 @@ function convertTo24Hour(timeValue) {
   return convertSingleTo24Hour(timeValue);
 }
 
-export function exportScheduleBackup({ days, colors, selectedWeek }) {
+function normalizeImportedDays(days = []) {
+  return normalizeDaysCategories(
+    days.map((day) => ({
+      ...day,
+      tasks: day.tasks.map((task) => ({
+        ...task,
+        time: convertTo24Hour(task.time),
+      })),
+    })),
+  );
+}
+
+export function exportScheduleBackup({ weekSchedules, days, colors, selectedWeek, monthlyGoals, weeklyGoals }) {
   const payload = {
+    weekSchedules,
     days,
     colors,
     selectedWeek,
+    monthlyGoals,
+    weeklyGoals,
     exportDate: new Date().toISOString(),
   };
 
@@ -57,23 +72,27 @@ export function importScheduleFromFile(file) {
     reader.onload = (event) => {
       try {
         const imported = JSON.parse(event.target?.result);
-        if (!imported.days || !Array.isArray(imported.days)) {
+        if (!imported.days && !imported.weekSchedules) {
           reject(new Error("صيغة الملف غير صحيحة"));
           return;
         }
 
-        const days = imported.days.map((day) => ({
-          ...day,
-          tasks: day.tasks.map((task) => ({
-            ...task,
-            time: convertTo24Hour(task.time),
-          })),
-        }));
+        const weekSchedules = imported.weekSchedules
+          ? Object.fromEntries(
+              Object.entries(imported.weekSchedules).map(([weekKey, storedDays]) => [
+                weekKey,
+                normalizeImportedDays(storedDays),
+              ]),
+            )
+          : undefined;
 
         resolve({
-          days: normalizeDaysCategories(days),
+          days: imported.days ? normalizeImportedDays(imported.days) : undefined,
+          weekSchedules,
           colors: normalizeColors(imported.colors),
           selectedWeek: imported.selectedWeek,
+          monthlyGoals: imported.monthlyGoals,
+          weeklyGoals: imported.weeklyGoals,
         });
       } catch (error) {
         reject(error);
