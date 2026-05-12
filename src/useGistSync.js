@@ -6,6 +6,7 @@ export function useGistSync(syncData, onDataMerged) {
   const [syncError, setSyncError] = useState(null);
   const debounceTimerRef = useRef(null);
   const isInitialLoadRef = useRef(true);
+  const isUploadingRef = useRef(false);
   const syncDataRef = useRef(syncData);
   const onDataMergedRef = useRef(onDataMerged);
 
@@ -28,7 +29,14 @@ export function useGistSync(syncData, onDataMerged) {
       const { token, gistId } = getGistConfig();
       if (!token || !gistId) return;
 
+      // Prevent concurrent uploads
+      if (isUploadingRef.current) {
+        console.log("Upload already in progress, skipping");
+        return;
+      }
+
       try {
+        isUploadingRef.current = true;
         setSyncStatus("syncing");
         setSyncError(null);
 
@@ -58,6 +66,7 @@ export function useGistSync(syncData, onDataMerged) {
 
         setTimeout(() => {
           setSyncStatus("idle");
+          isUploadingRef.current = false;
         }, 3000);
       } catch (error) {
         console.error("Gist push failed:", error);
@@ -66,6 +75,7 @@ export function useGistSync(syncData, onDataMerged) {
 
         setTimeout(() => {
           setSyncStatus("idle");
+          isUploadingRef.current = false;
         }, 5000);
       }
     },
@@ -214,7 +224,7 @@ export function useGistSync(syncData, onDataMerged) {
         ...syncDataRef.current,
         lastUpdated: new Date().toISOString(),
       });
-    }, 2000);
+    }, 3000);
 
     return () => {
       if (debounceTimerRef.current) {
