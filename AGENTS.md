@@ -11,7 +11,7 @@ Guidance for AI coding agents working on the Weekly Schedule Planner.
 npm run dev      # Dev server at http://localhost:5173 (or 0.0.0.0:5173)
 npm run build    # Production build
 npm run preview  # Preview production build
-```
+``` 
 
 **Main files**:
 - `src/App.jsx` — Main app component (v2, full-featured)
