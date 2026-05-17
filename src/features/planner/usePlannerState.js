@@ -515,6 +515,30 @@ export function usePlannerState() {
   const zoomIn = useCallback(() => setPrintZoom((value) => Math.min(150, value + 10)), []);
   const zoomOut = useCallback(() => setPrintZoom((value) => Math.max(50, value - 10)), []);
 
+  const getScheduleData = useCallback(() => {
+    return {
+      days: days,
+      colors: colors,
+    };
+  }, [days, colors]);
+
+  const updateScheduleFromJSON = useCallback((newData) => {
+    if (!newData.days || !Array.isArray(newData.days)) {
+      throw new Error("Invalid format: missing 'days' array");
+    }
+
+    const normalizedDays = normalizeDaysCategories(newData.days);
+    replace(normalizedDays);
+    updateWeekSchedules((currentSchedules) => ({ ...currentSchedules, [weekKey]: normalizedDays }));
+
+    if (newData.colors) {
+      const normalizedColors = normalizeColors(newData.colors);
+      // Update colors through localStorage
+      localStorage.setItem("scheduleColors", JSON.stringify(normalizedColors));
+      window.location.reload(); // Reload to apply color changes
+    }
+  }, [replace, updateWeekSchedules, weekKey]);
+
   return {
     days,
     colors,
@@ -563,6 +587,8 @@ export function usePlannerState() {
     changeColor,
     exportSchedule,
     importSchedule,
+    getScheduleData,
+    updateScheduleFromJSON,
     resetPlanner,
     incrementWeek,
     decrementWeek,

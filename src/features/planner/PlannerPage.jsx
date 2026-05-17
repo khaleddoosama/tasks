@@ -4,10 +4,12 @@ import DayCard from "../../components/schedule/DayCard";
 import ColorsTab from "../../components/tabs/ColorsTab";
 import GoalsTab from "../../components/tabs/GoalsTab";
 import PreviewTab from "../../components/tabs/PreviewTab";
+import JSONEditorTab from "../../components/tabs/JSONEditorTab";
 import { usePlannerState } from "./usePlannerState";
 
 const TAB_LABELS = {
   editor: "✏️ محرّر",
+  json: "📝 JSON",
   goals: "🎯 الأهداف",
   colors: "🎨 الألوان",
   preview: "👁️ معاينة",
@@ -172,6 +174,15 @@ export default function PlannerPage() {
               />
             ))}
           </div>
+        )}
+
+        {planner.tab === "json" && (
+          <JSONEditorTab
+            schedule={planner.getScheduleData()}
+            onScheduleUpdate={planner.updateScheduleFromJSON}
+            colors={planner.colors}
+            darkMode={planner.darkMode}
+          />
         )}
 
         {planner.tab === "goals" && (
