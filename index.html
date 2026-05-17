@@ -1,248 +1,313 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>جدول الأسبوع</title>
-    <style>
-      * { box-sizing: border-box; }
-      body { margin: 0; padding: 0; }
-      
-      /* Enhanced Animations */
-      @keyframes slideDown {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-          max-height: 0;
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-          max-height: 1000px;
-        }
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>جدول الأسبوع</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Enhanced Animations */
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
       }
-      
-      @keyframes slideUp {
-        from {
-          opacity: 1;
-          transform: translateY(0);
-          max-height: 1000px;
-        }
-        to {
-          opacity: 0;
-          transform: translateY(-10px);
-          max-height: 0;
-        }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 1000px;
       }
-      
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 1000px;
       }
-      
-      @keyframes fadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; }
+
+      to {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
       }
-      
-      @keyframes scaleIn {
-        from {
-          opacity: 0;
-          transform: scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
       }
-      
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
+
+      to {
+        opacity: 1;
       }
-      
-      /* Smooth transitions for all interactive elements */
-      button, input, select, textarea {
-        transition: all 0.2s ease;
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
       }
-      
-      button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+      to {
+        opacity: 0;
       }
-      
-      button:active {
-        transform: translateY(0px);
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
       }
-      
-      /* Responsive Design */
-      @media (max-width: 1024px) {
-        body { padding: 12px; }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
       }
-      
-      @media (max-width: 768px) {
-        body { padding: 8px; font-size: 14px; }
-        h1 { font-size: 24px !important; }
-        
-        /* Stack tabs vertically on small screens */
-        [style*="display: flex"][style*="gap: 12"][style*="marginBottom: 24"] {
-          flex-direction: column;
-        }
-        
-        /* Responsive grid for statistics */
-        [style*="gridTemplateColumns: \"repeat(auto-fit, minmax(200px"] {
-          grid-template-columns: 1fr !important;
-        }
-        
-        /* Make task table scrollable */
-        table { font-size: 12px !important; }
-        
-        /* Column sizing for tablets */
-        /* Column 2: المهمة (Task) - make bigger */
-        table td:nth-child(2),
-        table th:nth-child(2) {
-          min-width: 180px !important;
-        }
-        
-        /* Column 3: البداية (Start time) - reduce */
-        table td:nth-child(3),
-        table th:nth-child(3) {
-          min-width: 50px !important;
-        }
-        
-        /* Column 4: النهاية (End time) - reduce */
-        table td:nth-child(4),
-        table th:nth-child(4) {
-          min-width: 50px !important;
-        }
-        
-        /* Column 6: التصنيف (Category) - reduce */
-        table td:nth-child(6),
-        table th:nth-child(6) {
-          min-width: 100px !important;
-        }
-        
-        /* Column 7: الهدف (Goal) - make bigger */
-        table td:nth-child(7),
-        table th:nth-child(7) {
-          min-width: 140px !important;
-        }
-        
-        /* Adjust day card padding */
-        [style*="marginBottom: 24"][style*="borderRadius: 12"][style*="overflow"] {
-          margin-bottom: 16px;
-        }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
       }
-      
-      @media (max-width: 480px) {
-        body { padding: 4px; }
-        h1 { font-size: 20px !important; margin-bottom: 12px !important; }
-        
-        /* Single column layout */
-        [style*="gridTemplateColumns: \"repeat(auto-fit"] {
-          grid-template-columns: 1fr !important;
-        }
-        
-        /* Smaller buttons and inputs */
-        button { padding: 6px 12px !important; font-size: 12px !important; }
-        input, textarea, select { font-size: 14px !important; }
-        
-        /* Task table optimizations */
-        table thead th { padding: 4px !important; font-size: 10px !important; }
-        table td { padding: 6px 4px !important; font-size: 11px !important; }
-        
-        /* Column 1: تم (Done checkbox) - keep minimal */
-        table td:nth-child(1),
-        table th:nth-child(1) {
-          min-width: 35px !important;
-          padding: 6px 2px !important;
-        }
-        
-        /* Column 2: المهمة (Task) - MAKE MUCH BIGGER */
-        table td:nth-child(2),
-        table th:nth-child(2) {
-          min-width: 200px !important;
-          padding: 12px 6px !important;
-        }
-        
-        table td:nth-child(2) input {
-          font-size: 16px !important;
-          min-height: 40px !important;
-          line-height: 1.5 !important;
-        }
-        
-        /* Column 3: البداية (Start time) - REDUCE */
-        table td:nth-child(3),
-        table th:nth-child(3) {
-          min-width: 42px !important;
-          padding: 6px 2px !important;
-        }
-        
-        /* Column 4: النهاية (End time) - REDUCE */
-        table td:nth-child(4),
-        table th:nth-child(4) {
-          min-width: 42px !important;
-          padding: 6px 2px !important;
-        }
-        
-        /* Column 5: المدة (Duration) - keep small */
-        table td:nth-child(5),
-        table th:nth-child(5) {
-          min-width: 45px !important;
-          padding: 6px 2px !important;
-        }
-        
-        /* Column 6: التصنيف (Category) - REDUCE */
-        table td:nth-child(6),
-        table th:nth-child(6) {
-          min-width: 80px !important;
-          padding: 6px 2px !important;
-        }
-        
-        table td:nth-child(6) select {
-          font-size: 11px !important;
-          min-width: 75px !important;
-        }
-        
-        /* Column 7: الهدف (Goal) - MAKE BIGGER */
-        table td:nth-child(7),
-        table th:nth-child(7) {
-          min-width: 200px !important;
-          padding: 8px 4px !important;
-        }
-        
-        table td:nth-child(7) select {
-          font-size: 12px !important;
-          min-width: 195px !important;
-        }
-        
-        /* Column 8: Actions - MAKE BIGGER */
-        table td:nth-child(8),
-        table th:nth-child(8) {
-          min-width: 120px !important;
-          padding: 6px 4px !important;
-        }
-        
-        table td:nth-child(8) button {
-          font-size: 11px !important;
-          padding: 4px 6px !important;
-          margin: 2px !important;
-        }
-        
-        /* Flex wrap for action buttons */
-        [style*="display: flex"][style*="textAlign: center"] {
-          flex-wrap: wrap;
-        }
-        
-        /* Adjust color picker grid */
-        [style*="gridTemplateColumns: \"repeat(auto-fit, minmax(250px"] {
-          grid-template-columns: 1fr !important;
-        }
+
+      50% {
+        opacity: 0.7;
       }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+    }
+
+    /* Smooth transitions for all interactive elements */
+    button,
+    input,
+    select,
+    textarea {
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    button:active {
+      transform: translateY(0px);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      body {
+        padding: 12px;
+      }
+
+      /* Column sizing for tablets */
+      /* Column 2: المهمة (Task) - make bigger */
+      table td:nth-child(2),
+      table th:nth-child(2) {
+        min-width: 180px !important;
+      }
+
+      /* Column 3: البداية (Start time) - reduce */
+      table td:nth-child(3),
+      table th:nth-child(3) {
+        min-width: 50px !important;
+      }
+
+      /* Column 4: النهاية (End time) - reduce */
+      table td:nth-child(4),
+      table th:nth-child(4) {
+        min-width: 50px !important;
+      }
+
+      /* Column 6: التصنيف (Category) - reduce */
+      table td:nth-child(6),
+      table th:nth-child(6) {
+        min-width: 100px !important;
+      }
+
+      /* Column 7: الهدف (Goal) - make bigger */
+      table td:nth-child(7),
+      table th:nth-child(7) {
+        min-width: 140px !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 8px;
+        font-size: 14px;
+      }
+
+      h1 {
+        font-size: 24px !important;
+      }
+
+      /* Stack tabs vertically on small screens */
+      [style*="display: flex"][style*="gap: 12"][style*="marginBottom: 24"] {
+        flex-direction: column;
+      }
+
+      /* Responsive grid for statistics */
+      [style*="gridTemplateColumns: \"repeat(auto-fit, minmax(200px"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Make task table scrollable */
+      table {
+        font-size: 12px !important;
+      }
+
+
+
+      /* Adjust day card padding */
+      [style*="marginBottom: 24"][style*="borderRadius: 12"][style*="overflow"] {
+        margin-bottom: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 4px;
+      }
+
+      h1 {
+        font-size: 20px !important;
+        margin-bottom: 12px !important;
+      }
+
+      /* Single column layout */
+      [style*="gridTemplateColumns: \"repeat(auto-fit"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Smaller buttons and inputs */
+      button {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+      }
+
+      input,
+      textarea,
+      select {
+        font-size: 14px !important;
+      }
+
+      /* Task table optimizations */
+      table thead th {
+        padding: 4px !important;
+        font-size: 10px !important;
+      }
+
+      table td {
+        padding: 6px 4px !important;
+        font-size: 11px !important;
+      }
+
+      /* Column 1: تم (Done checkbox) - keep minimal */
+      table td:nth-child(1),
+      table th:nth-child(1) {
+        min-width: 35px !important;
+        padding: 6px 2px !important;
+      }
+
+      /* Column 2: المهمة (Task) - MAKE MUCH BIGGER */
+      table td:nth-child(2),
+      table th:nth-child(2) {
+        min-width: 200px !important;
+        padding: 12px 6px !important;
+      }
+
+      table td:nth-child(2) input {
+        font-size: 16px !important;
+        min-height: 40px !important;
+        line-height: 1.5 !important;
+      }
+
+      /* Column 3: البداية (Start time) - REDUCE */
+      table td:nth-child(3),
+      table th:nth-child(3) {
+        min-width: 42px !important;
+        padding: 6px 2px !important;
+      }
+
+      /* Column 4: النهاية (End time) - REDUCE */
+      table td:nth-child(4),
+      table th:nth-child(4) {
+        min-width: 42px !important;
+        padding: 6px 2px !important;
+      }
+
+      /* Column 5: المدة (Duration) - keep small */
+      table td:nth-child(5),
+      table th:nth-child(5) {
+        min-width: 45px !important;
+        padding: 6px 2px !important;
+      }
+
+      /* Column 6: التصنيف (Category) - REDUCE */
+      table td:nth-child(6),
+      table th:nth-child(6) {
+        min-width: 80px !important;
+        padding: 6px 2px !important;
+      }
+
+      table td:nth-child(6) select {
+        font-size: 11px !important;
+        min-width: 75px !important;
+      }
+
+      /* Column 7: الهدف (Goal) - MAKE BIGGER */
+      table td:nth-child(7),
+      table th:nth-child(7) {
+        min-width: 200px !important;
+        padding: 8px 4px !important;
+      }
+
+      table td:nth-child(7) select {
+        font-size: 12px !important;
+        min-width: 195px !important;
+      }
+
+      /* Column 8: Actions - MAKE BIGGER */
+      table td:nth-child(8),
+      table th:nth-child(8) {
+        min-width: 120px !important;
+        padding: 6px 4px !important;
+      }
+
+      table td:nth-child(8) button {
+        font-size: 11px !important;
+        padding: 4px 6px !important;
+        margin: 2px !important;
+      }
+
+      /* Flex wrap for action buttons */
+      [style*="display: flex"][style*="textAlign: center"] {
+        flex-wrap: wrap;
+      }
+
+      /* Adjust color picker grid */
+      [style*="gridTemplateColumns: \"repeat(auto-fit, minmax(250px"] {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>
