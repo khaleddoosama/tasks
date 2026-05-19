@@ -163,10 +163,11 @@ const DEFAULT_COLORS = {
   header:    { bg: "#1a1a2e", text: "#ffffff" },
   highlight: { bg: "#fff0f0", text: "#c0392b" },
   ibadah:    { bg: "#f0faf5", text: "#1e6e45" },
+  relationships: { bg: "#fff6ed", text: "#c2410c" },
   buffer:    { bg: "#fffbeb", text: "#92680a" },
 };
 
-const CAT_LABELS = { "": "عادي", highlight: "مميّز 🔴", ibadah: "عبادة 🟢", buffer: "Buffer 🟡" };
+const CAT_LABELS = { "": "عادي", highlight: "مميّز 🔴", ibadah: "عبادة 🟢", relationships: "العلاقات 🤝", buffer: "Buffer 🟡" };
 const GOALS = ["API Design","OIC","LH2L","إنجليزي","قرآن","ركوب عجلة"];
 let nextId = 500;
 
@@ -307,7 +308,7 @@ function TaskRow({ task, onUpdate, onDelete, onMoveUp, onMoveDown, colors }) {
 
 // ── Color picker panel ─────────────────────────────────────────
 function ColorPanel({ colors, setColors }) {
-  const labels = { header:"الهيدر", highlight:"مميّز", ibadah:"عبادة", buffer:"Buffer" };
+  const labels = { header:"الهيدر", highlight:"مميّز", ibadah:"عبادة", relationships:"العلاقات", buffer:"Buffer" };
   return (
     <div>
       <div style={{ fontSize:"11px", fontWeight:700, color:"#888", marginBottom:"8px", letterSpacing:"0.5px" }}>🎨 الألوان</div>

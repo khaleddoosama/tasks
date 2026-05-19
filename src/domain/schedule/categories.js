@@ -20,6 +20,7 @@ const CATEGORY_MATCHERS = [
   { value: "education", keywords: ["إنجليزي", "انجليزي", "english", "anki", "قراءة", "تعلم", "تعليم", "study"] },
   { value: "tech_projects", keywords: ["api design", "api", "oic", "برمجة", "coding", "code", "tech"] },
   { value: "personal_projects", keywords: ["lh2l", "مشروع شخصي", "مشاريع ذاتية", "personal project"] },
+  { value: "relationships", keywords: ["علاقات", "صلة رحم", "family", "friends", "social", "meeting", "زيارة", "أهل"] },
 ];
 
 const LEGACY_CATEGORY_MAP = {
