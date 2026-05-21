@@ -177,7 +177,7 @@ export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay,
               }}
             />
           </div>
-          <div style={{ padding: "8px 16px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+          <div style={{ padding: "8px 16px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
             <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4, textAlign: "right" }}>التاريخ:</label>
               <input
@@ -224,6 +224,16 @@ export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay,
                 value={day.عدد_ساعات_النوم || ""}
                 onChange={(event) => onChange({ عدد_ساعات_النوم: event.target.value })}
                 placeholder="مثال: 7 ساعات"
+                style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, boxSizing: "border-box" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4, textAlign: "right" }}>عدد ساعات الهاتف:</label>
+              <input
+                type="text"
+                value={day.عدد_ساعات_الهاتف || ""}
+                onChange={(event) => onChange({ عدد_ساعات_الهاتف: event.target.value })}
+                placeholder="مثال: 4 ساعات"
                 style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, boxSizing: "border-box" }}
               />
             </div>
