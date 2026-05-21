@@ -41,6 +41,7 @@ import { usePrintStyle } from "../../hooks/usePrintStyle";
 import { useSchedulePersistence } from "../../hooks/useSchedulePersistence";
 import { useUndoRedo } from "../../hooks/useUndoRedo";
 import { exportScheduleBackup, importScheduleFromFile } from "../../services/scheduleTransfer";
+import { exportArchiveRange } from "../../services/archiveExport";
 
 function getSaveIndicator(saveStatus, lastSaved) {
   if (saveStatus === "saving") return "💾 جاري الحفظ...";
@@ -494,6 +495,19 @@ export function usePlannerState() {
     });
   }, [colors, days, effectiveWeekSchedules, monthlyGoalsStore, selectedWeek, weeklyGoalsStore]);
 
+  const exportArchive = useCallback(
+    (fromDate, toDate) => {
+      return exportArchiveRange({
+        weekSchedules: effectiveWeekSchedules,
+        monthlyGoalsStore,
+        weeklyGoalsStore,
+        fromDate,
+        toDate,
+      });
+    },
+    [effectiveWeekSchedules, monthlyGoalsStore, weeklyGoalsStore],
+  );
+
   const importSchedule = useCallback(
     async (file) => {
       const imported = await importScheduleFromFile(file);
@@ -649,6 +663,7 @@ export function usePlannerState() {
     deleteWeeklyGoal,
     changeColor,
     exportSchedule,
+    exportArchive,
     importSchedule,
     getScheduleData,
     updateScheduleFromJSON,

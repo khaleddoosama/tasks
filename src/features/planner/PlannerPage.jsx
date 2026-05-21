@@ -7,8 +7,15 @@ import GoalsTab from "../../components/tabs/GoalsTab";
 import PreviewTab from "../../components/tabs/PreviewTab";
 import JSONEditorTab from "../../components/tabs/JSONEditorTab";
 import GeneralNotesTab from "../../components/tabs/GeneralNotesTab";
+import { useState } from "react";
 import { usePlannerState } from "./usePlannerState";
 import { getTodayDate } from "../../domain/schedule/week";
+
+function getDefaultFromDate() {
+  const d = new Date();
+  d.setDate(d.getDate() - 30);
+  return d.toISOString().slice(0, 10);
+}
 
 const TAB_LABELS = {
   editor: "✏️ محرّر",
@@ -23,6 +30,24 @@ export default function PlannerPage() {
   const planner = usePlannerState();
   const headerColor = planner.colors.header;
   const todayDate = getTodayDate();
+
+  const [archiveFrom, setArchiveFrom] = useState(getDefaultFromDate);
+  const [archiveTo, setArchiveTo] = useState(todayDate);
+
+  const handleArchiveExport = () => {
+    if (!archiveFrom || !archiveTo) {
+      alert("❌ اختر تاريخ البداية والنهاية أولاً");
+      return;
+    }
+    if (archiveFrom > archiveTo) {
+      alert("❌ تاريخ البداية يجب أن يكون قبل تاريخ النهاية");
+      return;
+    }
+    const result = planner.exportArchive(archiveFrom, archiveTo);
+    if (result?.totalDays === 0) {
+      alert("⚠️ لا توجد أيام محفوظة في هذا النطاق الزمني");
+    }
+  };
 
   const handleImportChange = async (event) => {
     const file = event.target.files?.[0];
@@ -169,6 +194,74 @@ export default function PlannerPage() {
             </label>
             <button onClick={() => window.print()} title="Ctrl+P" style={{ background: "#27ae60", color: "#fff", border: "none", borderRadius: 6, padding: "8px 20px", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>🖨️ طباعة</button>
           </div>
+        </div>
+
+        {/* Archive export bar */}
+        <div
+          style={{
+            background: planner.darkMode ? "#1e1e35" : "#fdf6e3",
+            border: `1px solid ${planner.darkMode ? "#3a3a5e" : "#e6d58a"}`,
+            borderRadius: 8,
+            padding: "10px 16px",
+            marginBottom: 20,
+            display: "flex",
+            gap: 10,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ fontSize: 13, fontWeight: 700, color: planner.darkMode ? "#e0c97f" : "#8a6a00", whiteSpace: "nowrap" }}>
+            📦 تصدير الأرشيف
+          </span>
+          <span style={{ fontSize: 12, color: planner.darkMode ? "#aaa" : "#999", whiteSpace: "nowrap" }}>من</span>
+          <input
+            type="date"
+            value={archiveFrom}
+            onChange={(e) => setArchiveFrom(e.target.value)}
+            style={{
+              padding: "5px 8px",
+              border: `1px solid ${planner.darkMode ? "#555" : "#ccc"}`,
+              borderRadius: 6,
+              fontSize: 13,
+              background: planner.darkMode ? "#2a2a3e" : "#fff",
+              color: planner.darkMode ? "#f0f0f0" : "#1a1a2e",
+              cursor: "pointer",
+            }}
+          />
+          <span style={{ fontSize: 12, color: planner.darkMode ? "#aaa" : "#999", whiteSpace: "nowrap" }}>إلى</span>
+          <input
+            type="date"
+            value={archiveTo}
+            onChange={(e) => setArchiveTo(e.target.value)}
+            style={{
+              padding: "5px 8px",
+              border: `1px solid ${planner.darkMode ? "#555" : "#ccc"}`,
+              borderRadius: 6,
+              fontSize: 13,
+              background: planner.darkMode ? "#2a2a3e" : "#fff",
+              color: planner.darkMode ? "#f0f0f0" : "#1a1a2e",
+              cursor: "pointer",
+            }}
+          />
+          <button
+            onClick={handleArchiveExport}
+            style={{
+              background: "#b8860b",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              padding: "6px 16px",
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+            }}
+          >
+            ⬇️ تصدير
+          </button>
+          <span style={{ fontSize: 11, color: planner.darkMode ? "#888" : "#aaa" }}>
+            JSON بدون IDs — مناسب للأرشيف والـ AI
+          </span>
         </div>
 
         {planner.tab === "editor" && (
