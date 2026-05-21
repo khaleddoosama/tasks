@@ -6,7 +6,7 @@ import GoalsTab from "../../components/tabs/GoalsTab";
 import PreviewTab from "../../components/tabs/PreviewTab";
 import JSONEditorTab from "../../components/tabs/JSONEditorTab";
 import { usePlannerState } from "./usePlannerState";
-import { getTodayDate, getCurrentWeekNumber } from "../../domain/schedule/week";
+import { getTodayDate } from "../../domain/schedule/week";
 
 const TAB_LABELS = {
   editor: "✏️ محرّر",
@@ -20,16 +20,6 @@ export default function PlannerPage() {
   const planner = usePlannerState();
   const headerColor = planner.colors.header;
   const todayDate = getTodayDate();
-  const isCurrentWeek = planner.selectedWeek === getCurrentWeekNumber();
-  
-  // Debug logging
-  console.log('PlannerPage Debug:', {
-    todayDate,
-    selectedWeek: planner.selectedWeek,
-    currentWeekNumber: getCurrentWeekNumber(),
-    isCurrentWeek,
-    firstDayDate: planner.days[0]?.التاريخ,
-  });
 
   const handleImportChange = async (event) => {
     const file = event.target.files?.[0];
@@ -183,7 +173,7 @@ export default function PlannerPage() {
                 onChange={(patch) => planner.updateDay(day.id, patch)}
                 onCopyDay={planner.copyDay}
                 createTaskId={planner.createTaskId}
-                isCurrentDay={isCurrentWeek && day.التاريخ === todayDate}
+                isCurrentDay={day.التاريخ === todayDate}
               />
             ))}
           </div>
