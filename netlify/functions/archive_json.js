@@ -148,7 +148,7 @@ exports.handler = async function (event) {
     return json(500, { error: "GIST_ID و GIST_TOKEN غير محددَين في بيئة Netlify" });
   }
 
-  let appData;
+  let appData; 
   try {
     const res = await fetch(`https://api.github.com/gists/${gistId}`, {
       headers: { Authorization: `token ${gistToken}` },
