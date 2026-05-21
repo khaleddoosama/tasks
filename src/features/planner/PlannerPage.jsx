@@ -1,15 +1,18 @@
 import GistSettingsModal from "../../GistSettingsModal";
 import SyncStatusIndicator from "../../SyncStatusIndicator";
 import DayCard from "../../components/schedule/DayCard";
+import GeneralNotesReadonly from "../../components/schedule/GeneralNotesReadonly";
 import ColorsTab from "../../components/tabs/ColorsTab";
 import GoalsTab from "../../components/tabs/GoalsTab";
 import PreviewTab from "../../components/tabs/PreviewTab";
 import JSONEditorTab from "../../components/tabs/JSONEditorTab";
+import GeneralNotesTab from "../../components/tabs/GeneralNotesTab";
 import { usePlannerState } from "./usePlannerState";
 import { getTodayDate } from "../../domain/schedule/week";
 
 const TAB_LABELS = {
   editor: "✏️ محرّر",
+  notes: "📝 ملاحظات",
   json: "📝 JSON",
   goals: "🎯 الأهداف",
   colors: "🎨 الألوان",
@@ -79,6 +82,12 @@ export default function PlannerPage() {
         </div>
 
         <h1 style={{ textAlign: "center", fontSize: 32, fontWeight: 900, marginBottom: 24, color: headerColor.bg }}>جدول الأسبوع 📆</h1>
+
+        <GeneralNotesReadonly
+          notes={planner.activeGeneralNotes}
+          colors={planner.colors}
+          darkMode={planner.darkMode}
+        />
 
         <div
           style={{
@@ -177,6 +186,18 @@ export default function PlannerPage() {
               />
             ))}
           </div>
+        )}
+
+        {planner.tab === "notes" && (
+          <GeneralNotesTab
+            notes={planner.generalNotes}
+            colors={planner.colors}
+            darkMode={planner.darkMode}
+            onAddNote={planner.addGeneralNote}
+            onUpdateNote={planner.updateGeneralNote}
+            onToggleActive={planner.toggleGeneralNoteActive}
+            onDeleteNote={planner.deleteGeneralNote}
+          />
         )}
 
         {planner.tab === "json" && (

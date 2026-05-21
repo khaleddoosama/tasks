@@ -7,6 +7,8 @@ import {
   MONTHLY_GOALS_KEY,
   WEEKLY_GOALS_KEY,
 } from "../../domain/schedule/constants";
+
+const GENERAL_NOTES_KEY = "generalNotes";
 import { normalizeColors, normalizeDaysCategories } from "../../domain/schedule/categories";
 import {
   calculateMonthSummary,
@@ -106,6 +108,7 @@ export function usePlannerState() {
   const [darkMode, setDarkMode] = useLocalStorageState(DARK_MODE_KEY, false);
   const [monthlyGoalsStore, setMonthlyGoalsStore] = useLocalStorageState(MONTHLY_GOALS_KEY, {});
   const [weeklyGoalsStore, setWeeklyGoalsStore] = useLocalStorageState(WEEKLY_GOALS_KEY, {});
+  const [generalNotes, setGeneralNotes] = useLocalStorageState(GENERAL_NOTES_KEY, []);
   const [weekSchedules, setWeekSchedulesState] = useState({});
   const weekSchedulesRef = useRef({});
   const nextTaskIdRef = useRef(getNextTaskIdSeed(days));
@@ -539,6 +542,60 @@ export function usePlannerState() {
     }
   }, [replace, updateWeekSchedules, weekKey]);
 
+  const addGeneralNote = useCallback(
+    (text) => {
+      const trimmedText = text.trim();
+      if (!trimmedText) return;
+
+      const newNote = {
+        id: Date.now(),
+        text: trimmedText,
+        active: true,
+        createdAt: new Date().toISOString(),
+      };
+
+      setGeneralNotes((currentNotes) => [newNote, ...currentNotes]);
+    },
+    [setGeneralNotes],
+  );
+
+  const updateGeneralNote = useCallback(
+    (noteId, text) => {
+      const trimmedText = text.trim();
+      setGeneralNotes((currentNotes) =>
+        currentNotes.map((note) =>
+          note.id === noteId ? { ...note, text: trimmedText } : note,
+        ),
+      );
+    },
+    [setGeneralNotes],
+  );
+
+  const toggleGeneralNoteActive = useCallback(
+    (noteId) => {
+      setGeneralNotes((currentNotes) =>
+        currentNotes.map((note) =>
+          note.id === noteId ? { ...note, active: !note.active } : note,
+        ),
+      );
+    },
+    [setGeneralNotes],
+  );
+
+  const deleteGeneralNote = useCallback(
+    (noteId) => {
+      setGeneralNotes((currentNotes) =>
+        currentNotes.filter((note) => note.id !== noteId),
+      );
+    },
+    [setGeneralNotes],
+  );
+
+  const activeGeneralNotes = useMemo(
+    () => generalNotes.filter((note) => note.active),
+    [generalNotes],
+  );
+
   return {
     days,
     colors,
@@ -571,6 +628,12 @@ export function usePlannerState() {
     pushToGist,
     createNewGist,
     hasCredentials,
+    generalNotes,
+    activeGeneralNotes,
+    addGeneralNote,
+    updateGeneralNote,
+    toggleGeneralNoteActive,
+    deleteGeneralNote,
     setTab,
     setDarkMode,
     setSelectedWeek: changeSelectedWeek,
