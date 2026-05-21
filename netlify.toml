@@ -5,6 +5,13 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# JSON API endpoint — must come before the SPA catch-all
+[[redirects]]
+  from = "/archive_json"
+  to = "/.netlify/functions/archive_json"
+  status = 200
+
+# SPA catch-all — serves index.html for all client-side routes
 [[redirects]]
   from = "/*"
   to = "/index.html"
