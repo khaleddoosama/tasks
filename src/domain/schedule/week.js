@@ -98,3 +98,7 @@ export function formatDateDisplay(dateStr) {
 export function getCurrentWeekNumber() {
   return getWeekNumberFromDate(new Date());
 }
+
+export function getTodayDate() {
+  return formatLocalDate(new Date());
+}

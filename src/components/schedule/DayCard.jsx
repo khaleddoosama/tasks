@@ -3,8 +3,18 @@ import { createEmptyTask } from "../../domain/schedule/ids";
 import { calculateDurationMin, detectConflicts, sortTasksByStartTime } from "../../domain/schedule/time";
 import TaskRow from "./TaskRow";
 
-export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay, createTaskId }) {
-  const [collapsed, setCollapsed] = useState(false);
+export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay, createTaskId, isCurrentDay }) {
+  const [collapsed, setCollapsed] = useState(isCurrentDay ? false : true);
+  
+  // Debug logging
+  if (day.id === 1) {
+    console.log('DayCard Debug:', {
+      dayName: day.name,
+      dayDate: day.التاريخ,
+      isCurrentDay,
+      collapsed: isCurrentDay ? false : true
+    });
+  }
   const [draggedId, setDraggedId] = useState(null);
   const conflicts = useMemo(() => detectConflicts(day.tasks), [day.tasks]);
   const totalMinutes = useMemo(
