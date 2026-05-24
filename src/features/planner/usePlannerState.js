@@ -17,6 +17,7 @@ import {
   clearGoalLinksFromDays,
   clearGoalLinksFromSchedules,
   createGoalId,
+  createMissingGoals,
   getMonthGoalsForMonth,
   getTaskGoalOptions,
   getWeekGoalsForWeek,
@@ -34,6 +35,7 @@ import {
   getPrimaryWeekDate,
   getWeekDates,
   getWeekKey,
+  getWeekNumberFromDate,
 } from "../../domain/schedule/week";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { useLocalStorageState } from "../../hooks/useLocalStorageState";
@@ -546,6 +548,45 @@ export function usePlannerState() {
     }
 
     const normalizedDays = normalizeDaysCategories(newData.days);
+    
+    // Extract all unique weeks and months from the imported data
+    const uniqueWeeksAndMonths = new Set();
+    normalizedDays.forEach((day) => {
+      if (day.التاريخ) {
+        const monthKey = getMonthKey(day.التاريخ);
+        const weekNumber = getWeekNumberFromDate(day.التاريخ, currentYear);
+        const wKey = getWeekKey(weekNumber, currentYear);
+        uniqueWeeksAndMonths.add(JSON.stringify({ monthKey, weekKey: wKey }));
+      }
+    });
+
+    // Create missing goals for each week/month combination
+    let updatedMonthlyStore = monthlyGoalsStore;
+    let updatedWeeklyStore = weeklyGoalsStore;
+
+    uniqueWeeksAndMonths.forEach((combo) => {
+      const { monthKey: mKey, weekKey: wKey } = JSON.parse(combo);
+      const { monthlyGoalsStore: newMonthlyStore, weeklyGoalsStore: newWeeklyStore } = createMissingGoals(
+        normalizedDays,
+        updatedMonthlyStore,
+        updatedWeeklyStore,
+        mKey,
+        wKey,
+      );
+      updatedMonthlyStore = newMonthlyStore;
+      updatedWeeklyStore = newWeeklyStore;
+    });
+
+    // Update goal stores if there are new goals
+    if (Object.keys(updatedMonthlyStore).length > Object.keys(monthlyGoalsStore).length ||
+        JSON.stringify(updatedMonthlyStore) !== JSON.stringify(monthlyGoalsStore)) {
+      setMonthlyGoalsStore(updatedMonthlyStore);
+    }
+    if (Object.keys(updatedWeeklyStore).length > Object.keys(weeklyGoalsStore).length ||
+        JSON.stringify(updatedWeeklyStore) !== JSON.stringify(weeklyGoalsStore)) {
+      setWeeklyGoalsStore(updatedWeeklyStore);
+    }
+
     replace(normalizedDays);
     updateWeekSchedules((currentSchedules) => ({ ...currentSchedules, [weekKey]: normalizedDays }));
 
@@ -553,7 +594,7 @@ export function usePlannerState() {
       const normalizedColors = normalizeColors(newData.colors);
       setColors(normalizedColors);
     }
-  }, [replace, setColors, updateWeekSchedules, weekKey]);
+  }, [replace, setColors, updateWeekSchedules, weekKey, currentYear, monthlyGoalsStore, weeklyGoalsStore, setMonthlyGoalsStore, setWeeklyGoalsStore]);
 
   const addGeneralNote = useCallback(
     (text) => {

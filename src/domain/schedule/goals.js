@@ -229,3 +229,95 @@ export function clearGoalLinksFromSchedules(weekSchedules, removedGoalIds = [], 
     ]),
   );
 }
+
+export function extractReferencedGoalIds(days = []) {
+  const monthlyGoalIds = new Set();
+  const weeklyGoalIds = new Set();
+
+  (Array.isArray(days) ? days : []).forEach((day) => {
+    (day.tasks || []).forEach((task) => {
+      if (task.linkedMonthlyGoalId) {
+        monthlyGoalIds.add(task.linkedMonthlyGoalId);
+      }
+      if (task.linkedWeeklyGoalId) {
+        weeklyGoalIds.add(task.linkedWeeklyGoalId);
+      }
+    });
+  });
+
+  return { monthlyGoalIds: Array.from(monthlyGoalIds), weeklyGoalIds: Array.from(weeklyGoalIds) };
+}
+
+export function findMissingGoals(monthlyGoalIds = [], weeklyGoalIds = [], monthlyGoalsStore = {}, weeklyGoalsStore = {}) {
+  const missingMonthlyGoals = monthlyGoalIds.filter((goalId) => {
+    // Check if this goal ID exists in any month bucket
+    return !Object.values(asObject(monthlyGoalsStore)).some((monthGoals) => asObject(monthGoals)[goalId]);
+  });
+
+  const missingWeeklyGoals = weeklyGoalIds.filter((goalId) => {
+    // Check if this goal ID exists in any week bucket
+    return !Object.values(asObject(weeklyGoalsStore)).some((weekGoals) => asObject(weekGoals)[goalId]);
+  });
+
+  return { missingMonthlyGoals, missingWeeklyGoals };
+}
+
+export function createMissingGoals(
+  days = [],
+  monthlyGoalsStore = {},
+  weeklyGoalsStore = {},
+  monthKey = "",
+  weekKey = "",
+) {
+  const { monthlyGoalIds, weeklyGoalIds } = extractReferencedGoalIds(days);
+  const { missingMonthlyGoals, missingWeeklyGoals } = findMissingGoals(
+    monthlyGoalIds,
+    weeklyGoalIds,
+    monthlyGoalsStore,
+    weeklyGoalsStore,
+  );
+
+  let updatedMonthlyStore = monthlyGoalsStore;
+  let updatedWeeklyStore = weeklyGoalsStore;
+
+  // Create missing monthly goals
+  if (missingMonthlyGoals.length > 0) {
+    updatedMonthlyStore = {
+      ...monthlyGoalsStore,
+      [monthKey]: {
+        ...(monthlyGoalsStore[monthKey] || {}),
+      },
+    };
+
+    missingMonthlyGoals.forEach((goalId) => {
+      updatedMonthlyStore[monthKey][goalId] = {
+        id: goalId,
+        title: goalId,
+        status: "active",
+        createdAt: new Date().toISOString(),
+      };
+    });
+  }
+
+  // Create missing weekly goals
+  if (missingWeeklyGoals.length > 0) {
+    updatedWeeklyStore = {
+      ...weeklyGoalsStore,
+      [weekKey]: {
+        ...(weeklyGoalsStore[weekKey] || {}),
+      },
+    };
+
+    missingWeeklyGoals.forEach((goalId) => {
+      updatedWeeklyStore[weekKey][goalId] = {
+        id: goalId,
+        title: goalId,
+        monthlyGoalId: "",
+        status: "active",
+        createdAt: new Date().toISOString(),
+      };
+    });
+  }
+
+  return { monthlyGoalsStore: updatedMonthlyStore, weeklyGoalsStore: updatedWeeklyStore };
+}
