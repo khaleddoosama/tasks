@@ -550,14 +550,12 @@ export function usePlannerState() {
     const normalizedDays = normalizeDaysCategories(newData.days);
     
     // Create missing goals for all weeks/months in the imported data
-    const { monthlyGoalsStore: updatedMonthlyStore, weeklyGoalsStore: updatedWeeklyStore } =
+    const { monthlyGoalsStore: updatedMonthlyStore, weeklyGoalsStore: updatedWeeklyStore, hasChanges } =
       createMissingGoalsForImportedData(normalizedDays, monthlyGoalsStore, weeklyGoalsStore, currentYear);
 
-    // Update goal stores if there are new goals
-    if (JSON.stringify(updatedMonthlyStore) !== JSON.stringify(monthlyGoalsStore)) {
+    // Update goal stores only if there are new goals
+    if (hasChanges) {
       setMonthlyGoalsStore(updatedMonthlyStore);
-    }
-    if (JSON.stringify(updatedWeeklyStore) !== JSON.stringify(weeklyGoalsStore)) {
       setWeeklyGoalsStore(updatedWeeklyStore);
     }
 
