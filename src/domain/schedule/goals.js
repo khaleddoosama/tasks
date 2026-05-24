@@ -1,4 +1,4 @@
-import { getMonthKey } from "./week";
+import { getMonthKey, getWeekNumberFromDate, getWeekKey } from "./week";
 
 function asObject(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
@@ -318,6 +318,93 @@ export function createMissingGoals(
       };
     });
   }
+
+  return { monthlyGoalsStore: updatedMonthlyStore, weeklyGoalsStore: updatedWeeklyStore };
+}
+
+export function createMissingGoalsForImportedData(
+  days = [],
+  monthlyGoalsStore = {},
+  weeklyGoalsStore = {},
+  currentYear,
+) {
+  // Map goal IDs to their week/month assignments
+  const goalToWeeksMonths = {
+    monthly: {}, // goalId -> Set<monthKey>
+    weekly: {},  // goalId -> Set<weekKey>
+  };
+
+  // Scan through all tasks to determine which week/month each goal should be in
+  (Array.isArray(days) ? days : []).forEach((day) => {
+    const monthKey = getMonthKey(day.التاريخ);
+    const weekNumber = getWeekNumberFromDate(day.التاريخ, currentYear);
+    const weekKey = getWeekKey(weekNumber, currentYear);
+
+    (day.tasks || []).forEach((task) => {
+      if (task.linkedMonthlyGoalId) {
+        if (!goalToWeeksMonths.monthly[task.linkedMonthlyGoalId]) {
+          goalToWeeksMonths.monthly[task.linkedMonthlyGoalId] = new Set();
+        }
+        goalToWeeksMonths.monthly[task.linkedMonthlyGoalId].add(monthKey);
+      }
+      if (task.linkedWeeklyGoalId) {
+        if (!goalToWeeksMonths.weekly[task.linkedWeeklyGoalId]) {
+          goalToWeeksMonths.weekly[task.linkedWeeklyGoalId] = new Set();
+        }
+        goalToWeeksMonths.weekly[task.linkedWeeklyGoalId].add(weekKey);
+      }
+    });
+  });
+
+  let updatedMonthlyStore = { ...monthlyGoalsStore };
+  let updatedWeeklyStore = { ...weeklyGoalsStore };
+
+  // Create missing monthly goals in their appropriate buckets
+  Object.entries(goalToWeeksMonths.monthly).forEach(([goalId, monthKeySet]) => {
+    const goalExists = Object.values(asObject(monthlyGoalsStore)).some(
+      (monthGoals) => asObject(monthGoals)[goalId],
+    );
+
+    if (!goalExists) {
+      monthKeySet.forEach((monthKey) => {
+        if (!updatedMonthlyStore[monthKey]) {
+          updatedMonthlyStore[monthKey] = {};
+        }
+        if (!updatedMonthlyStore[monthKey][goalId]) {
+          updatedMonthlyStore[monthKey][goalId] = {
+            id: goalId,
+            title: goalId,
+            status: "active",
+            createdAt: new Date().toISOString(),
+          };
+        }
+      });
+    }
+  });
+
+  // Create missing weekly goals in their appropriate buckets
+  Object.entries(goalToWeeksMonths.weekly).forEach(([goalId, weekKeySet]) => {
+    const goalExists = Object.values(asObject(weeklyGoalsStore)).some(
+      (weekGoals) => asObject(weekGoals)[goalId],
+    );
+
+    if (!goalExists) {
+      weekKeySet.forEach((weekKey) => {
+        if (!updatedWeeklyStore[weekKey]) {
+          updatedWeeklyStore[weekKey] = {};
+        }
+        if (!updatedWeeklyStore[weekKey][goalId]) {
+          updatedWeeklyStore[weekKey][goalId] = {
+            id: goalId,
+            title: goalId,
+            monthlyGoalId: "",
+            status: "active",
+            createdAt: new Date().toISOString(),
+          };
+        }
+      });
+    }
+  });
 
   return { monthlyGoalsStore: updatedMonthlyStore, weeklyGoalsStore: updatedWeeklyStore };
 }
