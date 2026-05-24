@@ -315,8 +315,8 @@ export function createMissingGoalsForImportedData(
       monthKeySet.forEach((monthKey) => {
         if (!updatedMonthlyStore[monthKey]) {
           updatedMonthlyStore[monthKey] = {};
-        } else if (updatedMonthlyStore[monthKey] === monthlyGoalsStore[monthKey]) {
-          // Create a shallow copy of the month bucket if it existed before
+        } else {
+          // Create a shallow copy of the month bucket when adding a new goal to it
           updatedMonthlyStore[monthKey] = { ...updatedMonthlyStore[monthKey] };
         }
         
@@ -345,8 +345,8 @@ export function createMissingGoalsForImportedData(
       weekKeySet.forEach((weekKey) => {
         if (!updatedWeeklyStore[weekKey]) {
           updatedWeeklyStore[weekKey] = {};
-        } else if (updatedWeeklyStore[weekKey] === weeklyGoalsStore[weekKey]) {
-          // Create a shallow copy of the week bucket if it existed before
+        } else {
+          // Create a shallow copy of the week bucket when adding a new goal to it
           updatedWeeklyStore[weekKey] = { ...updatedWeeklyStore[weekKey] };
         }
         
