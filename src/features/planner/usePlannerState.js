@@ -536,8 +536,9 @@ export function usePlannerState() {
     return {
       days: days,
       colors: colors,
+      weekKey: weekKey,
     };
-  }, [days, colors]);
+  }, [days, colors, weekKey]);
 
   const updateScheduleFromJSON = useCallback((newData) => {
     if (!newData.days || !Array.isArray(newData.days)) {
@@ -550,11 +551,9 @@ export function usePlannerState() {
 
     if (newData.colors) {
       const normalizedColors = normalizeColors(newData.colors);
-      // Update colors through localStorage
-      localStorage.setItem("scheduleColors", JSON.stringify(normalizedColors));
-      window.location.reload(); // Reload to apply color changes
+      setColors(normalizedColors);
     }
-  }, [replace, updateWeekSchedules, weekKey]);
+  }, [replace, setColors, updateWeekSchedules, weekKey]);
 
   const addGeneralNote = useCallback(
     (text) => {
