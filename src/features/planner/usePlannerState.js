@@ -17,6 +17,7 @@ import {
   clearGoalLinksFromDays,
   clearGoalLinksFromSchedules,
   createGoalId,
+  createMissingGoalsForImportedData,
   getMonthGoalsForMonth,
   getTaskGoalOptions,
   getWeekGoalsForWeek,
@@ -34,6 +35,7 @@ import {
   getPrimaryWeekDate,
   getWeekDates,
   getWeekKey,
+  getWeekNumberFromDate,
 } from "../../domain/schedule/week";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { useLocalStorageState } from "../../hooks/useLocalStorageState";
@@ -546,6 +548,17 @@ export function usePlannerState() {
     }
 
     const normalizedDays = normalizeDaysCategories(newData.days);
+    
+    // Create missing goals for all weeks/months in the imported data
+    const { monthlyGoalsStore: updatedMonthlyStore, weeklyGoalsStore: updatedWeeklyStore, hasChanges } =
+      createMissingGoalsForImportedData(normalizedDays, monthlyGoalsStore, weeklyGoalsStore, currentYear);
+
+    // Update goal stores only if there are new goals
+    if (hasChanges) {
+      setMonthlyGoalsStore(updatedMonthlyStore);
+      setWeeklyGoalsStore(updatedWeeklyStore);
+    }
+
     replace(normalizedDays);
     updateWeekSchedules((currentSchedules) => ({ ...currentSchedules, [weekKey]: normalizedDays }));
 
@@ -553,7 +566,7 @@ export function usePlannerState() {
       const normalizedColors = normalizeColors(newData.colors);
       setColors(normalizedColors);
     }
-  }, [replace, setColors, updateWeekSchedules, weekKey]);
+  }, [replace, setColors, updateWeekSchedules, weekKey, currentYear, monthlyGoalsStore, weeklyGoalsStore, setMonthlyGoalsStore, setWeeklyGoalsStore]);
 
   const addGeneralNote = useCallback(
     (text) => {
