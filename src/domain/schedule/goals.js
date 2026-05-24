@@ -262,66 +262,6 @@ export function findMissingGoals(monthlyGoalIds = [], weeklyGoalIds = [], monthl
   return { missingMonthlyGoals, missingWeeklyGoals };
 }
 
-export function createMissingGoals(
-  days = [],
-  monthlyGoalsStore = {},
-  weeklyGoalsStore = {},
-  monthKey = "",
-  weekKey = "",
-) {
-  const { monthlyGoalIds, weeklyGoalIds } = extractReferencedGoalIds(days);
-  const { missingMonthlyGoals, missingWeeklyGoals } = findMissingGoals(
-    monthlyGoalIds,
-    weeklyGoalIds,
-    monthlyGoalsStore,
-    weeklyGoalsStore,
-  );
-
-  let updatedMonthlyStore = monthlyGoalsStore;
-  let updatedWeeklyStore = weeklyGoalsStore;
-
-  // Create missing monthly goals
-  if (missingMonthlyGoals.length > 0) {
-    updatedMonthlyStore = {
-      ...monthlyGoalsStore,
-      [monthKey]: {
-        ...(monthlyGoalsStore[monthKey] || {}),
-      },
-    };
-
-    missingMonthlyGoals.forEach((goalId) => {
-      updatedMonthlyStore[monthKey][goalId] = {
-        id: goalId,
-        title: goalId,
-        status: "active",
-        createdAt: new Date().toISOString(),
-      };
-    });
-  }
-
-  // Create missing weekly goals
-  if (missingWeeklyGoals.length > 0) {
-    updatedWeeklyStore = {
-      ...weeklyGoalsStore,
-      [weekKey]: {
-        ...(weeklyGoalsStore[weekKey] || {}),
-      },
-    };
-
-    missingWeeklyGoals.forEach((goalId) => {
-      updatedWeeklyStore[weekKey][goalId] = {
-        id: goalId,
-        title: goalId,
-        monthlyGoalId: "",
-        status: "active",
-        createdAt: new Date().toISOString(),
-      };
-    });
-  }
-
-  return { monthlyGoalsStore: updatedMonthlyStore, weeklyGoalsStore: updatedWeeklyStore };
-}
-
 export function createMissingGoalsForImportedData(
   days = [],
   monthlyGoalsStore = {},
@@ -367,23 +307,25 @@ export function createMissingGoalsForImportedData(
     );
 
     if (!goalExists) {
-      updatedMonthlyStore = { ...updatedMonthlyStore };
       hasChanges = true;
+      if (updatedMonthlyStore === monthlyGoalsStore) {
+        updatedMonthlyStore = { ...monthlyGoalsStore };
+      }
+      
       monthKeySet.forEach((monthKey) => {
         if (!updatedMonthlyStore[monthKey]) {
           updatedMonthlyStore[monthKey] = {};
+        } else if (updatedMonthlyStore[monthKey] === monthlyGoalsStore[monthKey]) {
+          // Create a shallow copy of the month bucket if it existed before
+          updatedMonthlyStore[monthKey] = { ...updatedMonthlyStore[monthKey] };
         }
-        if (!updatedMonthlyStore[monthKey][goalId]) {
-          updatedMonthlyStore[monthKey] = {
-            ...updatedMonthlyStore[monthKey],
-            [goalId]: {
-              id: goalId,
-              title: `Goal: ${goalId}`,
-              status: "active",
-              createdAt: new Date().toISOString(),
-            },
-          };
-        }
+        
+        updatedMonthlyStore[monthKey][goalId] = {
+          id: goalId,
+          title: `Goal: ${goalId}`,
+          status: "active",
+          createdAt: new Date().toISOString(),
+        };
       });
     }
   });
@@ -395,24 +337,26 @@ export function createMissingGoalsForImportedData(
     );
 
     if (!goalExists) {
-      updatedWeeklyStore = { ...updatedWeeklyStore };
       hasChanges = true;
+      if (updatedWeeklyStore === weeklyGoalsStore) {
+        updatedWeeklyStore = { ...weeklyGoalsStore };
+      }
+      
       weekKeySet.forEach((weekKey) => {
         if (!updatedWeeklyStore[weekKey]) {
           updatedWeeklyStore[weekKey] = {};
+        } else if (updatedWeeklyStore[weekKey] === weeklyGoalsStore[weekKey]) {
+          // Create a shallow copy of the week bucket if it existed before
+          updatedWeeklyStore[weekKey] = { ...updatedWeeklyStore[weekKey] };
         }
-        if (!updatedWeeklyStore[weekKey][goalId]) {
-          updatedWeeklyStore[weekKey] = {
-            ...updatedWeeklyStore[weekKey],
-            [goalId]: {
-              id: goalId,
-              title: `Goal: ${goalId}`,
-              monthlyGoalId: "",
-              status: "active",
-              createdAt: new Date().toISOString(),
-            },
-          };
-        }
+        
+        updatedWeeklyStore[weekKey][goalId] = {
+          id: goalId,
+          title: `Goal: ${goalId}`,
+          monthlyGoalId: "",
+          status: "active",
+          createdAt: new Date().toISOString(),
+        };
       });
     }
   });
