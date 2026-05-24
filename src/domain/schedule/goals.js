@@ -230,38 +230,6 @@ export function clearGoalLinksFromSchedules(weekSchedules, removedGoalIds = [], 
   );
 }
 
-export function extractReferencedGoalIds(days = []) {
-  const monthlyGoalIds = new Set();
-  const weeklyGoalIds = new Set();
-
-  (Array.isArray(days) ? days : []).forEach((day) => {
-    (day.tasks || []).forEach((task) => {
-      if (task.linkedMonthlyGoalId) {
-        monthlyGoalIds.add(task.linkedMonthlyGoalId);
-      }
-      if (task.linkedWeeklyGoalId) {
-        weeklyGoalIds.add(task.linkedWeeklyGoalId);
-      }
-    });
-  });
-
-  return { monthlyGoalIds: Array.from(monthlyGoalIds), weeklyGoalIds: Array.from(weeklyGoalIds) };
-}
-
-export function findMissingGoals(monthlyGoalIds = [], weeklyGoalIds = [], monthlyGoalsStore = {}, weeklyGoalsStore = {}) {
-  const missingMonthlyGoals = monthlyGoalIds.filter((goalId) => {
-    // Check if this goal ID exists in any month bucket
-    return !Object.values(asObject(monthlyGoalsStore)).some((monthGoals) => asObject(monthGoals)[goalId]);
-  });
-
-  const missingWeeklyGoals = weeklyGoalIds.filter((goalId) => {
-    // Check if this goal ID exists in any week bucket
-    return !Object.values(asObject(weeklyGoalsStore)).some((weekGoals) => asObject(weekGoals)[goalId]);
-  });
-
-  return { missingMonthlyGoals, missingWeeklyGoals };
-}
-
 export function createMissingGoalsForImportedData(
   days = [],
   monthlyGoalsStore = {},
