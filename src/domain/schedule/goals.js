@@ -276,22 +276,24 @@ export function createMissingGoalsForImportedData(
 
   // Scan through all tasks to determine which week/month each goal should be in
   (Array.isArray(days) ? days : []).forEach((day) => {
-    const monthKey = getMonthKey(day.التاريخ);
-    const weekNumber = getWeekNumberFromDate(day.التاريخ, currentYear);
-    const weekKey = getWeekKey(weekNumber, currentYear);
-
     (day.tasks || []).forEach((task) => {
-      if (task.linkedMonthlyGoalId) {
-        if (!goalToWeeksMonths.monthly[task.linkedMonthlyGoalId]) {
-          goalToWeeksMonths.monthly[task.linkedMonthlyGoalId] = new Set();
+      if (task.linkedMonthlyGoalId || task.linkedWeeklyGoalId) {
+        const monthKey = getMonthKey(day.التاريخ);
+        const weekNumber = getWeekNumberFromDate(day.التاريخ, currentYear);
+        const weekKey = getWeekKey(weekNumber, currentYear);
+
+        if (task.linkedMonthlyGoalId) {
+          if (!goalToWeeksMonths.monthly[task.linkedMonthlyGoalId]) {
+            goalToWeeksMonths.monthly[task.linkedMonthlyGoalId] = new Set();
+          }
+          goalToWeeksMonths.monthly[task.linkedMonthlyGoalId].add(monthKey);
         }
-        goalToWeeksMonths.monthly[task.linkedMonthlyGoalId].add(monthKey);
-      }
-      if (task.linkedWeeklyGoalId) {
-        if (!goalToWeeksMonths.weekly[task.linkedWeeklyGoalId]) {
-          goalToWeeksMonths.weekly[task.linkedWeeklyGoalId] = new Set();
+        if (task.linkedWeeklyGoalId) {
+          if (!goalToWeeksMonths.weekly[task.linkedWeeklyGoalId]) {
+            goalToWeeksMonths.weekly[task.linkedWeeklyGoalId] = new Set();
+          }
+          goalToWeeksMonths.weekly[task.linkedWeeklyGoalId].add(weekKey);
         }
-        goalToWeeksMonths.weekly[task.linkedWeeklyGoalId].add(weekKey);
       }
     });
   });
@@ -313,10 +315,10 @@ export function createMissingGoalsForImportedData(
       }
       
       monthKeySet.forEach((monthKey) => {
+        // Ensure the month bucket is copied before modification
         if (!updatedMonthlyStore[monthKey]) {
           updatedMonthlyStore[monthKey] = {};
-        } else {
-          // Create a shallow copy of the month bucket when adding a new goal to it
+        } else if (updatedMonthlyStore[monthKey] === monthlyGoalsStore[monthKey]) {
           updatedMonthlyStore[monthKey] = { ...updatedMonthlyStore[monthKey] };
         }
         
@@ -343,10 +345,10 @@ export function createMissingGoalsForImportedData(
       }
       
       weekKeySet.forEach((weekKey) => {
+        // Ensure the week bucket is copied before modification
         if (!updatedWeeklyStore[weekKey]) {
           updatedWeeklyStore[weekKey] = {};
-        } else {
-          // Create a shallow copy of the week bucket when adding a new goal to it
+        } else if (updatedWeeklyStore[weekKey] === weeklyGoalsStore[weekKey]) {
           updatedWeeklyStore[weekKey] = { ...updatedWeeklyStore[weekKey] };
         }
         
