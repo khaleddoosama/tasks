@@ -3,7 +3,7 @@ import { createEmptyTask } from "../../domain/schedule/ids";
 import { calculateDurationMin, detectConflicts, sortTasksByStartTime } from "../../domain/schedule/time";
 import TaskRow from "./TaskRow";
 
-export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay, createTaskId, isCurrentDay }) {
+export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay, onSaveAsTemplate, onApplyTemplate, createTaskId, isCurrentDay }) {
   const [collapsed, setCollapsed] = useState(() => !isCurrentDay);
   
   useEffect(() => {
@@ -92,7 +92,29 @@ export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay,
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 20, fontWeight: 900 }}>{day.name}</span>
-          <span style={{ fontSize: 12, opacity: 0.8 }}>{day.type}</span>
+          <select
+            value={day.type}
+            onChange={(e) => {
+              e.stopPropagation();
+              onChange({ type: e.target.value });
+            }}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              marginLeft: 0,
+              padding: "4px 8px",
+              borderRadius: 4,
+              border: `1px solid ${headerColor.text}`,
+              background: "rgba(255,255,255,0.1)",
+              color: headerColor.text,
+              cursor: "pointer",
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            <option value="إجازة">إجازة</option>
+            <option value="أوفيس">أوفيس</option>
+            <option value="بيت">بيت</option>
+          </select>
           <span style={{ fontSize: 12, opacity: 0.7 }}>
             {totalHours > 0 ? `${totalHours} س ` : ""}
             {totalRemainderMinutes > 0 ? `${totalRemainderMinutes} د` : ""}
@@ -145,6 +167,55 @@ export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay,
             }}
           >
             نسخ
+          </button>
+          <button
+            onClick={(event) => {
+              event.stopPropagation();
+              const templateName = prompt("اسم القالب:");
+              if (templateName) {
+                onSaveAsTemplate?.(day.id, templateName);
+                alert("✅ تم حفظ القالب بنجاح!");
+              }
+            }}
+            title="حفظ كقالب"
+            style={{
+              border: "none",
+              background: "rgba(255,255,255,0.2)",
+              color: headerColor.text,
+              borderRadius: 4,
+              padding: "2px 8px",
+              cursor: "pointer",
+              fontSize: 12,
+            }}
+          >
+            💾 حفظ
+          </button>
+          <button
+            onClick={(event) => {
+              event.stopPropagation();
+              const templates = JSON.parse(localStorage.getItem("dayTemplatesV1") || "{}");
+              if (Object.keys(templates).length === 0) {
+                alert("⚠️ لا توجد قوالس محفوظة!");
+                return;
+              }
+              const templateNames = Object.keys(templates).join("\n");
+              const templateName = prompt(`اختر قالباً:\n${templateNames}`);
+              if (templateName && templates[templateName]) {
+                onApplyTemplate?.(day.id, templateName);
+              }
+            }}
+            title="تطبيق قالب"
+            style={{
+              border: "none",
+              background: "rgba(255,255,255,0.2)",
+              color: headerColor.text,
+              borderRadius: 4,
+              padding: "2px 8px",
+              cursor: "pointer",
+              fontSize: 12,
+            }}
+          >
+            📥 قالب
           </button>
           <span
             style={{

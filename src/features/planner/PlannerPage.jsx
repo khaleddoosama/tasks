@@ -33,6 +33,7 @@ export default function PlannerPage() {
 
   const [archiveFrom, setArchiveFrom] = useState(getDefaultFromDate);
   const [archiveTo, setArchiveTo] = useState(todayDate);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   const handleArchiveExport = () => {
     if (!archiveFrom || !archiveTo) {
@@ -162,6 +163,42 @@ export default function PlannerPage() {
           </div>
         </div>
 
+        <div style={{ display: "flex", gap: 12, marginBottom: 24, justifyContent: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={planner.copyPreviousWeek}
+            disabled={planner.selectedWeek === 1}
+            style={{
+              background: "#e8f5e9",
+              color: "#388e3c",
+              border: "1px solid #c8e6c9",
+              borderRadius: 6,
+              padding: "8px 12px",
+              cursor: planner.selectedWeek === 1 ? "not-allowed" : "pointer",
+              fontSize: 13,
+              fontWeight: 600,
+              opacity: planner.selectedWeek === 1 ? 0.5 : 1,
+            }}
+          >
+            📋 نسخ من الأسبوع السابق
+          </button>
+
+          <button
+            onClick={() => setShowTemplateModal(true)}
+            style={{
+              background: "#f4efff",
+              color: "#5f3bb3",
+              border: "1px solid #e9d9f5",
+              borderRadius: 6,
+              padding: "8px 12px",
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            ⚙️ إدارة قوالب الأيام
+          </button>
+        </div>
+
         <div style={{ display: "flex", gap: 12, marginBottom: 24, borderBottom: "2px solid #e0e0e0", flexWrap: "wrap", alignItems: "center" }}>
           {Object.entries(TAB_LABELS).map(([tabKey, label]) => (
             <button
@@ -274,6 +311,8 @@ export default function PlannerPage() {
                 goalOptions={planner.taskGoalOptions}
                 onChange={(patch) => planner.updateDay(day.id, patch)}
                 onCopyDay={planner.copyDay}
+                onSaveAsTemplate={planner.saveAsTemplate}
+                onApplyTemplate={planner.applyTemplate}
                 createTaskId={planner.createTaskId}
                 isCurrentDay={day.التاريخ === todayDate}
               />

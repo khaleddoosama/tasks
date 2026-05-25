@@ -343,6 +343,82 @@ export function usePlannerState() {
     [createTaskId, setDays],
   );
 
+  const copyPreviousWeek = useCallback(() => {
+    if (selectedWeek === 1) return;
+
+    const prevWeekKey = getWeekKey(selectedWeek - 1, currentYear);
+    const prevWeekData = weekSchedulesRef.current[prevWeekKey];
+
+    if (!prevWeekData) return;
+
+    const nextWeekDates = getWeekDates(selectedWeek, currentYear);
+    const clonedDays = prevWeekData.map((day) => ({
+      ...day,
+      التاريخ: nextWeekDates[day.id - 1],
+      tasks: cloneTasksWithNewIds(day.tasks, createTaskId),
+    }));
+
+    replace(clonedDays);
+
+    const prevWeekGoals = weeklyGoalsStore[prevWeekKey] || {};
+    if (Object.keys(prevWeekGoals).length > 0) {
+      const clonedGoals = {};
+      Object.entries(prevWeekGoals).forEach(([, goal]) => {
+        const newGoalId = createGoalId("weekly-goal");
+        clonedGoals[newGoalId] = {
+          ...goal,
+          id: newGoalId,
+          createdAt: new Date().toISOString(),
+        };
+      });
+      setWeeklyGoalsStore((prev) => ({
+        ...prev,
+        [weekKey]: clonedGoals,
+      }));
+    }
+  }, [selectedWeek, currentYear, weekSchedulesRef, weeklyGoalsStore, weekKey, replace, createTaskId, setWeeklyGoalsStore]);
+
+  const saveAsTemplate = useCallback(
+    (dayId, templateName) => {
+      const day = days.find((d) => d.id === dayId);
+      if (!day || !templateName.trim()) return;
+
+      const templates = JSON.parse(localStorage.getItem("dayTemplatesV1") || "{}");
+      templates[templateName] = {
+        name: templateName,
+        type: day.type,
+        notes: day.notes,
+        tasks: day.tasks.map((t) => ({ ...t })),
+        مستوى_الطاقة: day.مستوى_الطاقة,
+        تقييم_اليوم: day.تقييم_اليوم,
+        عدد_ساعات_النوم: day.عدد_ساعات_النوم,
+        عدد_ساعات_الهاتف: day.عدد_ساعات_الهاتف,
+      };
+      localStorage.setItem("dayTemplatesV1", JSON.stringify(templates));
+    },
+    [days],
+  );
+
+  const applyTemplate = useCallback(
+    (dayId, templateName) => {
+      const templates = JSON.parse(localStorage.getItem("dayTemplatesV1") || "{}");
+      const template = templates[templateName];
+
+      if (!template) return;
+
+      updateDay(dayId, {
+        type: template.type,
+        notes: template.notes,
+        tasks: cloneTasksWithNewIds(template.tasks, createTaskId),
+        مستوى_الطاقة: template.مستوى_الطاقة,
+        تقييم_اليوم: template.تقييم_اليوم,
+        عدد_ساعات_النوم: template.عدد_ساعات_النوم,
+        عدد_ساعات_الهاتف: template.عدد_ساعات_الهاتف,
+      });
+    },
+    [updateDay, createTaskId],
+  );
+
   const addMonthlyGoal = useCallback(
     (title) => {
       const trimmedTitle = title.trim();
@@ -666,6 +742,9 @@ export function usePlannerState() {
     setShowGistSettings,
     updateDay,
     copyDay,
+    copyPreviousWeek,
+    saveAsTemplate,
+    applyTemplate,
     createTaskId,
     addMonthlyGoal,
     updateMonthlyGoalTitle,
