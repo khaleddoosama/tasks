@@ -7,6 +7,7 @@ import GoalsTab from "../../components/tabs/GoalsTab";
 import PreviewTab from "../../components/tabs/PreviewTab";
 import JSONEditorTab from "../../components/tabs/JSONEditorTab";
 import GeneralNotesTab from "../../components/tabs/GeneralNotesTab";
+import TemplateManager from "../../components/TemplateManager";
 import { useState } from "react";
 import { usePlannerState } from "./usePlannerState";
 import { getTodayDate } from "../../domain/schedule/week";
@@ -381,6 +382,12 @@ export default function PlannerPage() {
           syncError={planner.syncError}
           onCreateGist={planner.createNewGist}
           onSave={() => undefined}
+        />
+
+        <TemplateManager
+          isOpen={showTemplateModal}
+          onClose={() => setShowTemplateModal(false)}
+          darkMode={planner.darkMode}
         />
       </div>
     </div>
