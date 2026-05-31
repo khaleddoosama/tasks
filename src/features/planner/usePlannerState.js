@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGistSync } from "../../useGistSync";
+import { useTaskManagement } from "./hooks/useTaskManagement";
+import { useGoalManagement } from "./hooks/useGoalManagement";
+import { usePersistenceAndColorManagement } from "./hooks/usePersistenceAndColorManagement";
 import {
   DARK_MODE_KEY,
   DEFAULT_COLORS,
@@ -321,278 +324,72 @@ export function usePlannerState() {
     [currentMonthGoals, monthlyGoalProgress],
   );
 
-  const updateDay = useCallback(
-    (dayId, patch) => {
-      setDays((currentDays) =>
-        currentDays.map((day) => (day.id === dayId ? { ...day, ...patch } : day)),
-      );
-    },
-    [setDays],
-  );
+  // Task management: delegated to useTaskManagement hook
+  const { updateDay, copyDay, copyPreviousWeek, saveAsTemplate, applyTemplate } = useTaskManagement({
+    days,
+    setDays,
+    weekSchedulesRef,
+    nextTaskIdRef,
+    updateWeekSchedules,
+    setWeeklyGoalsStore,
+    selectedWeek,
+    currentYear,
+    weekKey,
+    weeklyGoalsStore,
+    createTaskId,
+    replace,
+    cloneTasksWithNewIds,
+    createGoalId,
+    getWeekDates,
+    getWeekKey,
+    createInitialDays,
+    normalizeDaysCategories,
+  });
 
-  const copyDay = useCallback(
-    (dayId) => {
-      setDays((currentDays) =>
-        currentDays.map((day) =>
-          day.id === dayId
-            ? { ...day, tasks: cloneTasksWithNewIds(day.tasks, createTaskId) }
-            : day,
-        ),
-      );
-    },
-    [createTaskId, setDays],
-  );
+  // Goal management: delegated to useGoalManagement hook
+  const { addMonthlyGoal, updateMonthlyGoalTitle, deleteMonthlyGoal, addWeeklyGoal, updateWeeklyGoalTitle, deleteWeeklyGoal } = useGoalManagement({
+    monthlyGoalsStore,
+    setMonthlyGoalsStore,
+    weeklyGoalsStore,
+    setWeeklyGoalsStore,
+    days,
+    setDays,
+    updateWeekSchedules,
+    effectiveWeekSchedules,
+    monthKey,
+    weekKey,
+    createGoalId,
+    ensureMonthGoalBucket,
+    ensureWeekGoalBucket,
+    normalizedWeeklyGoals,
+    clearGoalLinksFromDays,
+    clearGoalLinksFromSchedules,
+  });
 
-  const copyPreviousWeek = useCallback(() => {
-    if (selectedWeek === 1) return;
-
-    const prevWeekKey = getWeekKey(selectedWeek - 1, currentYear);
-    const prevWeekData = weekSchedulesRef.current[prevWeekKey];
-
-    if (!prevWeekData) return;
-
-    const nextWeekDates = getWeekDates(selectedWeek, currentYear);
-    const clonedDays = prevWeekData.map((day) => ({
-      ...day,
-      التاريخ: nextWeekDates[day.id - 1],
-      tasks: cloneTasksWithNewIds(day.tasks, createTaskId),
-    }));
-
-    replace(clonedDays);
-
-    const prevWeekGoals = weeklyGoalsStore[prevWeekKey] || {};
-    if (Object.keys(prevWeekGoals).length > 0) {
-      const clonedGoals = {};
-      Object.entries(prevWeekGoals).forEach(([, goal]) => {
-        const newGoalId = createGoalId("weekly-goal");
-        clonedGoals[newGoalId] = {
-          ...goal,
-          id: newGoalId,
-          createdAt: new Date().toISOString(),
-        };
-      });
-      setWeeklyGoalsStore((prev) => ({
-        ...prev,
-        [weekKey]: clonedGoals,
-      }));
-    }
-  }, [selectedWeek, currentYear, weekSchedulesRef, weeklyGoalsStore, weekKey, replace, createTaskId, setWeeklyGoalsStore]);
-
-  const saveAsTemplate = useCallback(
-    (dayId, templateName) => {
-      const day = days.find((d) => d.id === dayId);
-      if (!day || !templateName.trim()) return;
-
-      const templates = JSON.parse(localStorage.getItem("dayTemplatesV1") || "{}");
-      templates[templateName] = {
-        name: templateName,
-        type: day.type,
-        notes: day.notes,
-        tasks: day.tasks.map((t) => ({ ...t })),
-        مستوى_الطاقة: day.مستوى_الطاقة,
-        تقييم_اليوم: day.تقييم_اليوم,
-        عدد_ساعات_النوم: day.عدد_ساعات_النوم,
-        عدد_ساعات_الهاتف: day.عدد_ساعات_الهاتف,
-      };
-      localStorage.setItem("dayTemplatesV1", JSON.stringify(templates));
-    },
-    [days],
-  );
-
-  const applyTemplate = useCallback(
-    (dayId, templateName) => {
-      const templates = JSON.parse(localStorage.getItem("dayTemplatesV1") || "{}");
-      const template = templates[templateName];
-
-      if (!template) return;
-
-      updateDay(dayId, {
-        type: template.type,
-        notes: template.notes,
-        tasks: cloneTasksWithNewIds(template.tasks, createTaskId),
-        مستوى_الطاقة: template.مستوى_الطاقة,
-        تقييم_اليوم: template.تقييم_اليوم,
-        عدد_ساعات_النوم: template.عدد_ساعات_النوم,
-        عدد_ساعات_الهاتف: template.عدد_ساعات_الهاتف,
-      });
-    },
-    [updateDay, createTaskId],
-  );
-
-  const addMonthlyGoal = useCallback(
-    (title) => {
-      const trimmedTitle = title.trim();
-      if (!trimmedTitle) return;
-
-      const goalId = createGoalId("monthly-goal");
-      const createdAt = new Date().toISOString();
-
-      setMonthlyGoalsStore((currentStore) => {
-        const nextStore = ensureMonthGoalBucket(currentStore, monthKey);
-        nextStore[monthKey][goalId] = {
-          id: goalId,
-          title: trimmedTitle,
-          status: "active",
-          createdAt,
-        };
-        return nextStore;
-      });
-    },
-    [monthKey, setMonthlyGoalsStore],
-  );
-
-  const updateMonthlyGoalTitle = useCallback(
-    (goalId, title) => {
-      setMonthlyGoalsStore((currentStore) => {
-        const nextStore = ensureMonthGoalBucket(currentStore, monthKey);
-        if (!nextStore[monthKey][goalId]) return currentStore;
-        nextStore[monthKey][goalId] = {
-          ...nextStore[monthKey][goalId],
-          title,
-        };
-        return nextStore;
-      });
-    },
-    [monthKey, setMonthlyGoalsStore],
-  );
-
-  const addWeeklyGoal = useCallback(
-    (monthlyGoalId, title) => {
-      const trimmedTitle = title.trim();
-      if (!trimmedTitle) return;
-
-      const goalId = createGoalId("weekly-goal");
-      const createdAt = new Date().toISOString();
-
-      setWeeklyGoalsStore((currentStore) => {
-        const nextStore = ensureWeekGoalBucket(currentStore, weekKey);
-        nextStore[weekKey][goalId] = {
-          id: goalId,
-          title: trimmedTitle,
-          monthlyGoalId,
-          status: "active",
-          createdAt,
-        };
-        return nextStore;
-      });
-    },
-    [setWeeklyGoalsStore, weekKey],
-  );
-
-  const updateWeeklyGoalTitle = useCallback(
-    (goalId, title) => {
-      setWeeklyGoalsStore((currentStore) => {
-        const nextStore = ensureWeekGoalBucket(currentStore, weekKey);
-        if (!nextStore[weekKey][goalId]) return currentStore;
-        nextStore[weekKey][goalId] = {
-          ...nextStore[weekKey][goalId],
-          title,
-        };
-        return nextStore;
-      });
-    },
-    [setWeeklyGoalsStore, weekKey],
-  );
-
-  const deleteWeeklyGoal = useCallback(
-    (goalId) => {
-      setWeeklyGoalsStore((currentStore) => {
-        const nextStore = ensureWeekGoalBucket(currentStore, weekKey);
-        delete nextStore[weekKey][goalId];
-        return nextStore;
-      });
-
-      setDays((currentDays) => clearGoalLinksFromDays(currentDays, [goalId], "weekly"));
-      updateWeekSchedules((currentSchedules) =>
-        clearGoalLinksFromSchedules(currentSchedules, [goalId], "weekly"),
-      );
-    },
-    [setWeeklyGoalsStore, updateWeekSchedules, weekKey],
-  );
-
-  const deleteMonthlyGoal = useCallback(
-    (goalId) => {
-      const childWeeklyGoalIds = Object.values(normalizedWeeklyGoals)
-        .flatMap((goals) => Object.values(goals))
-        .filter((goal) => goal.monthlyGoalId === goalId)
-        .map((goal) => goal.id);
-
-      setMonthlyGoalsStore((currentStore) => {
-        const nextStore = ensureMonthGoalBucket(currentStore, monthKey);
-        delete nextStore[monthKey][goalId];
-        return nextStore;
-      });
-
-      setWeeklyGoalsStore((currentStore) =>
-        Object.fromEntries(
-          Object.entries(currentStore).map(([storedWeekKey, goals]) => {
-            const nextGoals = { ...(goals || {}) };
-            childWeeklyGoalIds.forEach((childGoalId) => delete nextGoals[childGoalId]);
-            return [storedWeekKey, nextGoals];
-          }),
-        ),
-      );
-
-      setDays((currentDays) =>
-        clearGoalLinksFromDays(
-          clearGoalLinksFromDays(currentDays, childWeeklyGoalIds, "weekly"),
-          [goalId],
-          "monthly",
-        ),
-      );
-
-      updateWeekSchedules((currentSchedules) =>
-        clearGoalLinksFromSchedules(
-          clearGoalLinksFromSchedules(currentSchedules, childWeeklyGoalIds, "weekly"),
-          [goalId],
-          "monthly",
-        ),
-      );
-    },
-    [monthKey, normalizedWeeklyGoals, setMonthlyGoalsStore, setWeeklyGoalsStore, updateWeekSchedules],
-  );
-
-  const changeColor = useCallback((section, field, value) => {
-    setColors((currentColors) => ({
-      ...currentColors,
-      [section]: {
-        ...currentColors[section],
-        [field]: value,
-      },
-    }));
-  }, []);
-
-  const exportSchedule = useCallback(() => {
-    exportScheduleBackup({
-      weekSchedules: effectiveWeekSchedules,
-      days,
-      colors,
-      selectedWeek,
-      monthlyGoals: monthlyGoalsStore,
-      weeklyGoals: weeklyGoalsStore,
-    });
-  }, [colors, days, effectiveWeekSchedules, monthlyGoalsStore, selectedWeek, weeklyGoalsStore]);
-
-  const exportArchive = useCallback(
-    (fromDate, toDate) => {
-      return exportArchiveRange({
-        weekSchedules: effectiveWeekSchedules,
-        monthlyGoalsStore,
-        weeklyGoalsStore,
-        fromDate,
-        toDate,
-      });
-    },
-    [effectiveWeekSchedules, monthlyGoalsStore, weeklyGoalsStore],
-  );
-
-  const importSchedule = useCallback(
-    async (file) => {
-      const imported = await importScheduleFromFile(file);
-      applyPlannerData(imported, selectedWeek);
-    },
-    [applyPlannerData, selectedWeek],
-  );
+  // Persistence and color management: delegated to usePersistenceAndColorManagement hook
+  const { changeColor, exportSchedule, exportArchive, importSchedule, getScheduleData, updateScheduleFromJSON } = usePersistenceAndColorManagement({
+    days,
+    colors,
+    effectiveWeekSchedules,
+    monthlyGoalsStore,
+    weeklyGoalsStore,
+    selectedWeek,
+    currentYear,
+    setColors,
+    setMonthlyGoalsStore,
+    setWeeklyGoalsStore,
+    replace,
+    updateWeekSchedules,
+    applyPlannerData,
+    normalizeDaysCategories,
+    normalizeColors,
+    createMissingGoalsForImportedData,
+    createInitialDays,
+    exportScheduleBackup,
+    exportArchiveRange,
+    importScheduleFromFile,
+    weekKey,
+  });
 
   const resetPlanner = useCallback(() => {
     const confirmed = window.confirm("هل تريد إعادة ضبط جدول هذا الأسبوع فقط إلى الحالة الافتراضية؟");
@@ -603,46 +400,12 @@ export function usePlannerState() {
     updateWeekSchedules((currentSchedules) => ({ ...currentSchedules, [weekKey]: nextDays }));
     setTab("editor");
     setPrintZoom(100);
-  }, [replace, selectedWeek, updateWeekSchedules, weekKey]);
+  }, [replace, selectedWeek, updateWeekSchedules, weekKey, normalizeDaysCategories, createInitialDays]);
 
   const incrementWeek = useCallback(() => changeSelectedWeek(Math.min(52, selectedWeek + 1)), [changeSelectedWeek, selectedWeek]);
   const decrementWeek = useCallback(() => changeSelectedWeek(Math.max(1, selectedWeek - 1)), [changeSelectedWeek, selectedWeek]);
   const zoomIn = useCallback(() => setPrintZoom((value) => Math.min(150, value + 10)), []);
   const zoomOut = useCallback(() => setPrintZoom((value) => Math.max(50, value - 10)), []);
-
-  const getScheduleData = useCallback(() => {
-    return {
-      days: days,
-      colors: colors,
-      weekKey: weekKey,
-    };
-  }, [days, colors, weekKey]);
-
-  const updateScheduleFromJSON = useCallback((newData) => {
-    if (!newData.days || !Array.isArray(newData.days)) {
-      throw new Error("Invalid format: missing 'days' array");
-    }
-
-    const normalizedDays = normalizeDaysCategories(newData.days);
-    
-    // Create missing goals for all weeks/months in the imported data
-    const { monthlyGoalsStore: updatedMonthlyStore, weeklyGoalsStore: updatedWeeklyStore, hasChanges } =
-      createMissingGoalsForImportedData(normalizedDays, monthlyGoalsStore, weeklyGoalsStore, currentYear);
-
-    // Update goal stores only if there are new goals
-    if (hasChanges) {
-      setMonthlyGoalsStore(updatedMonthlyStore);
-      setWeeklyGoalsStore(updatedWeeklyStore);
-    }
-
-    replace(normalizedDays);
-    updateWeekSchedules((currentSchedules) => ({ ...currentSchedules, [weekKey]: normalizedDays }));
-
-    if (newData.colors) {
-      const normalizedColors = normalizeColors(newData.colors);
-      setColors(normalizedColors);
-    }
-  }, [replace, setColors, updateWeekSchedules, weekKey, currentYear, monthlyGoalsStore, weeklyGoalsStore, setMonthlyGoalsStore, setWeeklyGoalsStore]);
 
   const addGeneralNote = useCallback(
     (text) => {
