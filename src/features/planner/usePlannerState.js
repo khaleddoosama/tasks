@@ -24,6 +24,7 @@ import {
   getMonthGoalsForMonth,
   getTaskGoalOptions,
   getWeekGoalsForWeek,
+  getWeeklyGoalsByMonthlyGoalId,
   normalizeMonthlyGoalsStore,
   normalizeWeeklyGoalsStore,
 } from "../../domain/schedule/goals";
@@ -296,6 +297,17 @@ export function usePlannerState() {
     [currentMonthGoals, currentWeekGoals, normalizedWeeklyGoals],
   );
 
+  const weeklyGoalsByMonthly = useMemo(
+    () => getWeeklyGoalsByMonthlyGoalId(normalizedWeeklyGoals),
+    [normalizedWeeklyGoals],
+  );
+
+  const enhancedTaskGoalOptions = useMemo(() => ({
+    ...taskGoalOptions,
+    weeklyGoalsByMonthly,
+    allMonthlyGoals: currentMonthGoals,
+  }), [taskGoalOptions, weeklyGoalsByMonthly, currentMonthGoals]);
+
   const weeklyGoalProgress = useMemo(
     () => calculateWeeklyGoalProgress(days, currentWeekGoals),
     [currentWeekGoals, days],
@@ -469,7 +481,7 @@ export function usePlannerState() {
     darkMode,
     selectedWeek,
     showGistSettings,
-    taskGoalOptions,
+    taskGoalOptions: enhancedTaskGoalOptions,
     currentMonthGoals: currentMonthGoalItems,
     currentWeekGoals: currentWeekGoalItems,
     monthlySummary,

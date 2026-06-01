@@ -25,7 +25,9 @@ export default function TaskRow({
   const duration = calculateDuration(task.time);
   const { start, end } = splitTimeRange(task.time);
   const weeklyGoals = goalOptions?.weeklyGoals || [];
-  const monthlyGoals = goalOptions?.monthlyGoals || [];
+  const monthlyGoalsNoChildren = goalOptions?.monthlyGoals || [];
+  const weeklyGoalsByMonthly = goalOptions?.weeklyGoalsByMonthly || {};
+  const allMonthlyGoals = goalOptions?.allMonthlyGoals || [];
   const linkedGoalValue =
     task.linkedGoalType && task.linkedGoalId ? `${task.linkedGoalType}:${task.linkedGoalId}` : "";
 
@@ -138,7 +140,7 @@ export default function TaskRow({
         </select>
       </td>
       <td style={{ padding: "6px 10px", textAlign: "right", width: 260 }}>
-        {weeklyGoals.length === 0 && monthlyGoals.length === 0 ? (
+        {weeklyGoals.length === 0 && monthlyGoalsNoChildren.length === 0 && allMonthlyGoals.length === 0 ? (
           <span style={{ fontSize: 11, color: "#94a3b8" }}>لا توجد أهداف متاحة للربط</span>
         ) : (
           <select
@@ -154,18 +156,41 @@ export default function TaskRow({
             }}
           >
             <option value="">بدون ربط</option>
+            {/* Monthly goals that have weekly children: render group per monthly goal */}
+            {allMonthlyGoals
+              .filter((m) => (weeklyGoalsByMonthly[m.id] || []).length > 0)
+              .map((monthly) => (
+                <optgroup key={`m-${monthly.id}`} label={monthly.title}>
+                  <option value={`monthly:${monthly.id}`}>{monthly.title} (كـ هدف شهري)</option>
+                  {(weeklyGoalsByMonthly[monthly.id] || []).map((child) => (
+                    <option key={child.id} value={`weekly:${child.id}`}>
+                      {'— ' + child.title}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+
+            {/* Weekly goals not attached to a monthly parent (or general weekly options) */}
             {weeklyGoals.length > 0 && (
               <optgroup label="الأهداف الأسبوعية">
-                {weeklyGoals.map((goal) => (
-                  <option key={goal.id} value={`weekly:${goal.id}`}>
-                    {goal.title}
-                  </option>
-                ))}
+                {weeklyGoals
+                  .filter((g) => {
+                    // exclude weekly goals that were already shown as children
+                    const parentMap = Object.values(weeklyGoalsByMonthly).flatMap((arr) => arr.map((x) => x.id));
+                    return !parentMap.includes(g.id);
+                  })
+                  .map((goal) => (
+                    <option key={goal.id} value={`weekly:${goal.id}`}>
+                      {goal.title}
+                    </option>
+                  ))}
               </optgroup>
             )}
-            {monthlyGoals.length > 0 && (
+
+            {/* Monthly goals without weekly children */}
+            {monthlyGoalsNoChildren.length > 0 && (
               <optgroup label="أهداف شهرية بدون تقسيم أسبوعي">
-                {monthlyGoals.map((goal) => (
+                {monthlyGoalsNoChildren.map((goal) => (
                   <option key={goal.id} value={`monthly:${goal.id}`}>
                     {goal.title}
                   </option>
