@@ -2,9 +2,12 @@ import { useMemo, useState, useEffect } from "react";
 import { createEmptyTask } from "../../domain/schedule/ids";
 import { calculateDurationMin, detectConflicts, sortTasksByStartTime } from "../../domain/schedule/time";
 import TaskRow from "./TaskRow";
+import TemplateSelectionModal from "../TemplateSelectionModal";
 
-export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay, onSaveAsTemplate, onApplyTemplate, createTaskId, isCurrentDay }) {
+export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay, onSaveAsTemplate, onApplyTemplate, createTaskId, isCurrentDay, darkMode }) {
   const [collapsed, setCollapsed] = useState(() => !isCurrentDay);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [availableTemplates, setAvailableTemplates] = useState({});
   
   useEffect(() => {
     setCollapsed(!isCurrentDay);
@@ -198,11 +201,8 @@ export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay,
                 alert("⚠️ لا توجد قوالس محفوظة!");
                 return;
               }
-              const templateNames = Object.keys(templates).join("\n");
-              const templateName = prompt(`اختر قالباً:\n${templateNames}`);
-              if (templateName && templates[templateName]) {
-                onApplyTemplate?.(day.id, templateName);
-              }
+              setAvailableTemplates(templates);
+              setShowTemplateModal(true);
             }}
             title="تطبيق قالب"
             style={{
@@ -382,6 +382,16 @@ export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay,
           </div>
         </div>
       )}
+      <TemplateSelectionModal
+        isOpen={showTemplateModal}
+        templates={availableTemplates}
+        onClose={() => setShowTemplateModal(false)}
+        onConfirm={(templateName) => {
+          setShowTemplateModal(false);
+          onApplyTemplate?.(day.id, templateName);
+        }}
+        darkMode={darkMode}
+      />
     </div>
   );
 }

@@ -316,6 +316,7 @@ export default function PlannerPage() {
                 onApplyTemplate={planner.applyTemplate}
                 createTaskId={planner.createTaskId}
                 isCurrentDay={day.التاريخ === todayDate}
+                darkMode={planner.darkMode}
               />
             ))}
           </div>
