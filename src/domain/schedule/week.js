@@ -65,8 +65,9 @@ export function getWeekDates(weekNumber = null, year = getCurrentYear()) {
 export function getWeekNumberFromDate(dateInput, year = getCurrentYear()) {
   const startDate = getWeekStartDate(dateInput);
   const firstWeekStart = getFirstWeekStart(year);
-  const diffTime = startDate - firstWeekStart;
-  return Math.floor(diffTime / (7 * 24 * 60 * 60 * 1000)) + 1;
+  // Math.round instead of floor avoids DST clock-shift errors (±1 h ≪ 0.5 day)
+  const diffDays = Math.round((startDate - firstWeekStart) / (24 * 60 * 60 * 1000));
+  return Math.floor(diffDays / 7) + 1;
 }
 
 export function getWeekKey(weekNumber, year = getCurrentYear()) {
