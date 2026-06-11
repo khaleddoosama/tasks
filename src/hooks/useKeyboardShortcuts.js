@@ -22,7 +22,7 @@ export function useKeyboardShortcuts({ undo, redo, lastSaved }) {
 
       if (event.key === "s") {
         event.preventDefault();
-        alert(`✅ Schedule auto-saved at ${lastSaved.toLocaleTimeString()}`);
+        // save indicator in UI already shows the last saved time
       }
     };
 

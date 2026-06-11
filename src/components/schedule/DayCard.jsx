@@ -5,10 +5,12 @@ import { calculateDurationMin, detectConflicts, getNextStartTime, sortTasksBySta
 import TaskRow from "./TaskRow";
 import TemplateSelectionModal from "../TemplateSelectionModal";
 
-export default function DayCard({ day, colors, goalOptions, taskSuggestions, onChange, onCopyDay, onSaveAsTemplate, onApplyTemplate, createTaskId, isCurrentDay, darkMode }) {
+export default function DayCard({ day, colors, goalOptions, taskSuggestions, onChange, onCopyDay, onSaveAsTemplate, onApplyTemplate, createTaskId, isCurrentDay, darkMode, onToast }) {
   const [collapsed, setCollapsed] = useState(() => !isCurrentDay);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [availableTemplates, setAvailableTemplates] = useState({});
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateNameInput, setTemplateNameInput] = useState("");
   
   useEffect(() => {
     setCollapsed(!isCurrentDay);
@@ -175,16 +177,13 @@ export default function DayCard({ day, colors, goalOptions, taskSuggestions, onC
           <button
             onClick={(event) => {
               event.stopPropagation();
-              const templateName = prompt("اسم القالب:");
-              if (templateName) {
-                onSaveAsTemplate?.(day.id, templateName);
-                alert("✅ تم حفظ القالب بنجاح!");
-              }
+              setSavingTemplate((v) => !v);
+              setTemplateNameInput("");
             }}
             title="حفظ كقالب"
             style={{
               border: "none",
-              background: "rgba(255,255,255,0.2)",
+              background: savingTemplate ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.2)",
               color: headerColor.text,
               borderRadius: 4,
               padding: "2px 8px",
@@ -199,7 +198,7 @@ export default function DayCard({ day, colors, goalOptions, taskSuggestions, onC
               event.stopPropagation();
               const templates = readTemplates();
               if (Object.keys(templates).length === 0) {
-                alert("⚠️ لا توجد قوالب محفوظة!");
+                onToast?.("⚠️ لا توجد قوالب محفوظة!", "warn");
                 return;
               }
               setAvailableTemplates(templates);
@@ -229,6 +228,48 @@ export default function DayCard({ day, colors, goalOptions, taskSuggestions, onC
           </span>
         </div>
       </div>
+      {savingTemplate && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{ padding: "8px 16px", background: "rgba(255,255,255,0.15)", display: "flex", gap: 8, alignItems: "center" }}
+        >
+          <input
+            autoFocus
+            type="text"
+            value={templateNameInput}
+            onChange={(e) => setTemplateNameInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && templateNameInput.trim()) {
+                onSaveAsTemplate?.(day.id, templateNameInput.trim());
+                onToast?.("✅ تم حفظ القالب بنجاح!");
+                setSavingTemplate(false);
+                setTemplateNameInput("");
+              }
+              if (e.key === "Escape") { setSavingTemplate(false); setTemplateNameInput(""); }
+            }}
+            placeholder="اسم القالب..."
+            style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "none", fontFamily: "inherit", fontSize: 13 }}
+          />
+          <button
+            onClick={() => {
+              if (!templateNameInput.trim()) return;
+              onSaveAsTemplate?.(day.id, templateNameInput.trim());
+              onToast?.("✅ تم حفظ القالب بنجاح!");
+              setSavingTemplate(false);
+              setTemplateNameInput("");
+            }}
+            style={{ background: "#22c55e", color: "#fff", border: "none", borderRadius: 6, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 13 }}
+          >
+            حفظ
+          </button>
+          <button
+            onClick={() => { setSavingTemplate(false); setTemplateNameInput(""); }}
+            style={{ background: "rgba(255,255,255,0.2)", color: headerColor.text, border: "none", borderRadius: 6, padding: "6px 10px", cursor: "pointer", fontSize: 13 }}
+          >
+            إلغاء
+          </button>
+        </div>
+      )}
       {!collapsed && day.enabled && (
         <div style={{ padding: "0 0 12px 0" }}>
           <div style={{ padding: "8px 16px" }}>

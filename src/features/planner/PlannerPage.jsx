@@ -9,7 +9,7 @@ import JSONEditorTab from "../../components/tabs/JSONEditorTab";
 import GeneralNotesTab from "../../components/tabs/GeneralNotesTab";
 import StatsTab from "../../components/tabs/StatsTab";
 import TemplateManager from "../../components/TemplateManager";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePlannerState } from "./usePlannerState";
 import { getTodayDate } from "../../domain/schedule/week";
 
@@ -19,12 +19,49 @@ function getDefaultFromDate() {
   return d.toISOString().slice(0, 10);
 }
 
+function Toast({ toasts }) {
+  if (!toasts.length) return null;
+  return (
+    <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 9999, display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          style={{
+            background: t.type === "error" ? "#ef4444" : t.type === "warn" ? "#f59e0b" : "#22c55e",
+            color: "#fff",
+            padding: "10px 20px",
+            borderRadius: 10,
+            fontSize: 14,
+            fontWeight: 700,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+            direction: "rtl",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {t.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function useToast() {
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = useCallback((message, type = "success") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
+  }, []);
+
+  return { toasts, showToast };
+}
+
 const TAB_LABELS = {
   editor: "✏️ محرّر",
   notes: "📝 ملاحظات",
   json: "📝 JSON",
   goals: "🎯 الأهداف",
-  stats: "📊 إحصائيات",
   colors: "🎨 الألوان",
   preview: "👁️ معاينة",
 };
@@ -35,35 +72,36 @@ export default function PlannerPage() {
   const headerColor = colors.header;
   const { darkMode } = ui;
   const todayDate = getTodayDate();
+  const { toasts, showToast } = useToast();
 
   const [archiveFrom, setArchiveFrom] = useState(getDefaultFromDate);
   const [archiveTo, setArchiveTo] = useState(todayDate);
+  const [showArchive, setShowArchive] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   const handleArchiveExport = () => {
     if (!archiveFrom || !archiveTo) {
-      alert("❌ اختر تاريخ البداية والنهاية أولاً");
+      showToast("❌ اختر تاريخ البداية والنهاية أولاً", "error");
       return;
     }
     if (archiveFrom > archiveTo) {
-      alert("❌ تاريخ البداية يجب أن يكون قبل تاريخ النهاية");
+      showToast("❌ تاريخ البداية يجب أن يكون قبل تاريخ النهاية", "error");
       return;
     }
     const result = persistence.exportArchive(archiveFrom, archiveTo);
     if (result?.totalDays === 0) {
-      alert("⚠️ لا توجد أيام محفوظة في هذا النطاق الزمني");
+      showToast("⚠️ لا توجد أيام محفوظة في هذا النطاق الزمني", "warn");
     }
   };
 
   const handleImportChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     try {
       await persistence.importSchedule(file);
-      alert("✅ تم استيراد البيانات بنجاح!");
+      showToast("✅ تم استيراد البيانات بنجاح!");
     } catch (error) {
-      alert(`❌ خطأ في قراءة الملف: ${error.message}`);
+      showToast(`❌ خطأ في قراءة الملف: ${error.message}`, "error");
     } finally {
       event.target.value = "";
     }
@@ -81,6 +119,8 @@ export default function PlannerPage() {
         transition: "background 0.3s, color 0.3s",
       }}
     >
+      <Toast toasts={toasts} />
+
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -114,11 +154,7 @@ export default function PlannerPage() {
 
         <h1 style={{ textAlign: "center", fontSize: 32, fontWeight: 900, marginBottom: 24, color: headerColor.bg }}>جدول الأسبوع 📆</h1>
 
-        <GeneralNotesReadonly
-          notes={notes.activeGeneralNotes}
-          colors={colors}
-          darkMode={darkMode}
-        />
+        <GeneralNotesReadonly notes={notes.activeGeneralNotes} colors={colors} darkMode={darkMode} />
 
         <div
           style={{
@@ -142,9 +178,7 @@ export default function PlannerPage() {
               value={week.selectedWeek}
               onChange={(event) => {
                 const nextValue = parseInt(event.target.value, 10);
-                if (nextValue >= 1 && nextValue <= 52) {
-                  week.setSelectedWeek(nextValue);
-                }
+                if (nextValue >= 1 && nextValue <= 52) week.setSelectedWeek(nextValue);
               }}
               min="1"
               max="52"
@@ -159,9 +193,7 @@ export default function PlannerPage() {
               style={{ padding: "6px 8px", border: `1px solid ${headerColor.bg}`, borderRadius: 4, fontSize: 13, background: darkMode ? "#1a1a2e" : "#fff", color: darkMode ? "#f0f0f0" : "#1a1a2e", cursor: "pointer" }}
             >
               {Array.from({ length: 52 }, (_, index) => index + 1).map((weekNumber) => (
-                <option key={weekNumber} value={weekNumber}>
-                  الأسبوع {weekNumber}
-                </option>
+                <option key={weekNumber} value={weekNumber}>الأسبوع {weekNumber}</option>
               ))}
             </select>
             <span style={{ fontSize: 12, color: "#999", marginLeft: 12, whiteSpace: "nowrap" }}>{week.weekRangeLabel}</span>
@@ -172,33 +204,13 @@ export default function PlannerPage() {
           <button
             onClick={tasks.copyPreviousWeek}
             disabled={week.selectedWeek === 1}
-            style={{
-              background: "#e8f5e9",
-              color: "#388e3c",
-              border: "1px solid #c8e6c9",
-              borderRadius: 6,
-              padding: "8px 12px",
-              cursor: week.selectedWeek === 1 ? "not-allowed" : "pointer",
-              fontSize: 13,
-              fontWeight: 600,
-              opacity: week.selectedWeek === 1 ? 0.5 : 1,
-            }}
+            style={{ background: "#e8f5e9", color: "#388e3c", border: "1px solid #c8e6c9", borderRadius: 6, padding: "8px 12px", cursor: week.selectedWeek === 1 ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, opacity: week.selectedWeek === 1 ? 0.5 : 1 }}
           >
             📋 نسخ من الأسبوع السابق
           </button>
-
           <button
             onClick={() => setShowTemplateModal(true)}
-            style={{
-              background: "#f4efff",
-              color: "#5f3bb3",
-              border: "1px solid #e9d9f5",
-              borderRadius: 6,
-              padding: "8px 12px",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 600,
-            }}
+            style={{ background: "#f4efff", color: "#5f3bb3", border: "1px solid #e9d9f5", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
           >
             ⚙️ إدارة قوالب الأيام
           </button>
@@ -235,76 +247,40 @@ export default function PlannerPage() {
               <input type="file" accept=".json" onChange={handleImportChange} style={{ display: "none" }} />
             </label>
             <button onClick={() => window.print()} title="Ctrl+P" style={{ background: "#27ae60", color: "#fff", border: "none", borderRadius: 6, padding: "8px 20px", cursor: "pointer", fontSize: 14, fontWeight: 600 }}>🖨️ طباعة</button>
+            <button
+              onClick={() => setShowArchive((v) => !v)}
+              title="تصدير الأرشيف"
+              style={{ background: showArchive ? "#b8860b" : "#fdf6e3", color: showArchive ? "#fff" : "#8a6a00", border: "1px solid #e6d58a", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
+            >
+              📦
+            </button>
           </div>
         </div>
 
-        {/* Archive export bar */}
-        <div
-          style={{
-            background: darkMode ? "#1e1e35" : "#fdf6e3",
-            border: `1px solid ${darkMode ? "#3a3a5e" : "#e6d58a"}`,
-            borderRadius: 8,
-            padding: "10px 16px",
-            marginBottom: 20,
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-            flexWrap: "wrap",
-          }}
-        >
-          <span style={{ fontSize: 13, fontWeight: 700, color: darkMode ? "#e0c97f" : "#8a6a00", whiteSpace: "nowrap" }}>
-            📦 تصدير الأرشيف
-          </span>
-          <span style={{ fontSize: 12, color: darkMode ? "#aaa" : "#999", whiteSpace: "nowrap" }}>من</span>
-          <input
-            type="date"
-            value={archiveFrom}
-            onChange={(e) => setArchiveFrom(e.target.value)}
+        {/* Archive bar — collapsible */}
+        {showArchive && (
+          <div
             style={{
-              padding: "5px 8px",
-              border: `1px solid ${darkMode ? "#555" : "#ccc"}`,
-              borderRadius: 6,
-              fontSize: 13,
-              background: darkMode ? "#2a2a3e" : "#fff",
-              color: darkMode ? "#f0f0f0" : "#1a1a2e",
-              cursor: "pointer",
-            }}
-          />
-          <span style={{ fontSize: 12, color: darkMode ? "#aaa" : "#999", whiteSpace: "nowrap" }}>إلى</span>
-          <input
-            type="date"
-            value={archiveTo}
-            onChange={(e) => setArchiveTo(e.target.value)}
-            style={{
-              padding: "5px 8px",
-              border: `1px solid ${darkMode ? "#555" : "#ccc"}`,
-              borderRadius: 6,
-              fontSize: 13,
-              background: darkMode ? "#2a2a3e" : "#fff",
-              color: darkMode ? "#f0f0f0" : "#1a1a2e",
-              cursor: "pointer",
-            }}
-          />
-          <button
-            onClick={handleArchiveExport}
-            style={{
-              background: "#b8860b",
-              color: "#fff",
-              border: "none",
-              borderRadius: 6,
-              padding: "6px 16px",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 700,
-              whiteSpace: "nowrap",
+              background: darkMode ? "#1e1e35" : "#fdf6e3",
+              border: `1px solid ${darkMode ? "#3a3a5e" : "#e6d58a"}`,
+              borderRadius: 8,
+              padding: "10px 16px",
+              marginBottom: 20,
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              flexWrap: "wrap",
             }}
           >
-            ⬇️ تصدير
-          </button>
-          <span style={{ fontSize: 11, color: darkMode ? "#888" : "#aaa" }}>
-            JSON بدون IDs — مناسب للأرشيف والـ AI
-          </span>
-        </div>
+            <span style={{ fontSize: 13, fontWeight: 700, color: darkMode ? "#e0c97f" : "#8a6a00", whiteSpace: "nowrap" }}>📦 تصدير الأرشيف</span>
+            <span style={{ fontSize: 12, color: darkMode ? "#aaa" : "#999", whiteSpace: "nowrap" }}>من</span>
+            <input type="date" value={archiveFrom} onChange={(e) => setArchiveFrom(e.target.value)} style={{ padding: "5px 8px", border: `1px solid ${darkMode ? "#555" : "#ccc"}`, borderRadius: 6, fontSize: 13, background: darkMode ? "#2a2a3e" : "#fff", color: darkMode ? "#f0f0f0" : "#1a1a2e", cursor: "pointer" }} />
+            <span style={{ fontSize: 12, color: darkMode ? "#aaa" : "#999", whiteSpace: "nowrap" }}>إلى</span>
+            <input type="date" value={archiveTo} onChange={(e) => setArchiveTo(e.target.value)} style={{ padding: "5px 8px", border: `1px solid ${darkMode ? "#555" : "#ccc"}`, borderRadius: 6, fontSize: 13, background: darkMode ? "#2a2a3e" : "#fff", color: darkMode ? "#f0f0f0" : "#1a1a2e", cursor: "pointer" }} />
+            <button onClick={handleArchiveExport} style={{ background: "#b8860b", color: "#fff", border: "none", borderRadius: 6, padding: "6px 16px", cursor: "pointer", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }}>⬇️ تصدير</button>
+            <span style={{ fontSize: 11, color: darkMode ? "#888" : "#aaa" }}>JSON بدون IDs — مناسب للأرشيف والـ AI</span>
+          </div>
+        )}
 
         {ui.tab === "editor" && (
           <div style={{ marginBottom: 24 }}>
@@ -327,6 +303,7 @@ export default function PlannerPage() {
                 createTaskId={tasks.createTaskId}
                 isCurrentDay={day.التاريخ === todayDate}
                 darkMode={darkMode}
+                onToast={showToast}
               />
             ))}
           </div>
@@ -354,24 +331,25 @@ export default function PlannerPage() {
         )}
 
         {ui.tab === "goals" && (
-          <GoalsTab
-            colors={colors}
-            monthLabel={week.monthLabel}
-            weekRangeLabel={week.weekRangeLabel}
-            currentMonthGoals={goals.currentMonthGoals}
-            currentWeekGoals={goals.currentWeekGoals}
-            monthlySummary={goals.monthlySummary}
-            onAddMonthlyGoal={goals.addMonthlyGoal}
-            onUpdateMonthlyGoalTitle={goals.updateMonthlyGoalTitle}
-            onAddWeeklyGoal={goals.addWeeklyGoal}
-            onUpdateWeeklyGoalTitle={goals.updateWeeklyGoalTitle}
-            onDeleteMonthlyGoal={goals.deleteMonthlyGoal}
-            onDeleteWeeklyGoal={goals.deleteWeeklyGoal}
-          />
-        )}
-
-        {ui.tab === "stats" && (
-          <StatsTab colors={colors} days={tasks.days} weekRangeLabel={week.weekRangeLabel} />
+          <>
+            <GoalsTab
+              colors={colors}
+              monthLabel={week.monthLabel}
+              weekRangeLabel={week.weekRangeLabel}
+              currentMonthGoals={goals.currentMonthGoals}
+              currentWeekGoals={goals.currentWeekGoals}
+              monthlySummary={goals.monthlySummary}
+              onAddMonthlyGoal={goals.addMonthlyGoal}
+              onUpdateMonthlyGoalTitle={goals.updateMonthlyGoalTitle}
+              onAddWeeklyGoal={goals.addWeeklyGoal}
+              onUpdateWeeklyGoalTitle={goals.updateWeeklyGoalTitle}
+              onDeleteMonthlyGoal={goals.deleteMonthlyGoal}
+              onDeleteWeeklyGoal={goals.deleteWeeklyGoal}
+            />
+            <div style={{ marginTop: 16 }}>
+              <StatsTab colors={colors} days={tasks.days} weekRangeLabel={week.weekRangeLabel} />
+            </div>
+          </>
         )}
 
         {ui.tab === "colors" && <ColorsTab colors={colors} onColorChange={theme.changeColor} />}
@@ -406,6 +384,7 @@ export default function PlannerPage() {
           darkMode={darkMode}
           templates={tasks.templates}
           onDeleteTemplate={tasks.deleteTemplate}
+          onToast={showToast}
         />
       </div>
     </div>

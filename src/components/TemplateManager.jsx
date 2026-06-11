@@ -1,10 +1,10 @@
-export default function TemplateManager({ isOpen, onClose, darkMode, templates = {}, onDeleteTemplate }) {
+export default function TemplateManager({ isOpen, onClose, darkMode, templates = {}, onDeleteTemplate, onToast }) {
   const handleDeleteTemplate = (templateName) => {
     const confirmed = window.confirm(`هل تريد حذف القالب "${templateName}"؟`);
     if (!confirmed) return;
 
     onDeleteTemplate?.(templateName);
-    alert("✅ تم حذف القالب بنجاح!");
+    onToast?.("✅ تم حذف القالب بنجاح!");
   };
 
   if (!isOpen) return null;
