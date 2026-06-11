@@ -1,10 +1,10 @@
 import { useMemo, useState, useEffect } from "react";
 import { createEmptyTask } from "../../domain/schedule/ids";
 import { readTemplates } from "../../services/dayTemplates";
-import { calculateDurationMin, detectConflicts, sortTasksByStartTime } from "../../domain/schedule/time";
+import { calculateDurationMin, detectConflicts, getNextStartTime, sortTasksByStartTime } from "../../domain/schedule/time";
 import TaskRow from "./TaskRow";
 
-export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay, onSaveAsTemplate, onApplyTemplate, createTaskId, isCurrentDay }) {
+export default function DayCard({ day, colors, goalOptions, taskSuggestions, onChange, onCopyDay, onSaveAsTemplate, onApplyTemplate, createTaskId, isCurrentDay }) {
   const [collapsed, setCollapsed] = useState(() => !isCurrentDay);
   
   useEffect(() => {
@@ -334,6 +334,7 @@ export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay,
                     colors={colors}
                     conflict={conflicts.has(task.id)}
                     goalOptions={goalOptions}
+                    taskSuggestions={taskSuggestions}
                     onUpdate={(patch) => updateTask(task.id, patch)}
                     onDelete={() => deleteTask(task.id)}
                     onMoveUp={() => moveTask(task.id, -1)}
@@ -366,7 +367,12 @@ export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay,
               ترتيب
             </button>
             <button
-              onClick={() => updateTasks((tasks) => [...tasks, createEmptyTask(createTaskId())])}
+              onClick={() =>
+                updateTasks((tasks) => [
+                  ...tasks,
+                  { ...createEmptyTask(createTaskId()), time: getNextStartTime(tasks) },
+                ])
+              }
               style={{
                 background: headerColor.bg,
                 color: headerColor.text,

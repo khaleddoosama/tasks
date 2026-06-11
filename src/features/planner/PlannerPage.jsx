@@ -306,12 +306,18 @@ export default function PlannerPage() {
 
         {ui.tab === "editor" && (
           <div style={{ marginBottom: 24 }}>
+            <datalist id="task-suggestions">
+              {tasks.taskSuggestions.list.map((item) => (
+                <option key={item.task} value={item.task} />
+              ))}
+            </datalist>
             {tasks.days.map((day) => (
               <DayCard
                 key={day.id}
                 day={day}
                 colors={colors}
                 goalOptions={tasks.goalOptions}
+                taskSuggestions={tasks.taskSuggestions}
                 onChange={(patch) => tasks.updateDay(day.id, patch)}
                 onCopyDay={tasks.copyDay}
                 onSaveAsTemplate={tasks.saveAsTemplate}

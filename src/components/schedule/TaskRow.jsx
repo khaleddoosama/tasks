@@ -9,6 +9,7 @@ export default function TaskRow({
   colors,
   conflict,
   goalOptions,
+  taskSuggestions,
   onUpdate,
   onDelete,
   onMoveUp,
@@ -27,6 +28,17 @@ export default function TaskRow({
   const { start, end } = splitTimeRange(task.time);
   const linkedGoalValue =
     task.linkedGoalType && task.linkedGoalId ? `${task.linkedGoalType}:${task.linkedGoalId}` : "";
+
+  const updateTaskName = (value) => {
+    const patch = { task: value };
+    // Auto-fill the category from past usage of this exact task name, but only
+    // when no category is set yet — never override a manual choice.
+    const suggestedCat = taskSuggestions?.catByName?.[value.trim()];
+    if (suggestedCat && !task.cat) {
+      patch.cat = suggestedCat;
+    }
+    onUpdate(patch);
+  };
 
   const updateTime = (nextStart, nextEnd) => {
     const startValue = nextStart ?? start;
@@ -85,7 +97,8 @@ export default function TaskRow({
         )}
         <input
           value={task.task}
-          onChange={(event) => onUpdate({ task: event.target.value })}
+          onChange={(event) => updateTaskName(event.target.value)}
+          list="task-suggestions"
           style={{
             border: "none",
             background: "transparent",

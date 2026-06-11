@@ -111,3 +111,21 @@ export function buildTimeRange(start, end) {
   if (start && end) return `${start} - ${end}`;
   return start || "";
 }
+
+/**
+ * Find the time a newly added task should start at: the end of the most recent
+ * task that has a usable time. Scans from the bottom of the list (where a new
+ * row is appended) so contiguous days don't require retyping the start time.
+ * Falls back to a task's start when it has no end (single-time marker), and to
+ * "" when nothing usable is found.
+ * @param {Array} tasks
+ * @returns {string} "HH:MM" or ""
+ */
+export function getNextStartTime(tasks) {
+  for (let index = tasks.length - 1; index >= 0; index -= 1) {
+    const { start, end } = splitTimeRange(tasks[index].time);
+    const candidate = end || start;
+    if (candidate && parseTimeToMin(candidate) !== null) return candidate;
+  }
+  return "";
+}

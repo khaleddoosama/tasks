@@ -29,6 +29,7 @@ import {
   normalizeWeeklyGoalsStore,
 } from "../../domain/schedule/goals";
 import { cloneTasksWithNewIds, getNextTaskIdSeed } from "../../domain/schedule/ids";
+import { buildTaskSuggestions } from "../../domain/schedule/suggestions";
 import { createInitialDays } from "../../domain/schedule/seedData";
 import {
   formatDateDisplay,
@@ -302,6 +303,11 @@ export function usePlannerState() {
     [normalizedWeeklyGoals],
   );
 
+  const taskSuggestions = useMemo(
+    () => buildTaskSuggestions(effectiveWeekSchedules),
+    [effectiveWeekSchedules],
+  );
+
   const enhancedTaskGoalOptions = useMemo(() => ({
     ...taskGoalOptions,
     weeklyGoalsByMonthly,
@@ -524,6 +530,7 @@ export function usePlannerState() {
       applyTemplate,
       createTaskId,
       goalOptions: enhancedTaskGoalOptions,
+      taskSuggestions,
     },
 
     // Goal data and CRUD.
