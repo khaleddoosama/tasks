@@ -54,3 +54,26 @@ export function saveTemplate(name, template) {
 export function getTemplate(name) {
   return readTemplates()[name];
 }
+
+/**
+ * Merge two template maps by name for Gist sync. The union of both sides is
+ * kept; on a name collision the template with the newer `updatedAt` wins (ties
+ * and missing timestamps keep the local copy). This lets templates created on
+ * different devices coexist instead of one side clobbering the other on pull.
+ * @param {Object<string, Object>} local
+ * @param {Object<string, Object>} remote
+ * @returns {Object<string, Object>}
+ */
+export function mergeTemplates(local = {}, remote = {}) {
+  const merged = { ...local };
+  const timestamp = (template) => Date.parse(template?.updatedAt) || 0;
+
+  for (const [name, remoteTemplate] of Object.entries(remote)) {
+    const localTemplate = merged[name];
+    if (!localTemplate || timestamp(remoteTemplate) > timestamp(localTemplate)) {
+      merged[name] = remoteTemplate;
+    }
+  }
+
+  return merged;
+}

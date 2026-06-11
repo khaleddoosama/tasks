@@ -1,23 +1,9 @@
-import { useState, useEffect } from "react";
-import { readTemplates, writeTemplates } from "../services/dayTemplates";
-
-export default function TemplateManager({ isOpen, onClose, darkMode }) {
-  const [templates, setTemplates] = useState({});
-
-  useEffect(() => {
-    if (isOpen) {
-      setTemplates(readTemplates());
-    }
-  }, [isOpen]);
-
+export default function TemplateManager({ isOpen, onClose, darkMode, templates = {}, onDeleteTemplate }) {
   const handleDeleteTemplate = (templateName) => {
     const confirmed = window.confirm(`هل تريد حذف القالب "${templateName}"؟`);
     if (!confirmed) return;
 
-    const updatedTemplates = { ...templates };
-    delete updatedTemplates[templateName];
-    setTemplates(updatedTemplates);
-    writeTemplates(updatedTemplates);
+    onDeleteTemplate?.(templateName);
     alert("✅ تم حذف القالب بنجاح!");
   };
 

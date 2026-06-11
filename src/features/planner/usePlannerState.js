@@ -49,6 +49,7 @@ import { useSchedulePersistence } from "../../hooks/useSchedulePersistence";
 import { useUndoRedo } from "../../hooks/useUndoRedo";
 import { exportScheduleBackup, importScheduleFromFile } from "../../services/scheduleTransfer";
 import { exportArchiveRange } from "../../services/archiveExport";
+import { mergeTemplates, readTemplates, writeTemplates } from "../../services/dayTemplates";
 
 function getSaveIndicator(saveStatus, lastSaved) {
   if (saveStatus === "saving") return "💾 جاري الحفظ...";
@@ -117,6 +118,7 @@ export function usePlannerState() {
   const [monthlyGoalsStore, setMonthlyGoalsStore] = useLocalStorageState(MONTHLY_GOALS_KEY, {});
   const [weeklyGoalsStore, setWeeklyGoalsStore] = useLocalStorageState(WEEKLY_GOALS_KEY, {});
   const [generalNotes, setGeneralNotes] = useLocalStorageState(GENERAL_NOTES_KEY, []);
+  const [templates, setTemplatesState] = useState(() => readTemplates());
   const [weekSchedules, setWeekSchedulesState] = useState({});
   const weekSchedulesRef = useRef({});
   const nextTaskIdRef = useRef(getNextTaskIdSeed(days));
@@ -127,6 +129,16 @@ export function usePlannerState() {
       const nextState = typeof updater === "function" ? updater(currentState) : updater;
       weekSchedulesRef.current = nextState;
       return nextState;
+    });
+  }, []);
+
+  // Templates are mirrored into localStorage (the offline source of truth) and
+  // into React state so they flow through gistPayload and auto-push on change.
+  const persistTemplates = useCallback((updater) => {
+    setTemplatesState((currentTemplates) => {
+      const nextTemplates = typeof updater === "function" ? updater(currentTemplates) : updater;
+      writeTemplates(nextTemplates);
+      return nextTemplates;
     });
   }, []);
 
@@ -152,8 +164,9 @@ export function usePlannerState() {
       selectedWeek,
       monthlyGoals: monthlyGoalsStore,
       weeklyGoals: weeklyGoalsStore,
+      templates,
     }),
-    [colors, effectiveWeekSchedules, monthlyGoalsStore, selectedWeek, weeklyGoalsStore],
+    [colors, effectiveWeekSchedules, monthlyGoalsStore, selectedWeek, weeklyGoalsStore, templates],
   );
 
   useEffect(() => {
@@ -203,9 +216,14 @@ export function usePlannerState() {
       if (data?.weeklyGoals) {
         setWeeklyGoalsStore(data.weeklyGoals);
       }
+
+      if (data?.templates && typeof data.templates === "object" && !Array.isArray(data.templates)) {
+        persistTemplates((currentTemplates) => mergeTemplates(currentTemplates, data.templates));
+      }
     },
     [
       currentYear,
+      persistTemplates,
       replace,
       selectedWeek,
       setMonthlyGoalsStore,
@@ -342,7 +360,7 @@ export function usePlannerState() {
   );
 
   // Task management: delegated to useTaskManagement hook
-  const { updateDay, copyDay, copyPreviousWeek, saveAsTemplate, applyTemplate } = useTaskManagement({
+  const { updateDay, copyDay, copyPreviousWeek } = useTaskManagement({
     days,
     setDays,
     weekSchedulesRef,
@@ -362,6 +380,59 @@ export function usePlannerState() {
     createInitialDays,
     normalizeDaysCategories,
   });
+
+  // Day-template management (synced via gistPayload.templates). Lives here rather
+  // than in useTaskManagement so writes flow through the templates state.
+  const saveAsTemplate = useCallback(
+    (dayId, templateName) => {
+      const day = days.find((d) => d.id === dayId);
+      if (!day || !templateName.trim()) return;
+
+      const template = {
+        name: templateName,
+        type: day.type,
+        notes: day.notes,
+        tasks: day.tasks.map((task) => ({ ...task })),
+        مستوى_الطاقة: day.مستوى_الطاقة,
+        تقييم_اليوم: day.تقييم_اليوم,
+        عدد_ساعات_النوم: day.عدد_ساعات_النوم,
+        عدد_ساعات_الهاتف: day.عدد_ساعات_الهاتف,
+        updatedAt: new Date().toISOString(),
+      };
+
+      persistTemplates((currentTemplates) => ({ ...currentTemplates, [templateName]: template }));
+    },
+    [days, persistTemplates],
+  );
+
+  const applyTemplate = useCallback(
+    (dayId, templateName) => {
+      const template = templates[templateName];
+      if (!template) return;
+
+      updateDay(dayId, {
+        type: template.type,
+        notes: template.notes,
+        tasks: cloneTasksWithNewIds(template.tasks, createTaskId),
+        مستوى_الطاقة: template.مستوى_الطاقة,
+        تقييم_اليوم: template.تقييم_اليوم,
+        عدد_ساعات_النوم: template.عدد_ساعات_النوم,
+        عدد_ساعات_الهاتف: template.عدد_ساعات_الهاتف,
+      });
+    },
+    [templates, updateDay, createTaskId],
+  );
+
+  const deleteTemplate = useCallback(
+    (templateName) => {
+      persistTemplates((currentTemplates) => {
+        const nextTemplates = { ...currentTemplates };
+        delete nextTemplates[templateName];
+        return nextTemplates;
+      });
+    },
+    [persistTemplates],
+  );
 
   // Goal management: delegated to useGoalManagement hook
   const { addMonthlyGoal, updateMonthlyGoalTitle, deleteMonthlyGoal, addWeeklyGoal, updateWeeklyGoalTitle, deleteWeeklyGoal } = useGoalManagement({
@@ -527,6 +598,8 @@ export function usePlannerState() {
       copyPreviousWeek,
       saveAsTemplate,
       applyTemplate,
+      deleteTemplate,
+      templates,
       createTaskId,
       goalOptions: enhancedTaskGoalOptions,
       taskSuggestions,

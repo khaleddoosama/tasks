@@ -324,7 +324,7 @@ export default function PlannerPage() {
                 onApplyTemplate={tasks.applyTemplate}
                 createTaskId={tasks.createTaskId}
                 isCurrentDay={day.التاريخ === todayDate}
-                darkMode={planner.darkMode}
+                darkMode={darkMode}
               />
             ))}
           </div>
@@ -397,6 +397,8 @@ export default function PlannerPage() {
           isOpen={showTemplateModal}
           onClose={() => setShowTemplateModal(false)}
           darkMode={darkMode}
+          templates={tasks.templates}
+          onDeleteTemplate={tasks.deleteTemplate}
         />
       </div>
     </div>

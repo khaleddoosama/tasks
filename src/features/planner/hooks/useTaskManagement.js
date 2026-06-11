@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { getTemplate, saveTemplate } from "../../../services/dayTemplates";
 
 /**
  * Hook for managing task operations within the planner
@@ -8,8 +7,9 @@ import { getTemplate, saveTemplate } from "../../../services/dayTemplates";
  * - CRUD operations on individual days/tasks (updateDay)
  * - Copying tasks between days (copyDay)
  * - Copying entire weeks with goal cloning (copyPreviousWeek)
- * - Saving/loading day templates from localStorage (saveAsTemplate, applyTemplate)
- * - Generating unique task IDs (createTaskId)
+ *
+ * Day-template save/apply lives in usePlannerState so template writes flow
+ * through the synced templates state.
  *
  * @param {Object} params - Hook parameters
  * @param {Array} params.days - Current week's days array
@@ -35,8 +35,6 @@ import { getTemplate, saveTemplate } from "../../../services/dayTemplates";
  * @returns {Function} returns.updateDay - Update specific day properties
  * @returns {Function} returns.copyDay - Clone tasks within a day
  * @returns {Function} returns.copyPreviousWeek - Copy entire previous week
- * @returns {Function} returns.saveAsTemplate - Save day to localStorage template
- * @returns {Function} returns.applyTemplate - Apply template to a day
  */
 export function useTaskManagement({
   // Current state
@@ -150,60 +148,9 @@ export function useTaskManagement({
     getWeekKey,
   ]);
 
-  /**
-   * Save current day as a reusable template in localStorage
-   * @param {number} dayId - Day ID to save
-   * @param {string} templateName - Template name (user-friendly identifier)
-   */
-  const saveAsTemplate = useCallback(
-    (dayId, templateName) => {
-      const day = days.find((d) => d.id === dayId);
-      if (!day || !templateName.trim()) return;
-
-      saveTemplate(templateName, {
-        name: templateName,
-        type: day.type,
-        notes: day.notes,
-        tasks: day.tasks.map((t) => ({ ...t })),
-        مستوى_الطاقة: day.مستوى_الطاقة,
-        تقييم_اليوم: day.تقييم_اليوم,
-        عدد_ساعات_النوم: day.عدد_ساعات_النوم,
-        عدد_ساعات_الهاتف: day.عدد_ساعات_الهاتف,
-      });
-    },
-    [days],
-  );
-
-  /**
-   * Load a saved template and apply it to a specific day
-   * Clones tasks with new IDs, preserves other day properties
-   * @param {number} dayId - Day ID to apply template to
-   * @param {string} templateName - Template name to load
-   */
-  const applyTemplate = useCallback(
-    (dayId, templateName) => {
-      const template = getTemplate(templateName);
-
-      if (!template) return;
-
-      updateDay(dayId, {
-        type: template.type,
-        notes: template.notes,
-        tasks: cloneTasksWithNewIds(template.tasks, createTaskId),
-        مستوى_الطاقة: template.مستوى_الطاقة,
-        تقييم_اليوم: template.تقييم_اليوم,
-        عدد_ساعات_النوم: template.عدد_ساعات_النوم,
-        عدد_ساعات_الهاتف: template.عدد_ساعات_الهاتف,
-      });
-    },
-    [updateDay, createTaskId, cloneTasksWithNewIds],
-  );
-
   return {
     updateDay,
     copyDay,
     copyPreviousWeek,
-    saveAsTemplate,
-    applyTemplate,
   };
 }
