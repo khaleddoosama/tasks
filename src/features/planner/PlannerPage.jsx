@@ -1,4 +1,4 @@
-import GistSettingsModal from "../../GistSettingsModal";
+import AuthModal from "../../components/AuthModal";
 import SyncStatusIndicator from "../../SyncStatusIndicator";
 import DayCard from "../../components/schedule/DayCard";
 import GeneralNotesReadonly from "../../components/schedule/GeneralNotesReadonly";
@@ -91,7 +91,7 @@ export default function PlannerPage() {
               syncStatus={sync.syncStatus}
               lastSyncTime={sync.lastSyncTime}
               syncError={sync.syncError}
-              onSettingsClick={() => ui.setShowGistSettings(true)}
+              onSettingsClick={() => ui.setShowAuthModal(true)}
             />
           </div>
           <button
@@ -228,7 +228,7 @@ export default function PlannerPage() {
             <button onClick={undoRedo.undo} disabled={!undoRedo.canUndo} title="Ctrl+Z" style={{ background: "#e3f2fd", color: "#1976d2", border: "1px solid #90caf9", borderRadius: 6, padding: "8px 12px", cursor: undoRedo.canUndo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: undoRedo.canUndo ? 1 : 0.5 }}>↶ تراجع</button>
             <button onClick={undoRedo.redo} disabled={!undoRedo.canRedo} title="Ctrl+Y" style={{ background: "#f3e5f5", color: "#7b1fa2", border: "1px solid #ce93d8", borderRadius: 6, padding: "8px 12px", cursor: undoRedo.canRedo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: undoRedo.canRedo ? 1 : 0.5 }}>↷ إعادة</button>
             <button onClick={persistence.resetPlanner} title="Reset planner" style={{ background: "#fff3e0", color: "#ef6c00", border: "1px solid #ffb74d", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>↺ إعادة ضبط</button>
-            <button onClick={() => ui.setShowGistSettings(true)} title="GitHub Gist Sync" style={{ background: sync.hasCredentials() ? "#9b59b6" : "#bdc3c7", color: "#fff", border: "none", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>🔗 GitHub</button>
+            <button onClick={() => ui.setShowAuthModal(true)} title="حساب Supabase" style={{ background: sync.isAuthenticated ? "#6366f1" : "#bdc3c7", color: "#fff", border: "none", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>☁️ {sync.isAuthenticated ? "حساب" : "دخول"}</button>
             <button onClick={persistence.exportSchedule} title="Export as JSON" style={{ background: "#e8f5e9", color: "#388e3c", border: "1px solid #81c784", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>⬇️ تصدير</button>
             <label title="Import JSON" style={{ background: "#fce4ec", color: "#c2185b", border: "1px solid #f48fb1", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600, display: "inline-block" }}>
               ⬆️ استيراد
@@ -389,14 +389,15 @@ export default function PlannerPage() {
           />
         )}
 
-        <GistSettingsModal
-          isOpen={ui.showGistSettings}
-          onClose={() => ui.setShowGistSettings(false)}
+        <AuthModal
+          isOpen={ui.showAuthModal}
+          onClose={() => ui.setShowAuthModal(false)}
+          user={sync.user}
+          onSignOut={sync.signOut}
           syncStatus={sync.syncStatus}
-          lastSyncTime={sync.lastSyncTime}
           syncError={sync.syncError}
-          onCreateGist={sync.createNewGist}
-          onSave={() => undefined}
+          needsMigration={sync.needsMigration}
+          onImportFromLocal={sync.importFromLocal}
         />
 
         <TemplateManager

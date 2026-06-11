@@ -1,10 +1,12 @@
 // Netlify Function — /archive_json?from=YYYY-MM-DD&to=YYYY-MM-DD
-// Fetches schedule data from GitHub Gist and returns a clean denormalized JSON
+// Fetches schedule data from Supabase and returns a clean denormalized JSON
 // suitable for archiving or feeding to an AI model.
 //
 // Required Netlify env vars:
-//   GIST_ID    — the ID of your GitHub Gist
-//   GIST_TOKEN — a GitHub personal access token with gist scope
+//   SUPABASE_URL          — your Supabase project URL
+//   SUPABASE_SERVICE_ROLE_KEY — service role key (bypasses RLS — keep secret)
+
+const { createClient } = require("@supabase/supabase-js");
 
 // ---- Constants (mirrored from src/domain/schedule/constants.js) ----
 
@@ -84,8 +86,8 @@ function resolveTask(task, weeklyGoalTitleMap, monthlyGoalTitleMap) {
 }
 
 function buildArchive({ weekSchedules, monthlyGoalsStore, weeklyGoalsStore, fromDate, toDate }) {
-  const weeklyGoalTitleMap   = buildWeeklyGoalTitleMap(weeklyGoalsStore);
-  const monthlyGoalTitleMap  = buildMonthlyGoalTitleMap(monthlyGoalsStore);
+  const weeklyGoalTitleMap  = buildWeeklyGoalTitleMap(weeklyGoalsStore);
+  const monthlyGoalTitleMap = buildMonthlyGoalTitleMap(monthlyGoalsStore);
 
   const matchingDays = Object.values(weekSchedules)
     .flat()
@@ -99,11 +101,11 @@ function buildArchive({ weekSchedules, monthlyGoalsStore, weeklyGoalsStore, from
     date:    day.التاريخ,
     dayName: day.name || "",
     type:    day.type || "",
-    ...(day.notes              ? { notes:       day.notes }                          : {}),
+    ...(day.notes                         ? { notes:       day.notes }                          : {}),
     ...(ENERGY_LABELS[day.مستوى_الطاقة]  ? { energyLevel: ENERGY_LABELS[day.مستوى_الطاقة] }  : {}),
     ...(RATING_LABELS[day.تقييم_اليوم]   ? { dayRating:   RATING_LABELS[day.تقييم_اليوم] }   : {}),
-    ...(day.عدد_ساعات_النوم   ? { sleepHours:  day.عدد_ساعات_النوم }                : {}),
-    ...(day.عدد_ساعات_الهاتف  ? { phoneHours:  day.عدد_ساعات_الهاتف }               : {}),
+    ...(day.عدد_ساعات_النوم              ? { sleepHours:  day.عدد_ساعات_النوم }               : {}),
+    ...(day.عدد_ساعات_الهاتف             ? { phoneHours:  day.عدد_ساعات_الهاتف }              : {}),
     tasks: (day.tasks || []).map((task) =>
       resolveTask(task, weeklyGoalTitleMap, monthlyGoalTitleMap)
     ),
@@ -141,38 +143,41 @@ exports.handler = async function (event) {
     return json(400, { error: "تاريخ البداية يجب أن يكون قبل تاريخ النهاية" });
   }
 
-  const gistId    = process.env.GIST_ID;
-  const gistToken = process.env.GIST_TOKEN;
+  const supabaseUrl     = process.env.SUPABASE_URL;
+  const serviceRoleKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!gistId || !gistToken) {
-    return json(500, { error: "GIST_ID و GIST_TOKEN غير محددَين في بيئة Netlify" });
+  if (!supabaseUrl || !serviceRoleKey) {
+    return json(500, { error: "SUPABASE_URL و SUPABASE_SERVICE_ROLE_KEY غير محددَين في بيئة Netlify" });
   }
 
-  let appData; 
+  let weekSchedules = {};
+  let monthlyGoalsStore = {};
+  let weeklyGoalsStore  = {};
+
   try {
-    const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-      headers: { Authorization: `token ${gistToken}` },
-    });
-    if (!res.ok) {
-      return json(502, { error: `GitHub Gist error: ${res.status}` });
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    const [weeksResult, userDataResult] = await Promise.all([
+      supabase.from("weeks").select("week_key, data"),
+      supabase.from("user_data").select("monthly_goals, weekly_goals").limit(1).maybeSingle(),
+    ]);
+
+    if (weeksResult.error)    throw weeksResult.error;
+    if (userDataResult.error) throw userDataResult.error;
+
+    for (const row of weeksResult.data || []) {
+      weekSchedules[row.week_key] = row.data;
     }
-    const gist    = await res.json();
-    const content = gist.files["todo-app-data.json"]?.content;
-    if (!content) {
-      return json(404, { error: "الملف todo-app-data.json غير موجود في الـ Gist" });
+
+    if (userDataResult.data) {
+      monthlyGoalsStore = userDataResult.data.monthly_goals || {};
+      weeklyGoalsStore  = userDataResult.data.weekly_goals  || {};
     }
-    appData = JSON.parse(content);
   } catch (err) {
-    return json(502, { error: `فشل جلب البيانات: ${err.message}` });
+    return json(502, { error: `فشل جلب البيانات من Supabase: ${err.message}` });
   }
 
-  const archive = buildArchive({
-    weekSchedules:     appData.weekSchedules  || {},
-    monthlyGoalsStore: appData.monthlyGoals   || {},
-    weeklyGoalsStore:  appData.weeklyGoals    || {},
-    fromDate,
-    toDate,
-  });
+  const archive = buildArchive({ weekSchedules, monthlyGoalsStore, weeklyGoalsStore, fromDate, toDate });
 
   return json(200, archive);
 };

@@ -5,6 +5,10 @@
 [build.environment]
   NODE_VERSION = "20"
 
+# Keep Supabase free-tier project alive — runs every 5 days at noon UTC
+[functions.keep_alive]
+  schedule = "0 12 */5 * *"
+
 # JSON API endpoint — must come before the SPA catch-all
 [[redirects]]
   from = "/archive_json"

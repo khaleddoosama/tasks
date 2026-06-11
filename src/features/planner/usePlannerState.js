@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useGistSync } from "../../useGistSync";
+import { useSupabaseSync } from "../../hooks/useSupabaseSync";
 import { useTaskManagement } from "./hooks/useTaskManagement";
 import { useGoalManagement } from "./hooks/useGoalManagement";
 import { usePersistenceAndColorManagement } from "./hooks/usePersistenceAndColorManagement";
@@ -113,7 +113,7 @@ export function usePlannerState() {
   const [colors, setColors] = useState(DEFAULT_COLORS);
   const [tab, setTab] = useState("editor");
   const [printZoom, setPrintZoom] = useState(100);
-  const [showGistSettings, setShowGistSettings] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [darkMode, setDarkMode] = useLocalStorageState(DARK_MODE_KEY, false);
   const [monthlyGoalsStore, setMonthlyGoalsStore] = useLocalStorageState(MONTHLY_GOALS_KEY, {});
   const [weeklyGoalsStore, setWeeklyGoalsStore] = useLocalStorageState(WEEKLY_GOALS_KEY, {});
@@ -157,7 +157,7 @@ export function usePlannerState() {
     }),
     [colors, effectiveWeekSchedules],
   );
-  const gistPayload = useMemo(
+  const supabasePayload = useMemo(
     () => ({
       weekSchedules: effectiveWeekSchedules,
       colors,
@@ -165,8 +165,10 @@ export function usePlannerState() {
       monthlyGoals: monthlyGoalsStore,
       weeklyGoals: weeklyGoalsStore,
       templates,
+      generalNotes,
+      darkMode,
     }),
-    [colors, effectiveWeekSchedules, monthlyGoalsStore, selectedWeek, weeklyGoalsStore, templates],
+    [colors, effectiveWeekSchedules, monthlyGoalsStore, selectedWeek, weeklyGoalsStore, templates, generalNotes, darkMode],
   );
 
   useEffect(() => {
@@ -220,6 +222,14 @@ export function usePlannerState() {
       if (data?.templates && typeof data.templates === "object" && !Array.isArray(data.templates)) {
         persistTemplates((currentTemplates) => mergeTemplates(currentTemplates, data.templates));
       }
+
+      if (data?.generalNotes && Array.isArray(data.generalNotes)) {
+        setGeneralNotes(data.generalNotes);
+      }
+
+      if (typeof data?.darkMode === "boolean") {
+        setDarkMode(data.darkMode);
+      }
     },
     [
       currentYear,
@@ -228,6 +238,8 @@ export function usePlannerState() {
       selectedWeek,
       setMonthlyGoalsStore,
       setWeeklyGoalsStore,
+      setGeneralNotes,
+      setDarkMode,
       updateWeekSchedules,
     ],
   );
@@ -279,11 +291,14 @@ export function usePlannerState() {
     syncStatus,
     lastSyncTime,
     syncError,
-    pullFromGist,
-    pushToGist,
-    createNewGist,
-    hasCredentials,
-  } = useGistSync(gistPayload, (remoteData) => {
+    pullFromCloud,
+    pushToCloud,
+    signOut,
+    user: syncUser,
+    isAuthenticated,
+    needsMigration,
+    importFromLocal,
+  } = useSupabaseSync(supabasePayload, (remoteData) => {
     if (!remoteData) return;
     applyPlannerData(remoteData, selectedWeek);
   });
@@ -568,8 +583,8 @@ export function usePlannerState() {
       printZoom,
       zoomIn,
       zoomOut,
-      showGistSettings,
-      setShowGistSettings,
+      showAuthModal,
+      setShowAuthModal,
     },
 
     // Theme: category colors and the editor for them.
@@ -628,15 +643,18 @@ export function usePlannerState() {
       deleteGeneralNote,
     },
 
-    // GitHub Gist sync.
+    // Supabase cloud sync.
     sync: {
       syncStatus,
       lastSyncTime,
       syncError,
-      pullFromGist,
-      pushToGist,
-      createNewGist,
-      hasCredentials,
+      pullFromCloud,
+      pushToCloud,
+      signOut,
+      user: syncUser,
+      isAuthenticated,
+      needsMigration,
+      importFromLocal,
     },
 
     // Local persistence, import/export, reset.
