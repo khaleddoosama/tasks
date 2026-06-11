@@ -4,17 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Weekly Schedule Planner** — A React-based web application for planning and managing a weekly schedule. Built fully in Arabic (RTL) with multi-week navigation, task categorization, goal tracking, localStorage persistence, GitHub Gist sync, and print-to-PDF export.
+**Weekly Schedule Planner** — A React-based web application for planning and managing a weekly schedule. Built fully in Arabic (RTL) with multi-week navigation, task categorization, goal tracking, localStorage persistence, Supabase cloud sync, and print-to-PDF export.
 
 ## Commands
 
 ```bash
-npm run dev      # Dev server on 0.0.0.0:5173
-npm run build    # Production build
-npm run preview  # Preview production build on 0.0.0.0
+npm run dev          # Dev server on 0.0.0.0:5173
+npm run build        # Production build
+npm run preview      # Preview production build on 0.0.0.0
+npm test             # Run all Vitest tests once
+npm run test:watch   # Run tests in watch mode
 ```
 
-No test framework is configured.
+## Environment Variables
+
+Create `.env.local` in the project root (already gitignored):
+
+```
+VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+VITE_SUPABASE_ANON_KEY=sb_publishable_...
+```
+
+For Netlify Functions (set in Netlify dashboard — never use `VITE_` prefix for these):
+```
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
+```
 
 ## Architecture
 
@@ -31,41 +46,72 @@ src/
 │   ├── goals.js              # Goal progress calculation, goal store normalization
 │   ├── week.js               # Week/date arithmetic (week keys, date formatting)
 │   ├── time.js               # Time parsing, duration calculation, conflict detection
+│   ├── stats.js              # calculateWeekStats, parseHoursLoose
+│   ├── suggestions.js        # buildTaskSuggestions — frequency-ranked autocomplete
 │   ├── print.js              # Print HTML generation
 │   ├── ids.js                # Task ID generation helpers
 │   └── seedData.js           # createInitialDays — default week scaffold
 ├── hooks/
-│   ├── useUndoRedo.js        # Wraps useState with 30-state undo/redo history
+│   ├── useUndoRedo.js           # Wraps useState with 30-state undo/redo history
 │   ├── useLocalStorageState.js  # useState synced to localStorage
 │   ├── useSchedulePersistence.js  # Debounced auto-save + restore from localStorage
-│   ├── usePrintStyle.js      # Injects/removes <style id="__print_style__"> + hidden print DOM
-│   └── useKeyboardShortcuts.js   # Ctrl+Z/Y/P/S handlers
+│   ├── useSupabaseSync.js       # Supabase auth + cloud push/pull (replaces useGistSync)
+│   ├── usePrintStyle.js         # Injects/removes <style id="__print_style__"> + hidden print DOM
+│   └── useKeyboardShortcuts.js  # Ctrl+Z/Y/P/S handlers
 ├── components/
-│   ├── schedule/DayCard.jsx  # Collapsible day section with task table
-│   ├── schedule/TaskRow.jsx  # Inline-editable task row
+│   ├── schedule/DayCard.jsx     # Collapsible day section with task table
+│   ├── schedule/TaskRow.jsx     # Inline-editable task row (with autocomplete + smart time)
 │   ├── schedule/GoalSelector.jsx  # Per-task goal-link dropdown (grouped + memoized)
 │   ├── schedule/TimePickerField.jsx
-│   └── tabs/                 # ColorsTab, GoalsTab, PreviewTab, JSONEditorTab
+│   ├── AuthModal.jsx            # Email+password login / sign-up modal (replaces GistSettingsModal)
+│   └── tabs/                   # ColorsTab, GoalsTab, PreviewTab, JSONEditorTab, StatsTab
 ├── services/
+│   ├── supabaseClient.js     # createClient — VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+│   ├── cloudStore.js         # CRUD for `weeks` and `user_data` Supabase tables
 │   ├── scheduleTransfer.js   # exportScheduleBackup, importScheduleFromFile
 │   └── dayTemplates.js       # Day-template storage (dayTemplatesV1) read/write
-├── useGistSync.js            # GitHub Gist push/pull/create with debounced auto-push
-├── GistSettingsModal.jsx     # UI for entering Gist token/ID
 └── SyncStatusIndicator.jsx
 ```
+
+### Supabase schema (2 tables)
+
+```sql
+-- One row per user per week — concurrent edits to different weeks never conflict
+CREATE TABLE weeks (
+  user_id    uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  week_key   text NOT NULL,   -- "YYYY-WNN"
+  data       jsonb NOT NULL,  -- days[] array
+  updated_at timestamptz DEFAULT now(),
+  PRIMARY KEY (user_id, week_key)
+);
+
+-- All other user data in a single row
+CREATE TABLE user_data (
+  user_id       uuid REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  colors        jsonb,
+  dark_mode     boolean DEFAULT false,
+  selected_week integer,
+  monthly_goals jsonb DEFAULT '{}',
+  weekly_goals  jsonb DEFAULT '{}',
+  templates     jsonb DEFAULT '{}',
+  general_notes jsonb DEFAULT '[]',
+  updated_at    timestamptz DEFAULT now()
+);
+```
+
+Both tables have RLS enabled — users can only access their own rows.
 
 ### `usePlannerState` — the core
 
 All application state lives in `usePlannerState`. It owns:
 
 - **`days`** (via `useUndoRedo`) — the currently displayed week's task array
-- **`weekSchedules`** — all weeks keyed by `"YYYY-WNN"` (e.g. `"2025-W21"`); stored in a `useRef` to avoid stale closures when switching weeks
+- **`weekSchedules`** — all weeks keyed by `"YYYY-WNN"` (e.g. `"2026-W24"`); stored in a `useRef` to avoid stale closures when switching weeks
 - **`monthlyGoalsStore` / `weeklyGoalsStore`** — keyed by month/week key, persisted via `useLocalStorageState`
+- **`generalNotes`** — array, persisted via `useLocalStorageState` and synced to Supabase
 - **`colors`**, **`tab`**, **`darkMode`**, **`printZoom`**, **`selectedWeek`**
 
-When the user navigates to a different week, `days` is replaced with that week's saved schedule (or a fresh scaffold from `createInitialDays`), and the previous week is flushed into `weekSchedules`.
-
-Persistence is handled by `useSchedulePersistence`, which debounces saves (500ms) and restores on mount from `localStorage` key `weekScheduleV2`. GitHub Gist sync (`useGistSync`) pulls on load and auto-pushes (3s debounce) whenever `syncData` changes.
+Persistence: `useSchedulePersistence` debounces saves (500ms) to `localStorage` key `weekScheduleV2`. Supabase sync (`useSupabaseSync`) pulls all data on login and auto-pushes (1.5s debounce) whenever `supabasePayload` changes.
 
 #### Return shape (namespaced)
 
@@ -74,28 +120,30 @@ Persistence is handled by `useSchedulePersistence`, which debounces saves (500ms
 | Namespace | Contents |
 |-----------|----------|
 | `undoRedo` | `undo`, `redo`, `replace`, `canUndo`, `canRedo` |
-| `ui` | `tab`/`setTab`, `darkMode`/`setDarkMode`, `printZoom`/`zoomIn`/`zoomOut`, `showGistSettings`/`setShowGistSettings` |
+| `ui` | `tab`/`setTab`, `darkMode`/`setDarkMode`, `printZoom`/`zoomIn`/`zoomOut`, `showAuthModal`/`setShowAuthModal` |
 | `theme` | `colors`, `changeColor` |
 | `week` | `selectedWeek`/`setSelectedWeek`, `incrementWeek`/`decrementWeek`, `weekKey`, `monthKey`, `monthLabel`, `weekRangeLabel` |
-| `tasks` | `days`, `updateDay`, `copyDay`, `copyPreviousWeek`, `saveAsTemplate`, `applyTemplate`, `createTaskId`, `goalOptions` |
+| `tasks` | `days`, `updateDay`, `copyDay`, `copyPreviousWeek`, `saveAsTemplate`, `applyTemplate`, `createTaskId`, `goalOptions`, `taskSuggestions` |
 | `goals` | `currentMonthGoals`, `currentWeekGoals`, `monthlySummary`, and all goal CRUD (`addMonthlyGoal`, `updateMonthlyGoalTitle`, `addWeeklyGoal`, `updateWeeklyGoalTitle`, `deleteMonthlyGoal`, `deleteWeeklyGoal`) |
 | `notes` | `generalNotes`, `activeGeneralNotes`, `addGeneralNote`, `updateGeneralNote`, `toggleGeneralNoteActive`, `deleteGeneralNote` |
-| `sync` | `syncStatus`, `lastSyncTime`, `syncError`, `pullFromGist`, `pushToGist`, `createNewGist`, `hasCredentials` |
+| `sync` | `syncStatus`, `lastSyncTime`, `syncError`, `pullFromCloud`, `pushToCloud`, `signOut`, `user`, `isAuthenticated`, `needsMigration`, `importFromLocal` |
 | `persistence` | `saveIndicator`, `saveColor`, `exportSchedule`, `exportArchive`, `importSchedule`, `getScheduleData`, `updateScheduleFromJSON`, `resetPlanner` |
-
-Note: `tasks.days` is the same `days` array described above (the current week's tasks); `theme.colors` is the colors object.
 
 ### Data model
 
 ```javascript
-// Day object (stored in weekSchedules[weekKey][])
+// Day object (stored in weekSchedules[weekKey][] and Supabase weeks.data)
 {
   id: number,
-  name: string,       // Arabic day name
-  التاريخ: string,    // ISO date "YYYY-MM-DD" — used for month-key matching
-  type: string,       // e.g. "أوفيس" | "بيت" | "إجازة"
+  name: string,           // Arabic day name
+  التاريخ: string,        // ISO date "YYYY-MM-DD" — used for month-key matching
+  type: string,           // e.g. "أوفيس" | "بيت" | "إجازة"
   notes: string,
   enabled: boolean,
+  مستوى_الطاقة: string,   // "1"–"5" energy level
+  تقييم_اليوم: string,    // "1"–"5" day rating
+  عدد_ساعات_النوم: string, // free-text sleep hours (parsed by parseHoursLoose)
+  عدد_ساعات_الهاتف: string,// free-text phone hours
   tasks: [
     {
       id: number,
@@ -111,15 +159,6 @@ Note: `tasks.days` is the same `days` array described above (the current week's 
     }
   ]
 }
-
-// Colors object
-{
-  header: { bg, text },
-  // one entry per CATEGORY_META key:
-  worship, quran_study, sports_fitness, rest_nutrition,
-  education, tech_projects, personal_projects, relationships,
-  commute_buffer, planning_review, sleep: { bg, text }
-}
 ```
 
 ### Categories
@@ -130,25 +169,64 @@ Note: `tasks.days` is the same `days` array described above (the current week's 
 
 Goals are **user-defined**, not keyword-based. Monthly goals are stored by `monthKey` (`"YYYY-MM"`), weekly goals by `weekKey`. Weekly goals link to a parent monthly goal via `monthlyGoalId`. Tasks link to goals via `linkedWeeklyGoalId` or `linkedMonthlyGoalId`. Progress is computed in `goals.js` by counting `done` tasks. Monthly progress rolls up across all weeks in that month (`weekSchedules` filtered by `day.التاريخ`).
 
-The per-task goal-link dropdown lives in `components/schedule/GoalSelector.jsx` (rendered by `TaskRow`). It receives `goalOptions` (`{ weeklyGoals, monthlyGoals, weeklyGoalsByMonthly, allMonthlyGoals }`) and reports selections via `onLink(type, goalId)` / `onClear`; the parent/child grouping and "already-shown-as-child" filtering are memoized there.
-
 ### Week arithmetic
 
-Weeks start on **Saturday** (`WEEK_START_DAY = 6`). Week 1 starts on the first Saturday of the year. `getWeekKey(week, year)` → `"YYYY-WNN"`. `getMonthKey(dateStr)` → `"YYYY-MM"`.
+Weeks start on **Saturday** (`WEEK_START_DAY = 6`). Week 1 starts on the first Saturday of the year. `getWeekKey(week, year)` → `"YYYY-WNN"`. `getMonthKey(dateStr)` → `"YYYY-MM"`. `getWeekNumberFromDate` uses `Math.round` (not floor) on ms diff to handle DST clock-shift correctly.
+
+### Supabase sync
+
+`useSupabaseSync(syncData, onDataMerged)` mirrors the interface of the old `useGistSync`:
+- On mount: `supabase.auth.onAuthStateChange` listener — on login, fetches all data and calls `onDataMerged`
+- `needsMigration = true` when user just logged in and `weeks` table is empty → `AuthModal` shows a one-time import button
+- `importFromLocal()` reads all localStorage keys and upserts to Supabase (one-time migration)
+- Auto-push: debounced 1.5s after `syncData` changes; pushes each week as a separate row + `user_data` row
+- `supabasePayload` in `usePlannerState` adds `generalNotes` and `darkMode` (not in old Gist payload)
+
+### Autocomplete & smart time defaults
+
+- `buildTaskSuggestions(weekSchedules)` in `suggestions.js` scans all saved weeks, returns `{ list, catByName }` sorted by frequency
+- Task name input renders `<datalist id="task-suggestions">` for native browser autocomplete
+- On task name selection, `catByName[name]` auto-fills the category if the task has none set yet
+- `getNextStartTime(tasks)` in `time.js` scans the task list bottom-up and returns the last valid end time — used as the default time when adding a new task row
+
+### Stats tab
+
+`StatsTab` component (`components/tabs/StatsTab.jsx`) uses `calculateWeekStats(days)` from `stats.js`:
+- Returns: `totalTasks`, `doneTasks`, `completionRate`, `totalMinutes`, `categories[]` (sorted by minutes), `avgEnergy`, `avgRating`, `avgSleepHours`, `avgPhoneHours`, `perDay[]`
+- `parseHoursLoose(value)` handles messy free-text formats like `"7:30 + 1:30"`, `"5:15 + 1:30= 6:45"`, `"8"`, `"9:30"`
 
 ### Print
 
 `usePrintStyle` dynamically injects a `<style id="__print_style__">` tag and a hidden `#__print_root__` div with A4 HTML. Printing is triggered via `window.print()`.
 
-### Gist sync
+### Netlify Functions
 
-Credentials (`gist_token`, `gist_id`) are stored in `localStorage`. On load, data is pulled from the Gist and merged via `applyPlannerData`. Changes auto-push after a 3s debounce. The Gist file is always named `todo-app-data.json`.
+| Function | Purpose |
+|----------|---------|
+| `archive_json.js` | `GET /archive_json?from=YYYY-MM-DD&to=YYYY-MM-DD` — reads from Supabase (service role key), returns denormalized JSON for archiving/AI |
+| `keep_alive.js` | Scheduled every 5 days (`0 12 */5 * *`) — pings Supabase to prevent free-tier project pausing |
+
+## Testing
+
+Vitest is configured. Test files live alongside source files as `*.test.js`.
+
+```bash
+npm test             # one-shot run
+npm run test:watch   # watch mode
+```
+
+Covered modules (69 tests):
+- `time.test.js` — all time parsing and manipulation functions
+- `week.test.js` — all date/week arithmetic functions
+- `stats.test.js` — `parseHoursLoose` + `calculateWeekStats`
+- `suggestions.test.js` — `buildTaskSuggestions`
 
 ## Key implementation notes
 
 - All layout uses inline CSS. `direction: rtl` must be maintained on all containers.
-- Day templates are read/written **only** through `services/dayTemplates.js` (localStorage key `dayTemplatesV1`, guarded parsing). Do not access the key directly — both `useTaskManagement` and `DayCard` go through the service.
-- `schedule_editor.jsx` is a legacy file — `App.jsx` → `PlannerPage` is the current entry point.
+- Day templates are read/written **only** through `services/dayTemplates.js` (localStorage key `dayTemplatesV1`, guarded parsing). Do not access the key directly.
 - `weekSchedulesRef` mirrors `weekSchedules` state to avoid stale closures in week-switch callbacks.
 - Single times (no `" - "`) are treated as end-of-day markers in duration calculations.
 - Midnight wraparound (e.g. `"23:00 - 1:00"`) is handled in `time.js` using 24-hour modulo arithmetic.
+- `supabaseClient.js` guards against missing env vars with a placeholder URL so the app doesn't crash on cold load without credentials — auth features simply won't work until `.env.local` is configured.
+- localStorage remains the **offline cache** — the app loads from it on mount and works without internet; Supabase is the authoritative remote source.

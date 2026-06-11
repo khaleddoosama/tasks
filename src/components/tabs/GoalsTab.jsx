@@ -1,26 +1,106 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+
+function InlineEdit({ value, onChange, placeholder, style = {} }) {
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef(null);
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        autoFocus
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={() => setEditing(false)}
+        onKeyDown={(e) => { if (e.key === "Enter") setEditing(false); }}
+        placeholder={placeholder}
+        style={{
+          width: "100%",
+          padding: "6px 10px",
+          border: "1px solid #cbd5e1",
+          borderRadius: 8,
+          fontFamily: "inherit",
+          fontSize: "inherit",
+          fontWeight: "inherit",
+          background: "#f8fafc",
+          ...style,
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={() => setEditing(true)}
+      title="اضغط للتعديل"
+      style={{
+        cursor: "text",
+        padding: "6px 2px",
+        borderRadius: 6,
+        display: "block",
+        color: value ? "inherit" : "#94a3b8",
+        borderBottom: "1px dashed #cbd5e1",
+        ...style,
+      }}
+    >
+      {value || placeholder}
+    </span>
+  );
+}
 
 function GoalProgressBadge({ totalTasks, doneTasks, completionRate }) {
+  const color = completionRate >= 80 ? "#16a34a" : completionRate >= 40 ? "#f59e0b" : "#ef4444";
+  if (!totalTasks) return null;
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "3px 8px",
+        borderRadius: 999,
+        background: `${color}18`,
+        color,
+        fontSize: 11,
+        fontWeight: 700,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {completionRate}% · {doneTasks}/{totalTasks}
+    </span>
+  );
+}
+
+function MonthProgressBar({ monthlySummary, headerColor }) {
+  const { totalGoals, doneTasks, totalTasks, completionRate } = monthlySummary;
   const color = completionRate >= 80 ? "#16a34a" : completionRate >= 40 ? "#f59e0b" : "#ef4444";
 
   return (
     <div
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "6px 10px",
-        borderRadius: 999,
-        background: `${color}18`,
-        color,
-        fontSize: 12,
-        fontWeight: 700,
+        background: headerColor.bg,
+        color: headerColor.text,
+        padding: "14px 18px",
+        borderRadius: 12,
+        marginBottom: 20,
       }}
     >
-      <span>{completionRate}%</span>
-      <span>
-        {doneTasks}/{totalTasks || 0} مهمة
-      </span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <span style={{ fontSize: 12, opacity: 0.8 }}>{totalGoals} أهداف شهرية · {doneTasks}/{totalTasks} مهمة</span>
+        <span style={{ fontSize: 20, fontWeight: 900 }}>{completionRate}%</span>
+      </div>
+      <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: 999, height: 8 }}>
+        <div
+          style={{
+            width: `${completionRate}%`,
+            height: "100%",
+            borderRadius: 999,
+            background: color,
+            transition: "width 0.4s ease",
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -47,103 +127,83 @@ export default function GoalsTab({
     () =>
       currentWeekGoals.reduce((result, goal) => {
         const bucketKey = goal.monthlyGoalId || "__unlinked__";
-        if (!result[bucketKey]) {
-          result[bucketKey] = [];
-        }
+        if (!result[bucketKey]) result[bucketKey] = [];
         result[bucketKey].push(goal);
         return result;
       }, {}),
     [currentWeekGoals],
   );
 
+  const addMonthlyGoal = () => {
+    if (!newMonthlyGoalTitle.trim()) return;
+    onAddMonthlyGoal(newMonthlyGoalTitle);
+    setNewMonthlyGoalTitle("");
+  };
+
+  const addWeeklyGoal = (monthGoalId) => {
+    const title = newWeeklyGoalTitles[monthGoalId] || "";
+    if (!title.trim()) return;
+    onAddWeeklyGoal(monthGoalId, title);
+    setNewWeeklyGoalTitles((cur) => ({ ...cur, [monthGoalId]: "" }));
+  };
+
   return (
     <div style={{ padding: 20, background: "#f9fafb", borderRadius: 12 }}>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ textAlign: "right", fontSize: 24, fontWeight: 900, marginBottom: 8, color: headerColor.bg }}>
-          الأهداف الشهرية والأسبوعية
+      <div style={{ marginBottom: 16, textAlign: "right" }}>
+        <h2 style={{ fontSize: 22, fontWeight: 900, margin: 0, color: headerColor.bg }}>
+          {monthLabel}
         </h2>
-        <p style={{ textAlign: "right", fontSize: 13, color: "#666", margin: 0 }}>
-          أنشئ هدفًا شهريًا كبيرًا، ثم أضف تحته أهداف هذا الأسبوع. عند إنشاء مهمة يومية ستظهر كـ checkbox للربط.
-        </p>
+        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>الأسبوع الحالي: {weekRangeLabel}</div>
       </div>
 
-      <div
-        style={{
-          background: headerColor.bg,
-          color: headerColor.text,
-          padding: 16,
-          borderRadius: 12,
-          marginBottom: 24,
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-          gap: 16,
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>الشهر الحالي</div>
-          <div style={{ fontSize: 24, fontWeight: 900 }}>{monthLabel}</div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>أهداف شهرية</div>
-          <div style={{ fontSize: 24, fontWeight: 900 }}>{monthlySummary.totalGoals}</div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>إجمالي المهام</div>
-          <div style={{ fontSize: 24, fontWeight: 900 }}>{monthlySummary.totalTasks}</div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>المهام المنجزة</div>
-          <div style={{ fontSize: 24, fontWeight: 900 }}>{monthlySummary.doneTasks}</div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>التقدم</div>
-          <div style={{ fontSize: 24, fontWeight: 900 }}>{monthlySummary.completionRate}%</div>
-        </div>
-      </div>
+      <MonthProgressBar monthlySummary={monthlySummary} headerColor={headerColor} />
 
+      {/* Add monthly goal — at the top */}
       <div
         style={{
           background: "#fff",
-          padding: 16,
+          padding: 14,
           borderRadius: 12,
-          marginBottom: 24,
-          border: `2px dashed ${headerColor.bg}`,
+          border: `2px dashed ${headerColor.bg}40`,
+          marginBottom: 16,
         }}
       >
-        <div style={{ fontSize: 14, fontWeight: 800, color: headerColor.bg, marginBottom: 10, textAlign: "right" }}>
-          إضافة هدف شهري
+        <div style={{ fontSize: 12, fontWeight: 700, color: headerColor.bg, marginBottom: 8, textAlign: "right" }}>
+          + هدف شهري جديد
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12 }}>
+        <div style={{ display: "flex", gap: 8 }}>
           <input
             type="text"
             value={newMonthlyGoalTitle}
-            onChange={(event) => setNewMonthlyGoalTitle(event.target.value)}
+            onChange={(e) => setNewMonthlyGoalTitle(e.target.value)}
             placeholder="مثال: إنهاء PLSQL Course"
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                onAddMonthlyGoal(newMonthlyGoalTitle);
-                setNewMonthlyGoalTitle("");
-              }
+            onKeyDown={(e) => { if (e.key === "Enter") addMonthlyGoal(); }}
+            style={{
+              flex: 1,
+              padding: "9px 12px",
+              border: "1px solid #e2e8f0",
+              borderRadius: 8,
+              fontFamily: "inherit",
             }}
-            style={{ width: "100%", padding: "10px 12px", border: "1px solid #ddd", borderRadius: 8, fontFamily: "inherit" }}
           />
           <button
-            onClick={() => {
-              onAddMonthlyGoal(newMonthlyGoalTitle);
-              setNewMonthlyGoalTitle("");
+            onClick={addMonthlyGoal}
+            style={{
+              background: headerColor.bg,
+              color: headerColor.text,
+              border: "none",
+              borderRadius: 8,
+              padding: "9px 16px",
+              cursor: "pointer",
+              fontWeight: 700,
             }}
-            style={{ background: headerColor.bg, color: headerColor.text, border: "none", borderRadius: 8, padding: "10px 14px", cursor: "pointer", fontWeight: 700 }}
           >
             إضافة
           </button>
         </div>
       </div>
 
-      <div style={{ marginBottom: 14, textAlign: "right", fontSize: 12, color: "#64748b" }}>
-        الأسبوع الحالي: {weekRangeLabel}
-      </div>
-
-      <div style={{ display: "grid", gap: 18 }}>
+      <div style={{ display: "grid", gap: 14 }}>
         {currentMonthGoals.map((monthGoal) => {
           const childWeekGoals = weeklyGoalsByMonthGoalId[monthGoal.id] || [];
 
@@ -152,135 +212,190 @@ export default function GoalsTab({
               key={monthGoal.id}
               style={{
                 background: "#fff",
-                borderRadius: 16,
-                padding: 18,
-                boxShadow: "0 8px 24px rgba(15,23,42,0.06)",
+                borderRadius: 14,
+                padding: 16,
+                boxShadow: "0 2px 12px rgba(15,23,42,0.06)",
                 border: "1px solid #e2e8f0",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 14 }}>
+              {/* Monthly goal header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: childWeekGoals.length > 0 ? 10 : 12 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, color: "#64748b", marginBottom: 6 }}>هدف شهري</div>
-                  <input
-                    type="text"
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>هدف شهري</div>
+                  <InlineEdit
                     value={monthGoal.title}
-                    onChange={(event) => onUpdateMonthlyGoalTitle(monthGoal.id, event.target.value)}
-                    style={{ width: "100%", padding: "10px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 15, fontWeight: 800, fontFamily: "inherit" }}
+                    onChange={(val) => onUpdateMonthlyGoalTitle(monthGoal.id, val)}
+                    placeholder="اسم الهدف..."
+                    style={{ fontSize: 15, fontWeight: 800 }}
                   />
                 </div>
-                <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <GoalProgressBadge {...monthGoal.progress} />
                   <button
                     onClick={() => onDeleteMonthlyGoal(monthGoal.id)}
-                    style={{ border: "none", background: "#fee2e2", color: "#b91c1c", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontWeight: 700 }}
+                    title="حذف الهدف الشهري"
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: "#cbd5e1",
+                      cursor: "pointer",
+                      fontSize: 16,
+                      padding: 4,
+                      lineHeight: 1,
+                      borderRadius: 6,
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "#cbd5e1")}
                   >
-                    حذف الهدف الشهري
+                    🗑
                   </button>
                 </div>
               </div>
 
-              <div style={{ padding: 14, background: "#f8fafc", borderRadius: 12, marginBottom: 14 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10 }}>
-                  <input
-                    type="text"
-                    value={newWeeklyGoalTitles[monthGoal.id] || ""}
-                    onChange={(event) =>
-                      setNewWeeklyGoalTitles((current) => ({ ...current, [monthGoal.id]: event.target.value }))
-                    }
-                    placeholder="مثال: إنهاء Module 1 هذا الأسبوع"
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        onAddWeeklyGoal(monthGoal.id, newWeeklyGoalTitles[monthGoal.id] || "");
-                        setNewWeeklyGoalTitles((current) => ({ ...current, [monthGoal.id]: "" }));
-                      }
-                    }}
-                    style={{ width: "100%", padding: "9px 12px", border: "1px solid #cbd5e1", borderRadius: 8, fontFamily: "inherit" }}
-                  />
-                  <button
-                    onClick={() => {
-                      onAddWeeklyGoal(monthGoal.id, newWeeklyGoalTitles[monthGoal.id] || "");
-                      setNewWeeklyGoalTitles((current) => ({ ...current, [monthGoal.id]: "" }));
-                    }}
-                    style={{ border: "none", background: "#1d4ed8", color: "#fff", borderRadius: 8, padding: "9px 12px", cursor: "pointer", fontWeight: 700 }}
-                  >
-                    + هدف أسبوعي
-                  </button>
-                </div>
-              </div>
+              {/* Weekly goals progress summary */}
+              {childWeekGoals.length > 0 && (() => {
+                const totalW = childWeekGoals.reduce((s, g) => s + (g.progress?.totalTasks || 0), 0);
+                const doneW = childWeekGoals.reduce((s, g) => s + (g.progress?.doneTasks || 0), 0);
+                const rateW = totalW > 0 ? Math.round((doneW / totalW) * 100) : 0;
+                const color = rateW >= 80 ? "#16a34a" : rateW >= 40 ? "#f59e0b" : "#3b82f6";
+                return (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#64748b", marginBottom: 4 }}>
+                      <span style={{ color, fontWeight: 700 }}>{rateW}%</span>
+                      <span>أهداف هذا الأسبوع · {doneW}/{totalW} مهمة</span>
+                    </div>
+                    <div style={{ background: "#f1f5f9", borderRadius: 999, height: 5 }}>
+                      <div style={{ width: `${rateW}%`, height: "100%", borderRadius: 999, background: color, transition: "width 0.3s ease" }} />
+                    </div>
+                  </div>
+                );
+              })()}
 
-              <div style={{ display: "grid", gap: 10 }}>
-                {childWeekGoals.length > 0 ? (
-                  childWeekGoals.map((weekGoal) => (
+              {/* Weekly goals list */}
+              {childWeekGoals.length > 0 && (
+                <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
+                  {childWeekGoals.map((weekGoal) => (
                     <div
                       key={weekGoal.id}
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr auto auto",
-                        gap: 12,
+                        display: "flex",
                         alignItems: "center",
-                        padding: 12,
-                        borderRadius: 12,
+                        gap: 10,
+                        padding: "8px 12px",
+                        borderRadius: 10,
+                        background: "#f8fafc",
                         border: "1px solid #e2e8f0",
-                        background: "#fff",
                       }}
                     >
-                      <input
-                        type="text"
-                        value={weekGoal.title}
-                        onChange={(event) => onUpdateWeeklyGoalTitle(weekGoal.id, event.target.value)}
-                        style={{ width: "100%", padding: "8px 10px", border: "1px solid #cbd5e1", borderRadius: 8, fontFamily: "inherit", fontWeight: 700 }}
-                      />
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#94a3b8", flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <InlineEdit
+                          value={weekGoal.title}
+                          onChange={(val) => onUpdateWeeklyGoalTitle(weekGoal.id, val)}
+                          placeholder="هدف أسبوعي..."
+                          style={{ fontSize: 13, fontWeight: 700 }}
+                        />
+                      </div>
                       <GoalProgressBadge {...weekGoal.progress} />
                       <button
                         onClick={() => onDeleteWeeklyGoal(weekGoal.id)}
-                        style={{ border: "none", background: "#fff1f2", color: "#be123c", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontWeight: 700 }}
+                        title="حذف"
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          color: "#cbd5e1",
+                          cursor: "pointer",
+                          fontSize: 14,
+                          padding: 4,
+                          lineHeight: 1,
+                          borderRadius: 6,
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#cbd5e1")}
                       >
-                        حذف
+                        ✕
                       </button>
                     </div>
-                  ))
-                ) : (
-                  <div style={{ fontSize: 12, color: "#64748b", background: "#f8fafc", borderRadius: 10, padding: 12 }}>
-                    لا توجد أهداف أسبوعية لهذا الهدف بعد. إذا تركته بدون أهداف أسبوعية سيظهر مباشرة عند ربط المهام اليومية.
-                  </div>
-                )}
+                  ))}
+                </div>
+              )}
+
+              {/* Add weekly goal */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="text"
+                  value={newWeeklyGoalTitles[monthGoal.id] || ""}
+                  onChange={(e) =>
+                    setNewWeeklyGoalTitles((cur) => ({ ...cur, [monthGoal.id]: e.target.value }))
+                  }
+                  placeholder="+ هدف أسبوعي..."
+                  onKeyDown={(e) => { if (e.key === "Enter") addWeeklyGoal(monthGoal.id); }}
+                  style={{
+                    flex: 1,
+                    padding: "7px 10px",
+                    border: "1px dashed #cbd5e1",
+                    borderRadius: 8,
+                    fontFamily: "inherit",
+                    fontSize: 13,
+                    background: "#f8fafc",
+                  }}
+                />
+                <button
+                  onClick={() => addWeeklyGoal(monthGoal.id)}
+                  style={{
+                    border: "none",
+                    background: headerColor.bg,
+                    color: headerColor.text,
+                    borderRadius: 8,
+                    padding: "7px 14px",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: 13,
+                  }}
+                >
+                  إضافة
+                </button>
               </div>
             </div>
           );
         })}
 
         {currentMonthGoals.length === 0 && (
-          <div style={{ background: "#fff", borderRadius: 14, padding: 24, textAlign: "center", color: "#64748b" }}>
-            ابدأ بإضافة هدف شهري مثل: إنهاء PLSQL Course
+          <div style={{ background: "#fff", borderRadius: 14, padding: 24, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
+            لا توجد أهداف شهرية بعد — أضف هدفًا من الأعلى للبدء
           </div>
         )}
 
+        {/* Unlinked weekly goals */}
         {(weeklyGoalsByMonthGoalId.__unlinked__ || []).length > 0 && (
-          <div style={{ background: "#fff7ed", border: "1px solid #fdba74", borderRadius: 14, padding: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#9a3412", marginBottom: 10 }}>
-              أهداف أسبوعية غير مربوطة بهدف شهري
-            </div>
-            <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#92400e", marginBottom: 8 }}>أهداف أسبوعية غير مربوطة</div>
+            <div style={{ display: "grid", gap: 6 }}>
               {weeklyGoalsByMonthGoalId.__unlinked__.map((weekGoal) => (
-                <div key={weekGoal.id} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 12, alignItems: "center" }}>
-                  <input
-                    type="text"
-                    value={weekGoal.title}
-                    onChange={(event) => onUpdateWeeklyGoalTitle(weekGoal.id, event.target.value)}
-                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #fdba74", borderRadius: 8, fontFamily: "inherit", fontWeight: 700 }}
-                  />
+                <div key={weekGoal.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <InlineEdit
+                      value={weekGoal.title}
+                      onChange={(val) => onUpdateWeeklyGoalTitle(weekGoal.id, val)}
+                      placeholder="هدف أسبوعي..."
+                      style={{ fontSize: 13, fontWeight: 700 }}
+                    />
+                  </div>
                   <GoalProgressBadge {...weekGoal.progress} />
                   <button
                     onClick={() => onDeleteWeeklyGoal(weekGoal.id)}
-                    style={{ border: "none", background: "#fff1f2", color: "#be123c", borderRadius: 8, padding: "8px 10px", cursor: "pointer", fontWeight: 700 }}
+                    style={{ border: "none", background: "transparent", color: "#cbd5e1", cursor: "pointer", fontSize: 14, padding: 4 }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = "#cbd5e1")}
                   >
-                    حذف
+                    ✕
                   </button>
                 </div>
               ))}
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
