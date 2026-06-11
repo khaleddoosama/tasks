@@ -293,14 +293,13 @@ export function usePlannerState() {
       getTaskGoalOptions({
         monthGoals: currentMonthGoals,
         weekGoals: currentWeekGoals,
-        weeklyGoalsStore: normalizedWeeklyGoals,
       }),
-    [currentMonthGoals, currentWeekGoals, normalizedWeeklyGoals],
+    [currentMonthGoals, currentWeekGoals],
   );
 
   const weeklyGoalsByMonthly = useMemo(
-    () => getWeeklyGoalsByMonthlyGoalId(normalizedWeeklyGoals),
-    [normalizedWeeklyGoals],
+    () => getWeeklyGoalsByMonthlyGoalId({ [weekKey]: normalizedWeeklyGoals[weekKey] || {} }),
+    [normalizedWeeklyGoals, weekKey],
   );
 
   const taskSuggestions = useMemo(

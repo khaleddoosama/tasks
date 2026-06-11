@@ -97,8 +97,15 @@ export function getWeeklyGoalsByMonthlyGoalId(weeklyGoalsStore) {
   }, {});
 }
 
-export function getTaskGoalOptions({ monthGoals, weekGoals, weeklyGoalsStore }) {
-  const weeklyChildrenByMonthGoal = getWeeklyGoalsByMonthlyGoalId(weeklyGoalsStore);
+export function getTaskGoalOptions({ monthGoals, weekGoals }) {
+  const weeklyChildrenByMonthGoal = weekGoals.reduce((result, goal) => {
+    if (!goal.monthlyGoalId) return result;
+    if (!result[goal.monthlyGoalId]) {
+      result[goal.monthlyGoalId] = [];
+    }
+    result[goal.monthlyGoalId].push(goal);
+    return result;
+  }, {});
 
   return {
     weeklyGoals: weekGoals,
