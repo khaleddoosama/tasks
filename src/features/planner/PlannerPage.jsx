@@ -60,7 +60,6 @@ function useToast() {
 const TAB_LABELS = {
   editor: "✏️ محرّر",
   notes: "📝 ملاحظات",
-  json: "📝 JSON",
   goals: "🎯 الأهداف",
   colors: "🎨 الألوان",
   preview: "👁️ معاينة",
@@ -239,7 +238,7 @@ export default function PlannerPage() {
           <div style={{ marginRight: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <button onClick={undoRedo.undo} disabled={!undoRedo.canUndo} title="Ctrl+Z" style={{ background: "#e3f2fd", color: "#1976d2", border: "1px solid #90caf9", borderRadius: 6, padding: "8px 12px", cursor: undoRedo.canUndo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: undoRedo.canUndo ? 1 : 0.5 }}>↶ تراجع</button>
             <button onClick={undoRedo.redo} disabled={!undoRedo.canRedo} title="Ctrl+Y" style={{ background: "#f3e5f5", color: "#7b1fa2", border: "1px solid #ce93d8", borderRadius: 6, padding: "8px 12px", cursor: undoRedo.canRedo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: undoRedo.canRedo ? 1 : 0.5 }}>↷ إعادة</button>
-            <button onClick={persistence.resetPlanner} title="Reset planner" style={{ background: "#fff3e0", color: "#ef6c00", border: "1px solid #ffb74d", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>↺ إعادة ضبط</button>
+
             <button onClick={() => ui.setShowAuthModal(true)} title="حساب Supabase" style={{ background: sync.isAuthenticated ? "#6366f1" : "#bdc3c7", color: "#fff", border: "none", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>☁️ {sync.isAuthenticated ? "حساب" : "دخول"}</button>
             <button onClick={persistence.exportSchedule} title="Export as JSON" style={{ background: "#e8f5e9", color: "#388e3c", border: "1px solid #81c784", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>⬇️ تصدير</button>
             <label title="Import JSON" style={{ background: "#fce4ec", color: "#c2185b", border: "1px solid #f48fb1", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600, display: "inline-block" }}>

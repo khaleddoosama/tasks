@@ -156,24 +156,7 @@ export default function DayCard({ day, colors, goalOptions, taskSuggestions, onC
           >
             ⏱️ ترتيب
           </button>
-          <button
-            onClick={(event) => {
-              event.stopPropagation();
-              onCopyDay(day.id);
-            }}
-            title="نسخ جدول اليوم"
-            style={{
-              border: "none",
-              background: "rgba(255,255,255,0.2)",
-              color: headerColor.text,
-              borderRadius: 4,
-              padding: "2px 8px",
-              cursor: "pointer",
-              fontSize: 12,
-            }}
-          >
-            نسخ
-          </button>
+
           <button
             onClick={(event) => {
               event.stopPropagation();
