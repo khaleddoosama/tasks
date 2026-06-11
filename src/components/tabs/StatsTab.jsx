@@ -1,0 +1,155 @@
+import { useMemo } from "react";
+import { calculateWeekStats } from "../../domain/schedule/stats";
+
+const ENERGY_EMOJI = { 1: "😴", 2: "😐", 3: "🙂", 4: "😄", 5: "🔥" };
+const RATING_EMOJI = { 1: "😞", 2: "😕", 3: "😐", 4: "😊", 5: "🌟" };
+
+function formatMinutes(minutes) {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  if (hours === 0) return `${remainder} د`;
+  if (remainder === 0) return `${hours} س`;
+  return `${hours} س ${remainder} د`;
+}
+
+function formatHours(value) {
+  if (value === null || value === undefined) return "—";
+  const hours = Math.floor(value);
+  const minutes = Math.round((value - hours) * 60);
+  if (minutes === 0) return `${hours} س`;
+  return `${hours} س ${minutes} د`;
+}
+
+function StatCard({ label, value, sub, accent }) {
+  return (
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        borderRadius: 12,
+        padding: "14px 16px",
+        flex: "1 1 140px",
+        minWidth: 140,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+      }}
+    >
+      <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 600, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 24, fontWeight: 900, color: accent || "#111827" }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{sub}</div>}
+    </div>
+  );
+}
+
+export default function StatsTab({ colors, days, weekRangeLabel }) {
+  const stats = useMemo(() => calculateWeekStats(days), [days]);
+  const completionColor =
+    stats.completionRate >= 80 ? "#16a34a" : stats.completionRate >= 40 ? "#f59e0b" : "#ef4444";
+  const maxCategoryMinutes = stats.categories[0]?.minutes || 1;
+
+  return (
+    <div style={{ padding: 20, background: "#f9fafb", borderRadius: 12, direction: "rtl" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>📊 إحصائيات الأسبوع</h2>
+        <span style={{ fontSize: 12, color: "#6b7280" }}>{weekRangeLabel}</span>
+      </div>
+
+      {/* Summary cards */}
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
+        <StatCard
+          label="نسبة الإنجاز"
+          value={`${stats.completionRate}%`}
+          sub={`${stats.doneTasks} من ${stats.totalTasks} مهمة`}
+          accent={completionColor}
+        />
+        <StatCard label="إجمالي الوقت المجدوَل" value={formatMinutes(stats.totalMinutes)} />
+        <StatCard
+          label="متوسط الطاقة"
+          value={stats.avgEnergy ? `${stats.avgEnergy.toFixed(1)} ${ENERGY_EMOJI[Math.round(stats.avgEnergy)] || ""}` : "—"}
+          sub="من 5"
+        />
+        <StatCard
+          label="متوسط تقييم اليوم"
+          value={stats.avgRating ? `${stats.avgRating.toFixed(1)} ${RATING_EMOJI[Math.round(stats.avgRating)] || ""}` : "—"}
+          sub="من 5"
+        />
+        <StatCard label="متوسط النوم" value={formatHours(stats.avgSleepHours)} sub="في اليوم" />
+        <StatCard label="متوسط الهاتف" value={formatHours(stats.avgPhoneHours)} sub="في اليوم" />
+      </div>
+
+      {/* Time per category */}
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 24 }}>
+        <h3 style={{ margin: "0 0 14px 0", fontSize: 15, fontWeight: 700 }}>⏱️ الوقت حسب التصنيف</h3>
+        {stats.categories.length === 0 ? (
+          <p style={{ color: "#9ca3af", fontSize: 13, margin: 0 }}>لا توجد مهام لها أوقات بعد.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {stats.categories.map((category) => {
+              const categoryColor = colors[category.key];
+              const barColor = categoryColor?.text || "#6366f1";
+              const widthPct = Math.round((category.minutes / maxCategoryMinutes) * 100);
+              const sharePct = stats.totalMinutes > 0 ? Math.round((category.minutes / stats.totalMinutes) * 100) : 0;
+              return (
+                <div key={category.key}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                    <span style={{ fontWeight: 600 }}>
+                      {category.icon} {category.label}
+                    </span>
+                    <span style={{ color: "#6b7280" }}>
+                      {formatMinutes(category.minutes)} · {sharePct}%
+                    </span>
+                  </div>
+                  <div style={{ background: "#f1f5f9", borderRadius: 999, height: 10, overflow: "hidden" }}>
+                    <div style={{ width: `${widthPct}%`, height: "100%", background: barColor, borderRadius: 999, transition: "width 0.3s" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Per-day breakdown */}
+      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
+        <h3 style={{ margin: "0 0 14px 0", fontSize: 15, fontWeight: 700 }}>📅 تفصيل الأيام</h3>
+        {stats.perDay.length === 0 ? (
+          <p style={{ color: "#9ca3af", fontSize: 13, margin: 0 }}>لا توجد بيانات أيام بعد.</p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: colors.header.bg, color: colors.header.text }}>
+                  <th style={{ padding: "8px 10px", textAlign: "right" }}>اليوم</th>
+                  <th style={{ padding: "8px 10px", textAlign: "center" }}>الإنجاز</th>
+                  <th style={{ padding: "8px 10px", textAlign: "center" }}>الطاقة</th>
+                  <th style={{ padding: "8px 10px", textAlign: "center" }}>التقييم</th>
+                  <th style={{ padding: "8px 10px", textAlign: "center" }}>النوم</th>
+                  <th style={{ padding: "8px 10px", textAlign: "center" }}>الهاتف</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.perDay.map((day, index) => (
+                  <tr key={day.id} style={{ background: index % 2 ? "#f8fafc" : "#fff", borderBottom: "1px solid #eef2f7" }}>
+                    <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>
+                      {day.name} <span style={{ color: "#9ca3af", fontWeight: 400 }}>· {day.type}</span>
+                    </td>
+                    <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                      {day.total > 0 ? `${day.done}/${day.total} · ${day.completionRate}%` : "—"}
+                    </td>
+                    <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                      {day.energy ? `${ENERGY_EMOJI[day.energy] || ""} ${day.energy}` : "—"}
+                    </td>
+                    <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                      {day.rating ? `${RATING_EMOJI[day.rating] || ""} ${day.rating}` : "—"}
+                    </td>
+                    <td style={{ padding: "8px 10px", textAlign: "center", color: "#6b7280" }}>{day.sleep || "—"}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "center", color: "#6b7280" }}>{day.phone || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
