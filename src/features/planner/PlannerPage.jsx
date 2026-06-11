@@ -28,8 +28,10 @@ const TAB_LABELS = {
 };
 
 export default function PlannerPage() {
-  const planner = usePlannerState();
-  const headerColor = planner.colors.header;
+  const { ui, theme, week, tasks, goals, notes, sync, persistence, undoRedo } = usePlannerState();
+  const { colors } = theme;
+  const headerColor = colors.header;
+  const { darkMode } = ui;
   const todayDate = getTodayDate();
 
   const [archiveFrom, setArchiveFrom] = useState(getDefaultFromDate);
@@ -45,7 +47,7 @@ export default function PlannerPage() {
       alert("❌ تاريخ البداية يجب أن يكون قبل تاريخ النهاية");
       return;
     }
-    const result = planner.exportArchive(archiveFrom, archiveTo);
+    const result = persistence.exportArchive(archiveFrom, archiveTo);
     if (result?.totalDays === 0) {
       alert("⚠️ لا توجد أيام محفوظة في هذا النطاق الزمني");
     }
@@ -56,7 +58,7 @@ export default function PlannerPage() {
     if (!file) return;
 
     try {
-      await planner.importSchedule(file);
+      await persistence.importSchedule(file);
       alert("✅ تم استيراد البيانات بنجاح!");
     } catch (error) {
       alert(`❌ خطأ في قراءة الملف: ${error.message}`);
@@ -70,32 +72,32 @@ export default function PlannerPage() {
       style={{
         fontFamily: "Arial, sans-serif",
         direction: "rtl",
-        background: planner.darkMode ? "#1a1a2e" : "#f9fafb",
+        background: darkMode ? "#1a1a2e" : "#f9fafb",
         minHeight: "100vh",
         padding: "20px",
-        color: planner.darkMode ? "#f0f0f0" : "#1a1a2e",
+        color: darkMode ? "#f0f0f0" : "#1a1a2e",
         transition: "background 0.3s, color 0.3s",
       }}
     >
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 12, color: planner.saveColor, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-              {planner.saveIndicator}
+            <span style={{ fontSize: 12, color: persistence.saveColor, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+              {persistence.saveIndicator}
             </span>
             <SyncStatusIndicator
-              syncStatus={planner.syncStatus}
-              lastSyncTime={planner.lastSyncTime}
-              syncError={planner.syncError}
-              onSettingsClick={() => planner.setShowGistSettings(true)}
+              syncStatus={sync.syncStatus}
+              lastSyncTime={sync.lastSyncTime}
+              syncError={sync.syncError}
+              onSettingsClick={() => ui.setShowGistSettings(true)}
             />
           </div>
           <button
-            onClick={() => planner.setDarkMode((value) => !value)}
+            onClick={() => ui.setDarkMode((value) => !value)}
             title="Dark Mode"
             style={{
-              background: planner.darkMode ? "#2a2a3e" : "#e0e0e0",
-              color: planner.darkMode ? "#ffd700" : "#ff9800",
+              background: darkMode ? "#2a2a3e" : "#e0e0e0",
+              color: darkMode ? "#ffd700" : "#ff9800",
               border: "none",
               borderRadius: 6,
               padding: "6px 12px",
@@ -104,21 +106,21 @@ export default function PlannerPage() {
               fontWeight: 600,
             }}
           >
-            {planner.darkMode ? "🌙" : "☀️"}
+            {darkMode ? "🌙" : "☀️"}
           </button>
         </div>
 
         <h1 style={{ textAlign: "center", fontSize: 32, fontWeight: 900, marginBottom: 24, color: headerColor.bg }}>جدول الأسبوع 📆</h1>
 
         <GeneralNotesReadonly
-          notes={planner.activeGeneralNotes}
-          colors={planner.colors}
-          darkMode={planner.darkMode}
+          notes={notes.activeGeneralNotes}
+          colors={colors}
+          darkMode={darkMode}
         />
 
         <div
           style={{
-            background: planner.darkMode ? "#2a2a3e" : "#f0f5ff",
+            background: darkMode ? "#2a2a3e" : "#f0f5ff",
             border: `2px solid ${headerColor.bg}`,
             borderRadius: 8,
             padding: 16,
@@ -132,14 +134,14 @@ export default function PlannerPage() {
         >
           <label style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap" }}>📆 اختر الأسبوع:</label>
           <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <button onClick={planner.decrementWeek} title="Previous Week" style={{ background: headerColor.bg, color: headerColor.text, border: "none", borderRadius: 4, padding: "6px 10px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>←</button>
+            <button onClick={week.decrementWeek} title="Previous Week" style={{ background: headerColor.bg, color: headerColor.text, border: "none", borderRadius: 4, padding: "6px 10px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>←</button>
             <input
               type="number"
-              value={planner.selectedWeek}
+              value={week.selectedWeek}
               onChange={(event) => {
                 const nextValue = parseInt(event.target.value, 10);
                 if (nextValue >= 1 && nextValue <= 52) {
-                  planner.setSelectedWeek(nextValue);
+                  week.setSelectedWeek(nextValue);
                 }
               }}
               min="1"
@@ -147,37 +149,37 @@ export default function PlannerPage() {
               style={{ width: 60, padding: "6px 8px", border: `2px solid ${headerColor.bg}`, borderRadius: 4, textAlign: "center", fontSize: 14, fontWeight: 600 }}
               title="Week Number (1-52)"
             />
-            <span style={{ fontSize: 13, fontWeight: 600, color: planner.darkMode ? "#aaa" : "#666" }}>w</span>
-            <button onClick={planner.incrementWeek} title="Next Week" style={{ background: headerColor.bg, color: headerColor.text, border: "none", borderRadius: 4, padding: "6px 10px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>→</button>
+            <span style={{ fontSize: 13, fontWeight: 600, color: darkMode ? "#aaa" : "#666" }}>w</span>
+            <button onClick={week.incrementWeek} title="Next Week" style={{ background: headerColor.bg, color: headerColor.text, border: "none", borderRadius: 4, padding: "6px 10px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>→</button>
             <select
-              value={planner.selectedWeek}
-              onChange={(event) => planner.setSelectedWeek(parseInt(event.target.value, 10))}
-              style={{ padding: "6px 8px", border: `1px solid ${headerColor.bg}`, borderRadius: 4, fontSize: 13, background: planner.darkMode ? "#1a1a2e" : "#fff", color: planner.darkMode ? "#f0f0f0" : "#1a1a2e", cursor: "pointer" }}
+              value={week.selectedWeek}
+              onChange={(event) => week.setSelectedWeek(parseInt(event.target.value, 10))}
+              style={{ padding: "6px 8px", border: `1px solid ${headerColor.bg}`, borderRadius: 4, fontSize: 13, background: darkMode ? "#1a1a2e" : "#fff", color: darkMode ? "#f0f0f0" : "#1a1a2e", cursor: "pointer" }}
             >
-              {Array.from({ length: 52 }, (_, index) => index + 1).map((week) => (
-                <option key={week} value={week}>
-                  الأسبوع {week}
+              {Array.from({ length: 52 }, (_, index) => index + 1).map((weekNumber) => (
+                <option key={weekNumber} value={weekNumber}>
+                  الأسبوع {weekNumber}
                 </option>
               ))}
             </select>
-            <span style={{ fontSize: 12, color: "#999", marginLeft: 12, whiteSpace: "nowrap" }}>{planner.weekRangeLabel}</span>
+            <span style={{ fontSize: 12, color: "#999", marginLeft: 12, whiteSpace: "nowrap" }}>{week.weekRangeLabel}</span>
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 12, marginBottom: 24, justifyContent: "center", flexWrap: "wrap" }}>
           <button
-            onClick={planner.copyPreviousWeek}
-            disabled={planner.selectedWeek === 1}
+            onClick={tasks.copyPreviousWeek}
+            disabled={week.selectedWeek === 1}
             style={{
               background: "#e8f5e9",
               color: "#388e3c",
               border: "1px solid #c8e6c9",
               borderRadius: 6,
               padding: "8px 12px",
-              cursor: planner.selectedWeek === 1 ? "not-allowed" : "pointer",
+              cursor: week.selectedWeek === 1 ? "not-allowed" : "pointer",
               fontSize: 13,
               fontWeight: 600,
-              opacity: planner.selectedWeek === 1 ? 0.5 : 1,
+              opacity: week.selectedWeek === 1 ? 0.5 : 1,
             }}
           >
             📋 نسخ من الأسبوع السابق
@@ -204,10 +206,10 @@ export default function PlannerPage() {
           {Object.entries(TAB_LABELS).map(([tabKey, label]) => (
             <button
               key={tabKey}
-              onClick={() => planner.setTab(tabKey)}
+              onClick={() => ui.setTab(tabKey)}
               style={{
-                background: planner.tab === tabKey ? headerColor.bg : "transparent",
-                color: planner.tab === tabKey ? headerColor.text : "#666",
+                background: ui.tab === tabKey ? headerColor.bg : "transparent",
+                color: ui.tab === tabKey ? headerColor.text : "#666",
                 border: "none",
                 borderRadius: "8px 8px 0 0",
                 padding: "10px 20px",
@@ -221,11 +223,11 @@ export default function PlannerPage() {
           ))}
 
           <div style={{ marginRight: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-            <button onClick={planner.undoRedo.undo} disabled={!planner.undoRedo.canUndo} title="Ctrl+Z" style={{ background: "#e3f2fd", color: "#1976d2", border: "1px solid #90caf9", borderRadius: 6, padding: "8px 12px", cursor: planner.undoRedo.canUndo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: planner.undoRedo.canUndo ? 1 : 0.5 }}>↶ تراجع</button>
-            <button onClick={planner.undoRedo.redo} disabled={!planner.undoRedo.canRedo} title="Ctrl+Y" style={{ background: "#f3e5f5", color: "#7b1fa2", border: "1px solid #ce93d8", borderRadius: 6, padding: "8px 12px", cursor: planner.undoRedo.canRedo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: planner.undoRedo.canRedo ? 1 : 0.5 }}>↷ إعادة</button>
-            <button onClick={planner.resetPlanner} title="Reset planner" style={{ background: "#fff3e0", color: "#ef6c00", border: "1px solid #ffb74d", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>↺ إعادة ضبط</button>
-            <button onClick={() => planner.setShowGistSettings(true)} title="GitHub Gist Sync" style={{ background: planner.hasCredentials() ? "#9b59b6" : "#bdc3c7", color: "#fff", border: "none", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>🔗 GitHub</button>
-            <button onClick={planner.exportSchedule} title="Export as JSON" style={{ background: "#e8f5e9", color: "#388e3c", border: "1px solid #81c784", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>⬇️ تصدير</button>
+            <button onClick={undoRedo.undo} disabled={!undoRedo.canUndo} title="Ctrl+Z" style={{ background: "#e3f2fd", color: "#1976d2", border: "1px solid #90caf9", borderRadius: 6, padding: "8px 12px", cursor: undoRedo.canUndo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: undoRedo.canUndo ? 1 : 0.5 }}>↶ تراجع</button>
+            <button onClick={undoRedo.redo} disabled={!undoRedo.canRedo} title="Ctrl+Y" style={{ background: "#f3e5f5", color: "#7b1fa2", border: "1px solid #ce93d8", borderRadius: 6, padding: "8px 12px", cursor: undoRedo.canRedo ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 600, opacity: undoRedo.canRedo ? 1 : 0.5 }}>↷ إعادة</button>
+            <button onClick={persistence.resetPlanner} title="Reset planner" style={{ background: "#fff3e0", color: "#ef6c00", border: "1px solid #ffb74d", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>↺ إعادة ضبط</button>
+            <button onClick={() => ui.setShowGistSettings(true)} title="GitHub Gist Sync" style={{ background: sync.hasCredentials() ? "#9b59b6" : "#bdc3c7", color: "#fff", border: "none", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>🔗 GitHub</button>
+            <button onClick={persistence.exportSchedule} title="Export as JSON" style={{ background: "#e8f5e9", color: "#388e3c", border: "1px solid #81c784", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>⬇️ تصدير</button>
             <label title="Import JSON" style={{ background: "#fce4ec", color: "#c2185b", border: "1px solid #f48fb1", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600, display: "inline-block" }}>
               ⬆️ استيراد
               <input type="file" accept=".json" onChange={handleImportChange} style={{ display: "none" }} />
@@ -237,8 +239,8 @@ export default function PlannerPage() {
         {/* Archive export bar */}
         <div
           style={{
-            background: planner.darkMode ? "#1e1e35" : "#fdf6e3",
-            border: `1px solid ${planner.darkMode ? "#3a3a5e" : "#e6d58a"}`,
+            background: darkMode ? "#1e1e35" : "#fdf6e3",
+            border: `1px solid ${darkMode ? "#3a3a5e" : "#e6d58a"}`,
             borderRadius: 8,
             padding: "10px 16px",
             marginBottom: 20,
@@ -248,36 +250,36 @@ export default function PlannerPage() {
             flexWrap: "wrap",
           }}
         >
-          <span style={{ fontSize: 13, fontWeight: 700, color: planner.darkMode ? "#e0c97f" : "#8a6a00", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: darkMode ? "#e0c97f" : "#8a6a00", whiteSpace: "nowrap" }}>
             📦 تصدير الأرشيف
           </span>
-          <span style={{ fontSize: 12, color: planner.darkMode ? "#aaa" : "#999", whiteSpace: "nowrap" }}>من</span>
+          <span style={{ fontSize: 12, color: darkMode ? "#aaa" : "#999", whiteSpace: "nowrap" }}>من</span>
           <input
             type="date"
             value={archiveFrom}
             onChange={(e) => setArchiveFrom(e.target.value)}
             style={{
               padding: "5px 8px",
-              border: `1px solid ${planner.darkMode ? "#555" : "#ccc"}`,
+              border: `1px solid ${darkMode ? "#555" : "#ccc"}`,
               borderRadius: 6,
               fontSize: 13,
-              background: planner.darkMode ? "#2a2a3e" : "#fff",
-              color: planner.darkMode ? "#f0f0f0" : "#1a1a2e",
+              background: darkMode ? "#2a2a3e" : "#fff",
+              color: darkMode ? "#f0f0f0" : "#1a1a2e",
               cursor: "pointer",
             }}
           />
-          <span style={{ fontSize: 12, color: planner.darkMode ? "#aaa" : "#999", whiteSpace: "nowrap" }}>إلى</span>
+          <span style={{ fontSize: 12, color: darkMode ? "#aaa" : "#999", whiteSpace: "nowrap" }}>إلى</span>
           <input
             type="date"
             value={archiveTo}
             onChange={(e) => setArchiveTo(e.target.value)}
             style={{
               padding: "5px 8px",
-              border: `1px solid ${planner.darkMode ? "#555" : "#ccc"}`,
+              border: `1px solid ${darkMode ? "#555" : "#ccc"}`,
               borderRadius: 6,
               fontSize: 13,
-              background: planner.darkMode ? "#2a2a3e" : "#fff",
-              color: planner.darkMode ? "#f0f0f0" : "#1a1a2e",
+              background: darkMode ? "#2a2a3e" : "#fff",
+              color: darkMode ? "#f0f0f0" : "#1a1a2e",
               cursor: "pointer",
             }}
           />
@@ -297,97 +299,97 @@ export default function PlannerPage() {
           >
             ⬇️ تصدير
           </button>
-          <span style={{ fontSize: 11, color: planner.darkMode ? "#888" : "#aaa" }}>
+          <span style={{ fontSize: 11, color: darkMode ? "#888" : "#aaa" }}>
             JSON بدون IDs — مناسب للأرشيف والـ AI
           </span>
         </div>
 
-        {planner.tab === "editor" && (
+        {ui.tab === "editor" && (
           <div style={{ marginBottom: 24 }}>
-            {planner.days.map((day) => (
+            {tasks.days.map((day) => (
               <DayCard
                 key={day.id}
                 day={day}
-                colors={planner.colors}
-                goalOptions={planner.taskGoalOptions}
-                onChange={(patch) => planner.updateDay(day.id, patch)}
-                onCopyDay={planner.copyDay}
-                onSaveAsTemplate={planner.saveAsTemplate}
-                onApplyTemplate={planner.applyTemplate}
-                createTaskId={planner.createTaskId}
+                colors={colors}
+                goalOptions={tasks.goalOptions}
+                onChange={(patch) => tasks.updateDay(day.id, patch)}
+                onCopyDay={tasks.copyDay}
+                onSaveAsTemplate={tasks.saveAsTemplate}
+                onApplyTemplate={tasks.applyTemplate}
+                createTaskId={tasks.createTaskId}
                 isCurrentDay={day.التاريخ === todayDate}
               />
             ))}
           </div>
         )}
 
-        {planner.tab === "notes" && (
+        {ui.tab === "notes" && (
           <GeneralNotesTab
-            notes={planner.generalNotes}
-            colors={planner.colors}
-            darkMode={planner.darkMode}
-            onAddNote={planner.addGeneralNote}
-            onUpdateNote={planner.updateGeneralNote}
-            onToggleActive={planner.toggleGeneralNoteActive}
-            onDeleteNote={planner.deleteGeneralNote}
+            notes={notes.generalNotes}
+            colors={colors}
+            darkMode={darkMode}
+            onAddNote={notes.addGeneralNote}
+            onUpdateNote={notes.updateGeneralNote}
+            onToggleActive={notes.toggleGeneralNoteActive}
+            onDeleteNote={notes.deleteGeneralNote}
           />
         )}
 
-        {planner.tab === "json" && (
+        {ui.tab === "json" && (
           <JSONEditorTab
-            schedule={planner.getScheduleData()}
-            onScheduleUpdate={planner.updateScheduleFromJSON}
-            colors={planner.colors}
-            darkMode={planner.darkMode}
+            schedule={persistence.getScheduleData()}
+            onScheduleUpdate={persistence.updateScheduleFromJSON}
+            colors={colors}
+            darkMode={darkMode}
           />
         )}
 
-        {planner.tab === "goals" && (
+        {ui.tab === "goals" && (
           <GoalsTab
-            colors={planner.colors}
-            monthLabel={planner.monthLabel}
-            weekRangeLabel={planner.weekRangeLabel}
-            currentMonthGoals={planner.currentMonthGoals}
-            currentWeekGoals={planner.currentWeekGoals}
-            monthlySummary={planner.monthlySummary}
-            onAddMonthlyGoal={planner.addMonthlyGoal}
-            onUpdateMonthlyGoalTitle={planner.updateMonthlyGoalTitle}
-            onAddWeeklyGoal={planner.addWeeklyGoal}
-            onUpdateWeeklyGoalTitle={planner.updateWeeklyGoalTitle}
-            onDeleteMonthlyGoal={planner.deleteMonthlyGoal}
-            onDeleteWeeklyGoal={planner.deleteWeeklyGoal}
+            colors={colors}
+            monthLabel={week.monthLabel}
+            weekRangeLabel={week.weekRangeLabel}
+            currentMonthGoals={goals.currentMonthGoals}
+            currentWeekGoals={goals.currentWeekGoals}
+            monthlySummary={goals.monthlySummary}
+            onAddMonthlyGoal={goals.addMonthlyGoal}
+            onUpdateMonthlyGoalTitle={goals.updateMonthlyGoalTitle}
+            onAddWeeklyGoal={goals.addWeeklyGoal}
+            onUpdateWeeklyGoalTitle={goals.updateWeeklyGoalTitle}
+            onDeleteMonthlyGoal={goals.deleteMonthlyGoal}
+            onDeleteWeeklyGoal={goals.deleteWeeklyGoal}
           />
         )}
 
-        {planner.tab === "colors" && <ColorsTab colors={planner.colors} onColorChange={planner.changeColor} />}
+        {ui.tab === "colors" && <ColorsTab colors={colors} onColorChange={theme.changeColor} />}
 
-        {planner.tab === "preview" && (
+        {ui.tab === "preview" && (
           <PreviewTab
-            colors={planner.colors}
-            days={planner.days}
-            currentWeekGoals={planner.currentWeekGoals}
-            monthLabel={planner.monthLabel}
-            monthlySummary={planner.monthlySummary}
-            printZoom={planner.printZoom}
-            onZoomOut={planner.zoomOut}
-            onZoomIn={planner.zoomIn}
+            colors={colors}
+            days={tasks.days}
+            currentWeekGoals={goals.currentWeekGoals}
+            monthLabel={week.monthLabel}
+            monthlySummary={goals.monthlySummary}
+            printZoom={ui.printZoom}
+            onZoomOut={ui.zoomOut}
+            onZoomIn={ui.zoomIn}
           />
         )}
 
         <GistSettingsModal
-          isOpen={planner.showGistSettings}
-          onClose={() => planner.setShowGistSettings(false)}
-          syncStatus={planner.syncStatus}
-          lastSyncTime={planner.lastSyncTime}
-          syncError={planner.syncError}
-          onCreateGist={planner.createNewGist}
+          isOpen={ui.showGistSettings}
+          onClose={() => ui.setShowGistSettings(false)}
+          syncStatus={sync.syncStatus}
+          lastSyncTime={sync.lastSyncTime}
+          syncError={sync.syncError}
+          onCreateGist={sync.createNewGist}
           onSave={() => undefined}
         />
 
         <TemplateManager
           isOpen={showTemplateModal}
           onClose={() => setShowTemplateModal(false)}
-          darkMode={planner.darkMode}
+          darkMode={darkMode}
         />
       </div>
     </div>

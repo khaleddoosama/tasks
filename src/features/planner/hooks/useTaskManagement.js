@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { getTemplate, saveTemplate } from "../../../services/dayTemplates";
 
 /**
  * Hook for managing task operations within the planner
@@ -159,8 +160,7 @@ export function useTaskManagement({
       const day = days.find((d) => d.id === dayId);
       if (!day || !templateName.trim()) return;
 
-      const templates = JSON.parse(localStorage.getItem("dayTemplatesV1") || "{}");
-      templates[templateName] = {
+      saveTemplate(templateName, {
         name: templateName,
         type: day.type,
         notes: day.notes,
@@ -169,8 +169,7 @@ export function useTaskManagement({
         تقييم_اليوم: day.تقييم_اليوم,
         عدد_ساعات_النوم: day.عدد_ساعات_النوم,
         عدد_ساعات_الهاتف: day.عدد_ساعات_الهاتف,
-      };
-      localStorage.setItem("dayTemplatesV1", JSON.stringify(templates));
+      });
     },
     [days],
   );
@@ -183,8 +182,7 @@ export function useTaskManagement({
    */
   const applyTemplate = useCallback(
     (dayId, templateName) => {
-      const templates = JSON.parse(localStorage.getItem("dayTemplatesV1") || "{}");
-      const template = templates[templateName];
+      const template = getTemplate(templateName);
 
       if (!template) return;
 

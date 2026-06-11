@@ -43,10 +43,12 @@ src/
 ├── components/
 │   ├── schedule/DayCard.jsx  # Collapsible day section with task table
 │   ├── schedule/TaskRow.jsx  # Inline-editable task row
+│   ├── schedule/GoalSelector.jsx  # Per-task goal-link dropdown (grouped + memoized)
 │   ├── schedule/TimePickerField.jsx
 │   └── tabs/                 # ColorsTab, GoalsTab, PreviewTab, JSONEditorTab
 ├── services/
-│   └── scheduleTransfer.js   # exportScheduleBackup, importScheduleFromFile
+│   ├── scheduleTransfer.js   # exportScheduleBackup, importScheduleFromFile
+│   └── dayTemplates.js       # Day-template storage (dayTemplatesV1) read/write
 ├── useGistSync.js            # GitHub Gist push/pull/create with debounced auto-push
 ├── GistSettingsModal.jsx     # UI for entering Gist token/ID
 └── SyncStatusIndicator.jsx
@@ -64,6 +66,24 @@ All application state lives in `usePlannerState`. It owns:
 When the user navigates to a different week, `days` is replaced with that week's saved schedule (or a fresh scaffold from `createInitialDays`), and the previous week is flushed into `weekSchedules`.
 
 Persistence is handled by `useSchedulePersistence`, which debounces saves (500ms) and restores on mount from `localStorage` key `weekScheduleV2`. GitHub Gist sync (`useGistSync`) pulls on load and auto-pushes (3s debounce) whenever `syncData` changes.
+
+#### Return shape (namespaced)
+
+`usePlannerState` returns a **namespaced object**, not a flat property bag. `PlannerPage` is the only consumer; it destructures these groups and passes explicit props down to child components. The groups:
+
+| Namespace | Contents |
+|-----------|----------|
+| `undoRedo` | `undo`, `redo`, `replace`, `canUndo`, `canRedo` |
+| `ui` | `tab`/`setTab`, `darkMode`/`setDarkMode`, `printZoom`/`zoomIn`/`zoomOut`, `showGistSettings`/`setShowGistSettings` |
+| `theme` | `colors`, `changeColor` |
+| `week` | `selectedWeek`/`setSelectedWeek`, `incrementWeek`/`decrementWeek`, `weekKey`, `monthKey`, `monthLabel`, `weekRangeLabel` |
+| `tasks` | `days`, `updateDay`, `copyDay`, `copyPreviousWeek`, `saveAsTemplate`, `applyTemplate`, `createTaskId`, `goalOptions` |
+| `goals` | `currentMonthGoals`, `currentWeekGoals`, `monthlySummary`, and all goal CRUD (`addMonthlyGoal`, `updateMonthlyGoalTitle`, `addWeeklyGoal`, `updateWeeklyGoalTitle`, `deleteMonthlyGoal`, `deleteWeeklyGoal`) |
+| `notes` | `generalNotes`, `activeGeneralNotes`, `addGeneralNote`, `updateGeneralNote`, `toggleGeneralNoteActive`, `deleteGeneralNote` |
+| `sync` | `syncStatus`, `lastSyncTime`, `syncError`, `pullFromGist`, `pushToGist`, `createNewGist`, `hasCredentials` |
+| `persistence` | `saveIndicator`, `saveColor`, `exportSchedule`, `exportArchive`, `importSchedule`, `getScheduleData`, `updateScheduleFromJSON`, `resetPlanner` |
+
+Note: `tasks.days` is the same `days` array described above (the current week's tasks); `theme.colors` is the colors object.
 
 ### Data model
 
@@ -110,6 +130,8 @@ Persistence is handled by `useSchedulePersistence`, which debounces saves (500ms
 
 Goals are **user-defined**, not keyword-based. Monthly goals are stored by `monthKey` (`"YYYY-MM"`), weekly goals by `weekKey`. Weekly goals link to a parent monthly goal via `monthlyGoalId`. Tasks link to goals via `linkedWeeklyGoalId` or `linkedMonthlyGoalId`. Progress is computed in `goals.js` by counting `done` tasks. Monthly progress rolls up across all weeks in that month (`weekSchedules` filtered by `day.التاريخ`).
 
+The per-task goal-link dropdown lives in `components/schedule/GoalSelector.jsx` (rendered by `TaskRow`). It receives `goalOptions` (`{ weeklyGoals, monthlyGoals, weeklyGoalsByMonthly, allMonthlyGoals }`) and reports selections via `onLink(type, goalId)` / `onClear`; the parent/child grouping and "already-shown-as-child" filtering are memoized there.
+
 ### Week arithmetic
 
 Weeks start on **Saturday** (`WEEK_START_DAY = 6`). Week 1 starts on the first Saturday of the year. `getWeekKey(week, year)` → `"YYYY-WNN"`. `getMonthKey(dateStr)` → `"YYYY-MM"`.
@@ -125,6 +147,7 @@ Credentials (`gist_token`, `gist_id`) are stored in `localStorage`. On load, dat
 ## Key implementation notes
 
 - All layout uses inline CSS. `direction: rtl` must be maintained on all containers.
+- Day templates are read/written **only** through `services/dayTemplates.js` (localStorage key `dayTemplatesV1`, guarded parsing). Do not access the key directly — both `useTaskManagement` and `DayCard` go through the service.
 - `schedule_editor.jsx` is a legacy file — `App.jsx` → `PlannerPage` is the current entry point.
 - `weekSchedulesRef` mirrors `weekSchedules` state to avoid stale closures in week-switch callbacks.
 - Single times (no `" - "`) are treated as end-of-day markers in duration calculations.

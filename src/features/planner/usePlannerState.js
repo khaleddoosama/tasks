@@ -474,23 +474,7 @@ export function usePlannerState() {
   );
 
   return {
-    days,
-    colors,
-    tab,
-    printZoom,
-    darkMode,
-    selectedWeek,
-    showGistSettings,
-    taskGoalOptions: enhancedTaskGoalOptions,
-    currentMonthGoals: currentMonthGoalItems,
-    currentWeekGoals: currentWeekGoalItems,
-    monthlySummary,
-    monthKey,
-    monthLabel: formatMonthDisplay(monthKey),
-    weekKey,
-    saveIndicator: getSaveIndicator(saveStatus, lastSaved),
-    saveColor: getSaveColor(saveStatus),
-    weekRangeLabel: `من ${formatDateDisplay(weekDates[0])} إلى ${formatDateDisplay(weekDates[6])}`,
+    // History (undo/redo) — already a cohesive group.
     undoRedo: {
       undo,
       redo,
@@ -498,45 +482,94 @@ export function usePlannerState() {
       canUndo,
       canRedo,
     },
-    syncStatus,
-    lastSyncTime,
-    syncError,
-    pullFromGist,
-    pushToGist,
-    createNewGist,
-    hasCredentials,
-    generalNotes,
-    activeGeneralNotes,
-    addGeneralNote,
-    updateGeneralNote,
-    toggleGeneralNoteActive,
-    deleteGeneralNote,
-    setTab,
-    setDarkMode,
-    setSelectedWeek: changeSelectedWeek,
-    setShowGistSettings,
-    updateDay,
-    copyDay,
-    copyPreviousWeek,
-    saveAsTemplate,
-    applyTemplate,
-    createTaskId,
-    addMonthlyGoal,
-    updateMonthlyGoalTitle,
-    addWeeklyGoal,
-    updateWeeklyGoalTitle,
-    deleteMonthlyGoal,
-    deleteWeeklyGoal,
-    changeColor,
-    exportSchedule,
-    exportArchive,
-    importSchedule,
-    getScheduleData,
-    updateScheduleFromJSON,
-    resetPlanner,
-    incrementWeek,
-    decrementWeek,
-    zoomIn,
-    zoomOut,
+
+    // UI state: tabs, dark mode, print zoom, modal visibility.
+    ui: {
+      tab,
+      setTab,
+      darkMode,
+      setDarkMode,
+      printZoom,
+      zoomIn,
+      zoomOut,
+      showGistSettings,
+      setShowGistSettings,
+    },
+
+    // Theme: category colors and the editor for them.
+    theme: {
+      colors,
+      changeColor,
+    },
+
+    // Week navigation and date labels.
+    week: {
+      selectedWeek,
+      setSelectedWeek: changeSelectedWeek,
+      incrementWeek,
+      decrementWeek,
+      weekKey,
+      monthKey,
+      monthLabel: formatMonthDisplay(monthKey),
+      weekRangeLabel: `من ${formatDateDisplay(weekDates[0])} إلى ${formatDateDisplay(weekDates[6])}`,
+    },
+
+    // The current week's days plus all task/day mutations.
+    tasks: {
+      days,
+      updateDay,
+      copyDay,
+      copyPreviousWeek,
+      saveAsTemplate,
+      applyTemplate,
+      createTaskId,
+      goalOptions: enhancedTaskGoalOptions,
+    },
+
+    // Goal data and CRUD.
+    goals: {
+      currentMonthGoals: currentMonthGoalItems,
+      currentWeekGoals: currentWeekGoalItems,
+      monthlySummary,
+      addMonthlyGoal,
+      updateMonthlyGoalTitle,
+      addWeeklyGoal,
+      updateWeeklyGoalTitle,
+      deleteMonthlyGoal,
+      deleteWeeklyGoal,
+    },
+
+    // Free-form general notes.
+    notes: {
+      generalNotes,
+      activeGeneralNotes,
+      addGeneralNote,
+      updateGeneralNote,
+      toggleGeneralNoteActive,
+      deleteGeneralNote,
+    },
+
+    // GitHub Gist sync.
+    sync: {
+      syncStatus,
+      lastSyncTime,
+      syncError,
+      pullFromGist,
+      pushToGist,
+      createNewGist,
+      hasCredentials,
+    },
+
+    // Local persistence, import/export, reset.
+    persistence: {
+      saveIndicator: getSaveIndicator(saveStatus, lastSaved),
+      saveColor: getSaveColor(saveStatus),
+      exportSchedule,
+      exportArchive,
+      importSchedule,
+      getScheduleData,
+      updateScheduleFromJSON,
+      resetPlanner,
+    },
   };
 }

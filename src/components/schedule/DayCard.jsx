@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { createEmptyTask } from "../../domain/schedule/ids";
+import { readTemplates } from "../../services/dayTemplates";
 import { calculateDurationMin, detectConflicts, sortTasksByStartTime } from "../../domain/schedule/time";
 import TaskRow from "./TaskRow";
 
@@ -193,9 +194,9 @@ export default function DayCard({ day, colors, goalOptions, onChange, onCopyDay,
           <button
             onClick={(event) => {
               event.stopPropagation();
-              const templates = JSON.parse(localStorage.getItem("dayTemplatesV1") || "{}");
+              const templates = readTemplates();
               if (Object.keys(templates).length === 0) {
-                alert("⚠️ لا توجد قوالس محفوظة!");
+                alert("⚠️ لا توجد قوالب محفوظة!");
                 return;
               }
               const templateNames = Object.keys(templates).join("\n");

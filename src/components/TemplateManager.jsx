@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
+import { readTemplates, writeTemplates } from "../services/dayTemplates";
 
 export default function TemplateManager({ isOpen, onClose, darkMode }) {
   const [templates, setTemplates] = useState({});
 
   useEffect(() => {
     if (isOpen) {
-      const savedTemplates = JSON.parse(localStorage.getItem("dayTemplatesV1") || "{}");
-      setTemplates(savedTemplates);
+      setTemplates(readTemplates());
     }
   }, [isOpen]);
 
@@ -17,7 +17,7 @@ export default function TemplateManager({ isOpen, onClose, darkMode }) {
     const updatedTemplates = { ...templates };
     delete updatedTemplates[templateName];
     setTemplates(updatedTemplates);
-    localStorage.setItem("dayTemplatesV1", JSON.stringify(updatedTemplates));
+    writeTemplates(updatedTemplates);
     alert("✅ تم حذف القالب بنجاح!");
   };
 
@@ -74,7 +74,7 @@ export default function TemplateManager({ isOpen, onClose, darkMode }) {
 
         {templateNames.length === 0 ? (
           <div style={{ textAlign: "center", padding: 20, color: "#999" }}>
-            <p>📭 لا توجد قوالس محفوظة</p>
+            <p>📭 لا توجد قوالب محفوظة</p>
             <p style={{ fontSize: 12, marginTop: 8 }}>اضغط على زر "💾 حفظ" في أي يوم لحفظ قالب</p>
           </div>
         ) : (
