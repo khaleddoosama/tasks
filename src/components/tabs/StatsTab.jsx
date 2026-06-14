@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { calculateWeekStats } from "../../domain/schedule/stats";
 
 const ENERGY_EMOJI = { 1: "😴", 2: "😐", 3: "🙂", 4: "😄", 5: "🔥" };
@@ -40,11 +40,84 @@ function StatCard({ label, value, sub, accent }) {
   );
 }
 
+function CategoryTasksPanel({ category, days, colors, onClose }) {
+  const tasks = useMemo(() => {
+    const result = [];
+    days.forEach((day) => {
+      if (!day.enabled) return;
+      (day.tasks || []).forEach((task) => {
+        if (task.cat === category.key) {
+          result.push({ ...task, dayName: day.name });
+        }
+      });
+    });
+    return result;
+  }, [category.key, days]);
+
+  const barColor = colors[category.key]?.text || "#6366f1";
+  const done = tasks.filter((t) => t.done).length;
+
+  return (
+    <div style={{ flex: 1, minWidth: 0, background: "#f8fafc", borderRadius: 10, padding: 14, border: "1px solid #e5e7eb" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <span style={{ fontWeight: 700, fontSize: 14 }}>
+          {category.icon} {category.label}
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 12, color: "#6b7280" }}>{done}/{tasks.length} مكتملة</span>
+          <button
+            onClick={onClose}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#9ca3af", lineHeight: 1, padding: 0 }}
+            aria-label="إغلاق"
+          >✕</button>
+        </div>
+      </div>
+      {tasks.length === 0 ? (
+        <p style={{ color: "#9ca3af", fontSize: 13, margin: 0 }}>لا توجد مهام في هذا التصنيف.</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {tasks.map((task) => (
+            <div
+              key={task.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "6px 10px",
+                borderRadius: 8,
+                background: "#fff",
+                border: "1px solid #e5e7eb",
+                fontSize: 12,
+              }}
+            >
+              <span style={{ fontSize: 14, color: task.done ? "#16a34a" : "#d1d5db" }}>{task.done ? "✔" : "○"}</span>
+              <span style={{ flex: 1, color: task.done ? "#374151" : "#9ca3af", textDecoration: task.done ? "none" : "none" }}>
+                {task.task}
+              </span>
+              {task.time && <span style={{ color: "#9ca3af", flexShrink: 0 }}>{task.time}</span>}
+              <span style={{
+                fontSize: 10,
+                padding: "1px 6px",
+                borderRadius: 99,
+                background: barColor + "22",
+                color: barColor,
+                flexShrink: 0,
+              }}>{task.dayName}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StatsTab({ colors, days, weekRangeLabel }) {
   const stats = useMemo(() => calculateWeekStats(days), [days]);
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState(null);
   const completionColor =
     stats.completionRate >= 80 ? "#16a34a" : stats.completionRate >= 40 ? "#f59e0b" : "#ef4444";
   const maxCategoryMinutes = stats.categories[0]?.minutes || 1;
+  const selectedCategory = stats.categories.find((c) => c.key === selectedCategoryKey) || null;
 
   return (
     <div style={{ padding: 20, background: "#f9fafb", borderRadius: 12, direction: "rtl" }}>
@@ -82,28 +155,64 @@ export default function StatsTab({ colors, days, weekRangeLabel }) {
         {stats.categories.length === 0 ? (
           <p style={{ color: "#9ca3af", fontSize: 13, margin: 0 }}>لا توجد مهام لها أوقات بعد.</p>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {stats.categories.map((category) => {
-              const categoryColor = colors[category.key];
-              const barColor = categoryColor?.text || "#6366f1";
-              const widthPct = Math.round((category.minutes / maxCategoryMinutes) * 100);
-              const sharePct = stats.totalMinutes > 0 ? Math.round((category.minutes / stats.totalMinutes) * 100) : 0;
-              return (
-                <div key={category.key}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 600 }}>
-                      {category.icon} {category.label}
-                    </span>
-                    <span style={{ color: "#6b7280" }}>
-                      {formatMinutes(category.minutes)} · {sharePct}%
-                    </span>
+          <div style={{ display: "flex", gap: 14 }}>
+            {/* Category list */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, width: selectedCategory ? 200 : "100%", flexShrink: 0, transition: "width 0.2s" }}>
+              {stats.categories.map((category) => {
+                const categoryColor = colors[category.key];
+                const barColor = categoryColor?.text || "#6366f1";
+                const widthPct = Math.round((category.minutes / maxCategoryMinutes) * 100);
+                const sharePct = stats.totalMinutes > 0 ? Math.round((category.minutes / stats.totalMinutes) * 100) : 0;
+                const isSelected = selectedCategoryKey === category.key;
+                const taskCount = days.flatMap((d) => d.tasks || []).filter((t) => t.cat === category.key).length;
+                return (
+                  <div
+                    key={category.key}
+                    onClick={() => setSelectedCategoryKey(isSelected ? null : category.key)}
+                    style={{
+                      cursor: "pointer",
+                      padding: "8px 10px",
+                      borderRadius: 8,
+                      border: `1px solid ${isSelected ? barColor : "#e5e7eb"}`,
+                      background: isSelected ? barColor + "11" : "transparent",
+                      transition: "background 0.15s, border 0.15s",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: selectedCategory ? 0 : 4 }}>
+                      <span style={{ fontWeight: 600 }}>
+                        {category.icon} {category.label}
+                        <span style={{
+                          marginRight: 6,
+                          fontSize: 10,
+                          padding: "1px 6px",
+                          borderRadius: 99,
+                          background: "#f1f5f9",
+                          color: "#6b7280",
+                        }}>{taskCount}</span>
+                      </span>
+                      <span style={{ color: "#6b7280", fontSize: 12 }}>
+                        {formatMinutes(category.minutes)} · {sharePct}%
+                      </span>
+                    </div>
+                    {!selectedCategory && (
+                      <div style={{ background: "#f1f5f9", borderRadius: 999, height: 8, overflow: "hidden", marginTop: 4 }}>
+                        <div style={{ width: `${widthPct}%`, height: "100%", background: barColor, borderRadius: 999, transition: "width 0.3s" }} />
+                      </div>
+                    )}
                   </div>
-                  <div style={{ background: "#f1f5f9", borderRadius: 999, height: 10, overflow: "hidden" }}>
-                    <div style={{ width: `${widthPct}%`, height: "100%", background: barColor, borderRadius: 999, transition: "width 0.3s" }} />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            {/* Task detail panel */}
+            {selectedCategory && (
+              <CategoryTasksPanel
+                category={selectedCategory}
+                days={days}
+                colors={colors}
+                onClose={() => setSelectedCategoryKey(null)}
+              />
+            )}
           </div>
         )}
       </div>
