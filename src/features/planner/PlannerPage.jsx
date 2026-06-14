@@ -8,6 +8,7 @@ import PreviewTab from "../../components/tabs/PreviewTab";
 import JSONEditorTab from "../../components/tabs/JSONEditorTab";
 import GeneralNotesTab from "../../components/tabs/GeneralNotesTab";
 import StatsTab from "../../components/tabs/StatsTab";
+import GoalStatsTab from "../../components/tabs/GoalStatsTab";
 import TemplateManager from "../../components/TemplateManager";
 import { useCallback, useEffect, useState } from "react";
 import { usePlannerState } from "./usePlannerState";
@@ -61,6 +62,7 @@ const TAB_LABELS = {
   editor: "✏️ محرّر",
   notes: "📝 ملاحظات",
   goals: "🎯 الأهداف",
+  goalStats: "📊 إحصائيات الأهداف",
   colors: "🎨 الألوان",
   preview: "👁️ معاينة",
 };
@@ -349,6 +351,15 @@ export default function PlannerPage() {
               <StatsTab colors={colors} days={tasks.days} weekRangeLabel={week.weekRangeLabel} />
             </div>
           </>
+        )}
+
+        {ui.tab === "goalStats" && (
+          <GoalStatsTab
+            monthLabel={week.monthLabel}
+            currentMonthGoals={goals.currentMonthGoals}
+            currentWeekGoals={goals.currentWeekGoals}
+            monthlySummary={goals.monthlySummary}
+          />
         )}
 
         {ui.tab === "colors" && <ColorsTab colors={colors} onColorChange={theme.changeColor} />}
