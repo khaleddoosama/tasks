@@ -30,35 +30,45 @@ export async function upsertWeek(userId, weekKey, daysArray) {
     if (dayErr) return { error: dayErr };
 
     const dayId = dayRows.id;
-
-    // Delete old tasks for this day then re-insert (simplest correctness guarantee)
-    const { error: delErr } = await supabase
-      .from("tasks")
-      .delete()
-      .eq("day_id", dayId);
-    if (delErr) return { error: delErr };
-
     const tasks = Array.isArray(day.tasks) ? day.tasks : [];
-    if (tasks.length === 0) continue;
 
-    const taskPayloads = tasks.map((t, i) => ({
-      user_id:                userId,
-      day_id:                 dayId,
-      task_order:             i * 10,
-      time:                   t.time                ?? null,
-      task:                   t.task                ?? null,
-      cat:                    t.cat                 ?? null,
-      done:                   t.done                ?? false,
-      recurring:              t.recurring           ?? false,
-      linked_weekly_goal_id:  t.linkedWeeklyGoalId  ?? null,
-      linked_monthly_goal_id: t.linkedMonthlyGoalId ?? null,
-      linked_goal_type:       t.linkedGoalType      ?? null,
-      linked_goal_id:         t.linkedGoalId        ?? null,
-      updated_at:             new Date().toISOString(),
-    }));
+    // Upsert tasks using (day_id, app_id) as stable key — preserves notes across pushes
+    if (tasks.length > 0) {
+      const taskPayloads = tasks.map((t, i) => ({
+        user_id:                userId,
+        day_id:                 dayId,
+        app_id:                 t.id,
+        task_order:             i * 10,
+        time:                   t.time                ?? null,
+        task:                   t.task                ?? null,
+        cat:                    t.cat                 ?? null,
+        done:                   t.done                ?? false,
+        recurring:              t.recurring           ?? false,
+        notes:                  t.notes               ?? null,
+        linked_weekly_goal_id:  t.linkedWeeklyGoalId  ?? null,
+        linked_monthly_goal_id: t.linkedMonthlyGoalId ?? null,
+        linked_goal_type:       t.linkedGoalType      ?? null,
+        linked_goal_id:         t.linkedGoalId        ?? null,
+        updated_at:             new Date().toISOString(),
+      }));
 
-    const { error: taskErr } = await supabase.from("tasks").insert(taskPayloads);
-    if (taskErr) return { error: taskErr };
+      const { error: taskErr } = await supabase
+        .from("tasks")
+        .upsert(taskPayloads, { onConflict: "day_id,app_id" });
+      if (taskErr) return { error: taskErr };
+    }
+
+    // Delete tasks removed from the app (app_id no longer in the list)
+    const currentAppIds = tasks.map((t) => t.id).filter(Boolean);
+    if (currentAppIds.length > 0) {
+      await supabase
+        .from("tasks")
+        .delete()
+        .eq("day_id", dayId)
+        .not("app_id", "in", `(${currentAppIds.join(",")})`);
+    } else {
+      await supabase.from("tasks").delete().eq("day_id", dayId);
+    }
   }
 
   return { error: null };
@@ -89,12 +99,13 @@ export async function fetchAllWeeks(userId) {
   for (const t of taskRows || []) {
     if (!tasksByDay[t.day_id]) tasksByDay[t.day_id] = [];
     tasksByDay[t.day_id].push({
-      id:                   t.id,
+      id:                   t.app_id ?? t.id,
       time:                 t.time                   ?? "",
       task:                 t.task                   ?? "",
       cat:                  t.cat                    ?? "",
       done:                 t.done                   ?? false,
       recurring:            t.recurring              ?? false,
+      notes:                t.notes                  ?? "",
       linkedWeeklyGoalId:   t.linked_weekly_goal_id  ?? "",
       linkedMonthlyGoalId:  t.linked_monthly_goal_id ?? "",
       linkedGoalType:       t.linked_goal_type        ?? "",
