@@ -199,6 +199,18 @@ export function useSupabaseSync(syncData, onDataMerged) {
     return () => subscription.unsubscribe();
   }, [pullFromCloud]);
 
+  // Warn before unload while a push is in flight
+  useEffect(() => {
+    const handler = (e) => {
+      if (isPushingRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
   // Debounced auto-push on data change
   useEffect(() => {
     if (!userRef.current || isInitialLoadRef.current) return undefined;
