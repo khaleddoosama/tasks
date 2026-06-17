@@ -19,6 +19,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
 
   const isInitialLoadRef = useRef(true);
   const isPushingRef = useRef(false);
+  const isRequestInFlightRef = useRef(false);
   const debounceTimerRef = useRef(null);
   const syncDataRef = useRef(syncData);
   const onDataMergedRef = useRef(onDataMerged);
@@ -86,6 +87,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
     if (isPushingRef.current) return;
 
     isPushingRef.current = true;
+    isRequestInFlightRef.current = true;
     setSyncStatus("syncing");
     setSyncError(null);
 
@@ -105,6 +107,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
       });
 
       const results = await Promise.all([...weekOps, userDataOp]);
+      isRequestInFlightRef.current = false;
       const failed = results.find((r) => r.error);
       if (failed) throw failed.error;
 
@@ -115,6 +118,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
         isPushingRef.current = false;
       }, 3000);
     } catch (err) {
+      isRequestInFlightRef.current = false;
       console.error("Supabase push failed:", err);
       setSyncStatus("failed");
       setSyncError(err.message || "فشل حفظ البيانات");
@@ -202,7 +206,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
   // Warn before unload while a push is in flight
   useEffect(() => {
     const handler = (e) => {
-      if (isPushingRef.current) {
+      if (isRequestInFlightRef.current) {
         e.preventDefault();
         e.returnValue = "";
       }
