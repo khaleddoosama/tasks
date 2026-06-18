@@ -449,6 +449,20 @@ export function usePlannerState() {
     [persistTemplates],
   );
 
+  const updateTemplate = useCallback(
+    (oldName, newName, newTasks) => {
+      persistTemplates((currentTemplates) => {
+        const next = { ...currentTemplates };
+        const existing = next[oldName] || {};
+        const updated = { ...existing, name: newName, tasks: newTasks, updatedAt: new Date().toISOString() };
+        if (oldName !== newName) delete next[oldName];
+        next[newName] = updated;
+        return next;
+      });
+    },
+    [persistTemplates],
+  );
+
   // Goal management: delegated to useGoalManagement hook
   const { addMonthlyGoal, updateMonthlyGoalTitle, deleteMonthlyGoal, addWeeklyGoal, updateWeeklyGoalTitle, deleteWeeklyGoal } = useGoalManagement({
     monthlyGoalsStore,
@@ -614,6 +628,7 @@ export function usePlannerState() {
       saveAsTemplate,
       applyTemplate,
       deleteTemplate,
+      updateTemplate,
       templates,
       createTaskId,
       goalOptions: enhancedTaskGoalOptions,

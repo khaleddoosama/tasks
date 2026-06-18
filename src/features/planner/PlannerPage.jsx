@@ -394,6 +394,7 @@ export default function PlannerPage() {
           darkMode={darkMode}
           templates={tasks.templates}
           onDeleteTemplate={tasks.deleteTemplate}
+          onUpdateTemplate={tasks.updateTemplate}
           onToast={showToast}
         />
       </div>
