@@ -122,36 +122,54 @@ export default function PlannerPage() {
     >
       <Toast toasts={toasts} />
 
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 12, color: persistence.saveColor, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-              {persistence.saveIndicator}
-            </span>
-            <SyncStatusIndicator
-              syncStatus={sync.syncStatus}
-              lastSyncTime={sync.lastSyncTime}
-              syncError={sync.syncError}
-              onSettingsClick={() => ui.setShowAuthModal(true)}
-            />
-          </div>
-          <button
-            onClick={() => ui.setDarkMode((value) => !value)}
-            title="Dark Mode"
-            style={{
-              background: darkMode ? "#2a2a3e" : "#e0e0e0",
-              color: darkMode ? "#ffd700" : "#ff9800",
-              border: "none",
-              borderRadius: 6,
-              padding: "6px 12px",
-              cursor: "pointer",
-              fontSize: 16,
-              fontWeight: 600,
-            }}
-          >
-            {darkMode ? "🌙" : "☀️"}
-          </button>
+      {/* Fixed top bar */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          background: darkMode ? "#1a1a2e" : "#f9fafb",
+          borderBottom: darkMode ? "1px solid #2a2a3e" : "1px solid #e5e7eb",
+          padding: "8px 20px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          direction: "rtl",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: persistence.saveColor, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            {persistence.saveIndicator}
+          </span>
+          <SyncStatusIndicator
+            syncStatus={sync.syncStatus}
+            lastSyncTime={sync.lastSyncTime}
+            syncError={sync.syncError}
+            onSettingsClick={() => ui.setShowAuthModal(true)}
+          />
         </div>
+        <button
+          onClick={() => ui.setDarkMode((value) => !value)}
+          title="Dark Mode"
+          style={{
+            background: darkMode ? "#2a2a3e" : "#e0e0e0",
+            color: darkMode ? "#ffd700" : "#ff9800",
+            border: "none",
+            borderRadius: 6,
+            padding: "6px 12px",
+            cursor: "pointer",
+            fontSize: 16,
+            fontWeight: 600,
+          }}
+        >
+          {darkMode ? "🌙" : "☀️"}
+        </button>
+      </div>
+
+      <div style={{ maxWidth: 1200, margin: "0 auto", paddingTop: 56 }}>
 
         <h1 style={{ textAlign: "center", fontSize: 32, fontWeight: 900, marginBottom: 24, color: headerColor.bg }}>جدول الأسبوع 📆</h1>
 
