@@ -49,7 +49,10 @@ export function buildPrintHtml(colors, days) {
       const stars5 = Array(5)
         .fill('<span style="font-size:13pt;color:#ccc;margin-left:2mm;">&#9733;</span>')
         .join("");
-      const energyLevel = day.مستوى_الطاقة ? parseInt(day.مستوى_الطاقة, 10) : 0;
+      const energyEntries = Array.isArray(day.energyLog) ? day.energyLog : [];
+      const energyLevel = energyEntries.length > 0
+        ? Math.round(energyEntries.reduce((sum, entry) => sum + parseInt(entry.level || 0), 0) / energyEntries.length)
+        : 0;
       const dayRating = day.تقييم_اليوم ? parseInt(day.تقييم_اليوم, 10) : 0;
       const energyEmojis = ["", "😴", "😐", "😊", "😄", "🔥"];
       const ratingEmojis = ["", "😞", "😕", "😐", "😊", "🌟"];

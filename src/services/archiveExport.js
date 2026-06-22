@@ -94,7 +94,11 @@ export function exportArchiveRange({
     .sort((a, b) => a.التاريخ.localeCompare(b.التاريخ));
 
   const days = matchingDays.map((day) => {
-    const energyLabel = ENERGY_LABELS[day.مستوى_الطاقة] || null;
+    const energyEntries = Array.isArray(day.energyLog) ? day.energyLog : [];
+    const averageEnergyLevel = energyEntries.length > 0
+      ? Math.round(energyEntries.reduce((sum, entry) => sum + parseInt(entry.level || 0), 0) / energyEntries.length)
+      : null;
+    const energyLabel = averageEnergyLevel ? ENERGY_LABELS[String(averageEnergyLevel)] : null;
     const ratingLabel = RATING_LABELS[day.تقييم_اليوم] || null;
 
     return {
@@ -103,6 +107,7 @@ export function exportArchiveRange({
       type: day.type || "",
       ...(day.notes ? { notes: day.notes } : {}),
       ...(energyLabel ? { energyLevel: energyLabel } : {}),
+      ...(energyEntries.length > 0 ? { energyLog: energyEntries } : {}),
       ...(ratingLabel ? { dayRating: ratingLabel } : {}),
       ...(day.عدد_ساعات_النوم ? { sleepHours: day.عدد_ساعات_النوم } : {}),
       ...(day.عدد_ساعات_الهاتف ? { phoneHours: day.عدد_ساعات_الهاتف } : {}),

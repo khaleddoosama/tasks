@@ -87,8 +87,13 @@ export function calculateWeekStats(days = []) {
     .sort((a, b) => b.minutes - a.minutes);
 
   const energyValues = activeDays
-    .map((day) => Number(day.مستوى_الطاقة))
-    .filter((value) => value >= 1 && value <= 5);
+    .map((day) => {
+      const energyEntries = Array.isArray(day.energyLog) ? day.energyLog : [];
+      if (energyEntries.length === 0) return null;
+      const avg = energyEntries.reduce((sum, entry) => sum + parseInt(entry.level || 0), 0) / energyEntries.length;
+      return Math.round(avg);
+    })
+    .filter((value) => value !== null && value >= 1 && value <= 5);
   const ratingValues = activeDays
     .map((day) => Number(day.تقييم_اليوم))
     .filter((value) => value >= 1 && value <= 5);
@@ -103,6 +108,10 @@ export function calculateWeekStats(days = []) {
     .map((day) => {
       const tasks = day.tasks || [];
       const done = tasks.filter((task) => task.done).length;
+      const energyEntries = Array.isArray(day.energyLog) ? day.energyLog : [];
+      const energyAvg = energyEntries.length > 0
+        ? Math.round(energyEntries.reduce((sum, entry) => sum + parseInt(entry.level || 0), 0) / energyEntries.length)
+        : null;
       return {
         id: day.id,
         name: day.name,
@@ -110,7 +119,7 @@ export function calculateWeekStats(days = []) {
         total: tasks.length,
         done,
         completionRate: tasks.length > 0 ? Math.round((done / tasks.length) * 100) : 0,
-        energy: Number(day.مستوى_الطاقة) || null,
+        energy: energyAvg,
         rating: Number(day.تقييم_اليوم) || null,
         sleep: day.عدد_ساعات_النوم || "",
         phone: day.عدد_ساعات_الهاتف || "",

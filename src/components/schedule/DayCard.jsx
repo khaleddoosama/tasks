@@ -4,6 +4,7 @@ import { readTemplates } from "../../services/dayTemplates";
 import { calculateDurationMin, detectConflicts, getNextStartTime, sortTasksByStartTime } from "../../domain/schedule/time";
 import TaskRow from "./TaskRow";
 import TemplateSelectionModal from "../TemplateSelectionModal";
+import EnergyLog from "./EnergyLog";
 
 export default function DayCard({ day, colors, goalOptions, taskSuggestions, onChange, onCopyDay, onSaveAsTemplate, onApplyTemplate, createTaskId, isCurrentDay, darkMode, onToast }) {
   const [collapsed, setCollapsed] = useState(() => !isCurrentDay);
@@ -284,21 +285,6 @@ export default function DayCard({ day, colors, goalOptions, taskSuggestions, onC
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4, textAlign: "right" }}>مستوى الطاقة:</label>
-              <select
-                value={day.مستوى_الطاقة || ""}
-                onChange={(event) => onChange({ مستوى_الطاقة: event.target.value })}
-                style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, boxSizing: "border-box" }}
-              >
-                <option value="">--</option>
-                <option value="1">منخفضة جدا 😴</option>
-                <option value="2">منخفضة 😐</option>
-                <option value="3">متوسطة 😊</option>
-                <option value="4">عالية 😄</option>
-                <option value="5">عالية جدا 🔥</option>
-              </select>
-            </div>
-            <div>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, marginBottom: 4, textAlign: "right" }}>تقييم اليوم:</label>
               <select
                 value={day.تقييم_اليوم || ""}
@@ -333,6 +319,12 @@ export default function DayCard({ day, colors, goalOptions, taskSuggestions, onC
                 style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 6, padding: "6px 10px", fontFamily: "inherit", fontSize: 13, boxSizing: "border-box" }}
               />
             </div>
+          </div>
+          <div style={{ padding: "0 16px 12px 16px" }}>
+            <EnergyLog
+              energyLog={day.energyLog}
+              onChange={(newEnergyLog) => onChange({ energyLog: newEnergyLog })}
+            />
           </div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
