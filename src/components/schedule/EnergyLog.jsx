@@ -1,4 +1,7 @@
+import { useState } from "react";
+
 export default function EnergyLog({ energyLog = [], onChange }) {
+  const [hoveredPoint, setHoveredPoint] = useState(null);
   const energyEntries = energyLog || [];
 
   const addEnergyEntry = () => {
@@ -106,7 +109,7 @@ export default function EnergyLog({ energyLog = [], onChange }) {
         </div>
       ) : (
         <>
-          <EnergyChart entries={energyEntries} />
+          <EnergyChart entries={energyEntries} hoveredPoint={hoveredPoint} setHoveredPoint={setHoveredPoint} />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {energyEntries.map((entry) => (
               <div
@@ -187,7 +190,7 @@ export default function EnergyLog({ energyLog = [], onChange }) {
   );
 }
 
-function EnergyChart({ entries }) {
+function EnergyChart({ entries, hoveredPoint, setHoveredPoint }) {
   if (entries.length < 2) return null;
 
   const sorted = [...entries]
@@ -242,7 +245,7 @@ function EnergyChart({ entries }) {
   };
 
   return (
-    <div style={{ marginBottom: 12, padding: "8px 10px", background: "#f9f9f9", borderRadius: 6, overflowX: "auto" }}>
+    <div style={{ marginBottom: 12, padding: "8px 10px", background: "#f9f9f9", borderRadius: 6, overflowX: "auto", position: "relative" }}>
       <svg width={width} height={height} style={{ display: "block", margin: "0 auto" }}>
         {/* Grid lines */}
         {[1, 2, 3, 4, 5].map((level) => (
@@ -258,24 +261,77 @@ function EnergyChart({ entries }) {
           />
         ))}
 
-        {/* Area */}
-        <path d={areaD} fill="url(#gradient)" opacity="0.3" />
-
-        {/* Gradient def */}
+        {/* Gradient defs - different colors per level */}
         <defs>
           <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style={{ stopColor: "#4CAF50", stopOpacity: 0.6 }} />
-            <stop offset="100%" style={{ stopColor: "#4CAF50", stopOpacity: 0.1 }} />
+            <stop offset="0%" style={{ stopColor: "#4CAF50", stopOpacity: 0.5 }} />
+            <stop offset="50%" style={{ stopColor: "#FFC107", stopOpacity: 0.3 }} />
+            <stop offset="100%" style={{ stopColor: "#FF6B6B", stopOpacity: 0.1 }} />
           </linearGradient>
+          <style>{`
+            @keyframes chartSlideIn {
+              from { stroke-dashoffset: 1000; }
+              to { stroke-dashoffset: 0; }
+            }
+            .energy-path {
+              animation: chartSlideIn 1.2s ease-out forwards;
+              stroke-dasharray: 1000;
+            }
+          `}</style>
         </defs>
 
-        {/* Line */}
-        <path d={pathD} stroke="#4CAF50" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Area with animation */}
+        <path
+          d={areaD}
+          fill="url(#gradient)"
+          opacity="0.4"
+          style={{ animation: "chartSlideIn 1.2s ease-out forwards" }}
+        />
 
-        {/* Points */}
+        {/* Line with animation */}
+        <path
+          d={pathD}
+          stroke="#4CAF50"
+          strokeWidth="2.5"
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="energy-path"
+        />
+
+        {/* Points with hover effect */}
         {points.map((point, i) => (
-          <g key={`point-${i}`}>
-            <circle cx={point.x} cy={point.y} r="3.5" fill="white" stroke={getColor(point.level)} strokeWidth="2" />
+          <g
+            key={`point-${i}`}
+            onMouseEnter={() => setHoveredPoint(i)}
+            onMouseLeave={() => setHoveredPoint(null)}
+            style={{ cursor: "pointer" }}
+          >
+            {/* Highlight circle on hover */}
+            {hoveredPoint === i && (
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r="8"
+                fill="none"
+                stroke={getColor(point.level)}
+                strokeWidth="2"
+                opacity="0.5"
+                style={{ animation: "pulse 0.6s ease-in-out infinite" }}
+              />
+            )}
+
+            {/* Main dot */}
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r={hoveredPoint === i ? "5" : "3.5"}
+              fill="white"
+              stroke={getColor(point.level)}
+              strokeWidth="2"
+              style={{ transition: "r 0.2s ease" }}
+            />
+
             <text
               x={point.x}
               y={height - 12}
@@ -303,6 +359,54 @@ function EnergyChart({ entries }) {
           </text>
         ))}
       </svg>
+
+      {/* Tooltip on hover */}
+      {hoveredPoint !== null && points[hoveredPoint] && (
+        <div
+          style={{
+            position: "absolute",
+            left: `${points[hoveredPoint].x}px`,
+            top: `${points[hoveredPoint].y - 50}px`,
+            transform: "translateX(-50%)",
+            background: "#333",
+            color: "white",
+            padding: "8px 12px",
+            borderRadius: "6px",
+            fontSize: "12px",
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            zIndex: 10,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            animation: "fadeInUp 0.2s ease",
+          }}
+        >
+          🕐 {points[hoveredPoint].time} | ⚡ {points[hoveredPoint].level}/5
+          {points[hoveredPoint].entry.notes && (
+            <div style={{ marginTop: "4px", fontSize: "11px", opacity: 0.9 }}>
+              {points[hoveredPoint].entry.notes}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Animation styles */}
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+          }
+        }
+        @keyframes pulse {
+          0%, 100% { r: 8; opacity: 0.5; }
+          50% { r: 10; opacity: 0.3; }
+        }
+      `}</style>
     </div>
   );
 }
