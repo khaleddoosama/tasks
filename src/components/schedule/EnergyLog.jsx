@@ -204,53 +204,105 @@ function EnergyChart({ entries }) {
 
   if (sorted.length === 0) return null;
 
+  const width = 400;
+  const height = 150;
+  const padding = 40;
+  const graphWidth = width - padding * 2;
+  const graphHeight = height - padding * 2;
   const maxLevel = 5;
-  const chartHeight = 80;
-  const barHeight = (level) => (parseInt(level) / maxLevel) * chartHeight;
+
+  // Calculate points
+  const points = sorted.map((entry, i) => ({
+    x: padding + (i / (sorted.length - 1)) * graphWidth,
+    y: padding + graphHeight - (parseInt(entry.level) / maxLevel) * graphHeight,
+    level: parseInt(entry.level),
+    time: entry.time,
+    entry,
+  }));
+
+  // Generate smooth curve path using quadratic bezier
+  let pathD = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const controlX = (prev.x + curr.x) / 2;
+    const controlY = (prev.y + curr.y) / 2;
+    pathD += ` Q ${controlX} ${controlY} ${curr.x} ${curr.y}`;
+  }
+
+  // Area fill path
+  let areaD = pathD + ` L ${points[points.length - 1].x} ${padding + graphHeight} L ${points[0].x} ${padding + graphHeight} Z`;
+
+  const getColor = (level) => {
+    if (level >= 4.5) return "#4CAF50";
+    if (level >= 3.5) return "#8BC34A";
+    if (level >= 2.5) return "#FFC107";
+    if (level >= 1.5) return "#FF9800";
+    return "#F44336";
+  };
 
   return (
-    <div style={{ marginBottom: 12, padding: "8px 10px", background: "#f9f9f9", borderRadius: 6 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          gap: 6,
-          height: chartHeight + 30,
-          justifyContent: "space-around",
-        }}
-      >
-        {sorted.map((entry) => (
-          <div
-            key={entry.id}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 4,
-              flex: 1,
-            }}
-          >
-            <div
-              style={{
-                width: "100%",
-                height: barHeight(entry.level),
-                background:
-                  entry.level >= 4
-                    ? "#4CAF50"
-                    : entry.level === 3
-                      ? "#FFC107"
-                      : "#FF6B6B",
-                borderRadius: "2px 2px 0 0",
-                minHeight: 4,
-              }}
-              title={`${entry.level}/5`}
-            />
-            <span style={{ fontSize: 10, color: "#666", whiteSpace: "nowrap" }}>
-              {entry.time}
-            </span>
-          </div>
+    <div style={{ marginBottom: 12, padding: "8px 10px", background: "#f9f9f9", borderRadius: 6, overflowX: "auto" }}>
+      <svg width={width} height={height} style={{ display: "block", margin: "0 auto" }}>
+        {/* Grid lines */}
+        {[1, 2, 3, 4, 5].map((level) => (
+          <line
+            key={`grid-${level}`}
+            x1={padding}
+            y1={padding + graphHeight - (level / maxLevel) * graphHeight}
+            x2={width - padding}
+            y2={padding + graphHeight - (level / maxLevel) * graphHeight}
+            stroke="#e0e0e0"
+            strokeDasharray="3,3"
+            strokeWidth="1"
+          />
         ))}
-      </div>
+
+        {/* Area */}
+        <path d={areaD} fill="url(#gradient)" opacity="0.3" />
+
+        {/* Gradient def */}
+        <defs>
+          <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style={{ stopColor: "#4CAF50", stopOpacity: 0.6 }} />
+            <stop offset="100%" style={{ stopColor: "#4CAF50", stopOpacity: 0.1 }} />
+          </linearGradient>
+        </defs>
+
+        {/* Line */}
+        <path d={pathD} stroke="#4CAF50" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Points */}
+        {points.map((point, i) => (
+          <g key={`point-${i}`}>
+            <circle cx={point.x} cy={point.y} r="3.5" fill="white" stroke={getColor(point.level)} strokeWidth="2" />
+            <text
+              x={point.x}
+              y={height - 12}
+              textAnchor="middle"
+              fontSize="10"
+              fill="#666"
+              style={{ pointerEvents: "none" }}
+            >
+              {point.time}
+            </text>
+          </g>
+        ))}
+
+        {/* Y-axis labels */}
+        {[1, 2, 3, 4, 5].map((level) => (
+          <text
+            key={`label-${level}`}
+            x={padding - 8}
+            y={padding + graphHeight - (level / maxLevel) * graphHeight + 4}
+            textAnchor="end"
+            fontSize="11"
+            fill="#999"
+          >
+            {level}
+          </text>
+        ))}
+      </svg>
     </div>
   );
 }
