@@ -18,7 +18,7 @@ export async function upsertWeek(userId, weekKey, daysArray) {
         type:        day.type                    ?? null,
         notes:       day.notes                   ?? null,
         enabled:     day.enabled                 ?? true,
-        energy_log:  Array.isArray(day.energyLog) ? day.energyLog : [],
+        energy:      day.energyLog ? JSON.stringify(day.energyLog) : null,
         rating:      day["تقييم_اليوم"]          ?? null,
         sleep_hours: day["عدد_ساعات_النوم"]      ?? null,
         phone_hours: day["عدد_ساعات_الهاتف"]     ?? null,
@@ -117,7 +117,12 @@ export async function fetchAllWeeks(userId) {
   const weekSchedules = {};
   for (const d of daysRows) {
     if (!weekSchedules[d.week_key]) weekSchedules[d.week_key] = [];
-    const energyLog = Array.isArray(d.energy_log) ? d.energy_log : [];
+    let energyLog = [];
+    try {
+      energyLog = d.energy ? JSON.parse(d.energy) : [];
+    } catch {
+      energyLog = [];
+    }
     weekSchedules[d.week_key].push({
       id:                   d.day_index,
       name:                 d.name        ?? "",
