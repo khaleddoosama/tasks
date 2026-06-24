@@ -72,6 +72,28 @@ function GoalProgressBadge({ totalTasks, doneTasks, completionRate }) {
   );
 }
 
+function CompletionRateControl({ completionRate, onChange }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 120 }}>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={completionRate || 0}
+        onChange={(e) => onChange(Number(e.target.value))}
+        style={{
+          width: 60,
+          cursor: "pointer",
+        }}
+        title="اسحب لتعديل النسبة"
+      />
+      <span style={{ fontSize: 12, fontWeight: 700, minWidth: 35, textAlign: "center", color: "#64748b" }}>
+        {completionRate || 0}%
+      </span>
+    </div>
+  );
+}
+
 function MonthProgressBar({ monthlySummary, headerColor }) {
   const { totalGoals, doneTasks, totalTasks, completionRate } = monthlySummary;
   const color = completionRate >= 80 ? "#16a34a" : completionRate >= 40 ? "#f59e0b" : "#ef4444";
@@ -118,6 +140,7 @@ export default function GoalsTab({
   onUpdateWeeklyGoalTitle,
   onDeleteMonthlyGoal,
   onDeleteWeeklyGoal,
+  onUpdateWeeklyGoalCompletion,
 }) {
   const headerColor = colors.header;
   const [newMonthlyGoalTitle, setNewMonthlyGoalTitle] = useState("");
@@ -296,6 +319,10 @@ export default function GoalsTab({
                           style={{ fontSize: 13, fontWeight: 700 }}
                         />
                       </div>
+                      <CompletionRateControl
+                        completionRate={weekGoal.completionRate}
+                        onChange={(rate) => onUpdateWeeklyGoalCompletion?.(weekGoal.id, rate)}
+                      />
                       <GoalProgressBadge {...weekGoal.progress} />
                       <button
                         onClick={() => onDeleteWeeklyGoal(weekGoal.id)}
@@ -381,6 +408,10 @@ export default function GoalsTab({
                       style={{ fontSize: 13, fontWeight: 700 }}
                     />
                   </div>
+                  <CompletionRateControl
+                    completionRate={weekGoal.completionRate}
+                    onChange={(rate) => onUpdateWeeklyGoalCompletion?.(weekGoal.id, rate)}
+                  />
                   <GoalProgressBadge {...weekGoal.progress} />
                   <button
                     onClick={() => onDeleteWeeklyGoal(weekGoal.id)}
