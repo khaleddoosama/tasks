@@ -111,8 +111,22 @@ function CategoryTasksPanel({ category, days, colors, onClose }) {
   );
 }
 
-export default function StatsTab({ colors, days, weekRangeLabel }) {
-  const stats = useMemo(() => calculateWeekStats(days), [days]);
+export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [] }) {
+  const stats = useMemo(() => {
+    // If weekly goals exist, calculate from them; otherwise from tasks
+    if (weeklyGoals.length > 0) {
+      const totalCompletion = weeklyGoals.reduce((s, g) => s + (g.completionRate || 0), 0);
+      const avgCompletion = Math.round(totalCompletion / weeklyGoals.length);
+      return {
+        ...calculateWeekStats(days),
+        completionRate: avgCompletion,
+        doneTasks: Math.round((avgCompletion / 100) * weeklyGoals.length),
+        totalTasks: weeklyGoals.length,
+      };
+    }
+    return calculateWeekStats(days);
+  }, [days, weeklyGoals]);
+
   const [selectedCategoryKey, setSelectedCategoryKey] = useState(null);
   const completionColor =
     stats.completionRate >= 80 ? "#16a34a" : stats.completionRate >= 40 ? "#f59e0b" : "#ef4444";
