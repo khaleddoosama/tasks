@@ -163,6 +163,7 @@ export function calculateMonthlyGoalProgress(weekSchedules, monthGoals, weeklyGo
     return result;
   }, {});
 
+  // First pass: count tasks linked to each monthly goal
   Object.values(asObject(weekSchedules)).forEach((days) => {
     (Array.isArray(days) ? days : []).forEach((day) => {
       if (getMonthKey(day.التاريخ) !== monthKey) return;
@@ -178,6 +179,20 @@ export function calculateMonthlyGoalProgress(weekSchedules, monthGoals, weeklyGo
         progress[targetMonthlyGoalId].doneTasks += task.done ? 1 : 0;
         progress[targetMonthlyGoalId].linkedTaskIds.push(task.id);
       });
+    });
+  });
+
+  // Second pass: account for weekly goal completion rates
+  Object.entries(weekGoalsByMonthGoal).forEach(([monthlyGoalId, weeklyGoals]) => {
+    if (!progress[monthlyGoalId]) return;
+
+    weeklyGoals.forEach((weeklyGoal) => {
+      if (weeklyGoal.completionRate !== undefined && weeklyGoal.completionRate > 0) {
+        // Weekly goal has manual completion rate - add it as a "virtual task"
+        progress[monthlyGoalId].totalTasks += 1;
+        const completedPortion = Math.round(weeklyGoal.completionRate / 100);
+        progress[monthlyGoalId].doneTasks += completedPortion;
+      }
     });
   });
 

@@ -323,6 +323,25 @@ export default function GoalsTab({
                         completionRate={weekGoal.completionRate}
                         onChange={(rate) => onUpdateWeeklyGoalCompletion?.(weekGoal.id, rate)}
                       />
+                      {weekGoal.progress?.linkedTaskIds?.length > 0 && (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            background: "#e0e7ff",
+                            color: "#4f46e5",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                          }}
+                          title="عدد المهام المرتبطة"
+                        >
+                          📌 {weekGoal.progress.linkedTaskIds.length}
+                        </span>
+                      )}
                       <GoalProgressBadge {...weekGoal.progress} />
                       <button
                         onClick={() => onDeleteWeeklyGoal(weekGoal.id)}
@@ -412,6 +431,25 @@ export default function GoalsTab({
                     completionRate={weekGoal.completionRate}
                     onChange={(rate) => onUpdateWeeklyGoalCompletion?.(weekGoal.id, rate)}
                   />
+                  {weekGoal.progress?.linkedTaskIds?.length > 0 && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        background: "#e0e7ff",
+                        color: "#4f46e5",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                      }}
+                      title="عدد المهام المرتبطة"
+                    >
+                      📌 {weekGoal.progress.linkedTaskIds.length}
+                    </span>
+                  )}
                   <GoalProgressBadge {...weekGoal.progress} />
                   <button
                     onClick={() => onDeleteWeeklyGoal(weekGoal.id)}
