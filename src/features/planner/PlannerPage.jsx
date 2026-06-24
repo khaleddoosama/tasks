@@ -367,7 +367,7 @@ export default function PlannerPage() {
               onUpdateWeeklyGoalCompletion={goals.updateWeeklyGoalCompletion}
             />
             <div style={{ marginTop: 16 }}>
-              <StatsTab colors={colors} days={tasks.days} weekRangeLabel={week.weekRangeLabel} weeklyGoals={goals.currentWeekGoals} />
+              <StatsTab colors={colors} days={tasks.days} weekRangeLabel={week.weekRangeLabel} weeklyGoals={goals.weeklyGoalsForStats} />
             </div>
           </>
         )}

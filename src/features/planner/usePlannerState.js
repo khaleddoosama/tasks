@@ -369,6 +369,9 @@ export function usePlannerState() {
     () => buildProgressItems(currentWeekGoals, weeklyGoalProgress),
     [currentWeekGoals, weeklyGoalProgress],
   );
+
+  // Raw weekly goals with completionRate (for stats calculations)
+  const weeklyGoalsForStats = useMemo(() => currentWeekGoals, [currentWeekGoals]);
   const currentMonthGoalItems = useMemo(
     () => buildProgressItems(currentMonthGoals, monthlyGoalProgress),
     [currentMonthGoals, monthlyGoalProgress],
@@ -637,6 +640,7 @@ export function usePlannerState() {
     goals: {
       currentMonthGoals: currentMonthGoalItems,
       currentWeekGoals: currentWeekGoalItems,
+      weeklyGoalsForStats,
       monthlySummary,
       addMonthlyGoal,
       updateMonthlyGoalTitle,
