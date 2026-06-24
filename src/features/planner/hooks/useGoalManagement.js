@@ -238,6 +238,26 @@ export function useGoalManagement({
     [setWeeklyGoalsStore, weekKey, setDays, updateWeekSchedules, ensureWeekGoalBucket, clearGoalLinksFromDays, clearGoalLinksFromSchedules],
   );
 
+  /**
+   * Update the completion rate of a weekly goal
+   * @param {string} goalId - Weekly goal ID to update
+   * @param {number} completionRate - Completion percentage (0-100)
+   */
+  const updateWeeklyGoalCompletion = useCallback(
+    (goalId, completionRate) => {
+      setWeeklyGoalsStore((currentStore) => {
+        const nextStore = ensureWeekGoalBucket(currentStore, weekKey);
+        if (!nextStore[weekKey][goalId]) return currentStore;
+        nextStore[weekKey][goalId] = {
+          ...nextStore[weekKey][goalId],
+          completionRate: Math.max(0, Math.min(100, Number(completionRate) || 0)),
+        };
+        return nextStore;
+      });
+    },
+    [setWeeklyGoalsStore, weekKey, ensureWeekGoalBucket],
+  );
+
   return {
     addMonthlyGoal,
     updateMonthlyGoalTitle,
@@ -245,5 +265,6 @@ export function useGoalManagement({
     addWeeklyGoal,
     updateWeeklyGoalTitle,
     deleteWeeklyGoal,
+    updateWeeklyGoalCompletion,
   };
 }

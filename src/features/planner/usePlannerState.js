@@ -462,7 +462,7 @@ export function usePlannerState() {
   );
 
   // Goal management: delegated to useGoalManagement hook
-  const { addMonthlyGoal, updateMonthlyGoalTitle, deleteMonthlyGoal, addWeeklyGoal, updateWeeklyGoalTitle, deleteWeeklyGoal } = useGoalManagement({
+  const { addMonthlyGoal, updateMonthlyGoalTitle, deleteMonthlyGoal, addWeeklyGoal, updateWeeklyGoalTitle, deleteWeeklyGoal, updateWeeklyGoalCompletion } = useGoalManagement({
     monthlyGoalsStore,
     setMonthlyGoalsStore,
     weeklyGoalsStore,
@@ -644,6 +644,7 @@ export function usePlannerState() {
       updateWeeklyGoalTitle,
       deleteMonthlyGoal,
       deleteWeeklyGoal,
+      updateWeeklyGoalCompletion,
     },
 
     // Free-form general notes.
