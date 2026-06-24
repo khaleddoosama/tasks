@@ -277,18 +277,17 @@ export default function GoalsTab({
 
               {/* Weekly goals progress summary */}
               {childWeekGoals.length > 0 && (() => {
-                const totalW = childWeekGoals.reduce((s, g) => s + (g.progress?.totalTasks || 0), 0);
-                const doneW = childWeekGoals.reduce((s, g) => s + (g.progress?.doneTasks || 0), 0);
-                const rateW = totalW > 0 ? Math.round((doneW / totalW) * 100) : 0;
-                const color = rateW >= 80 ? "#16a34a" : rateW >= 40 ? "#f59e0b" : "#3b82f6";
+                const totalCompletion = childWeekGoals.reduce((s, g) => s + (g.completionRate || 0), 0);
+                const avgCompletion = Math.round(totalCompletion / childWeekGoals.length);
+                const color = avgCompletion >= 80 ? "#16a34a" : avgCompletion >= 40 ? "#f59e0b" : "#3b82f6";
                 return (
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#64748b", marginBottom: 4 }}>
-                      <span style={{ color, fontWeight: 700 }}>{rateW}%</span>
-                      <span>أهداف هذا الأسبوع · {doneW}/{totalW} مهمة</span>
+                      <span style={{ color, fontWeight: 700 }}>{avgCompletion}%</span>
+                      <span>أهداف هذا الأسبوع · {childWeekGoals.length} مهمة</span>
                     </div>
                     <div style={{ background: "#f1f5f9", borderRadius: 999, height: 5 }}>
-                      <div style={{ width: `${rateW}%`, height: "100%", borderRadius: 999, background: color, transition: "width 0.3s ease" }} />
+                      <div style={{ width: `${avgCompletion}%`, height: "100%", borderRadius: 999, background: color, transition: "width 0.3s ease" }} />
                     </div>
                   </div>
                 );
