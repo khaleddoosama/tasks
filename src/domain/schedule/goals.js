@@ -186,14 +186,22 @@ export function calculateMonthlyGoalProgress(weekSchedules, monthGoals, weeklyGo
   Object.entries(weekGoalsByMonthGoal).forEach(([monthlyGoalId, weeklyGoals]) => {
     if (!progress[monthlyGoalId]) return;
 
+    let totalWeeklyCompletion = 0;
+    let weeklyGoalsCount = 0;
+
     weeklyGoals.forEach((weeklyGoal) => {
       if (weeklyGoal.completionRate !== undefined && weeklyGoal.completionRate > 0) {
-        // Weekly goal has manual completion rate - add it as a "virtual task"
-        progress[monthlyGoalId].totalTasks += 1;
-        const completedPortion = Math.round(weeklyGoal.completionRate / 100);
-        progress[monthlyGoalId].doneTasks += completedPortion;
+        totalWeeklyCompletion += weeklyGoal.completionRate;
+        weeklyGoalsCount += 1;
       }
     });
+
+    // If weekly goals have completion rates, add them as weighted tasks
+    if (weeklyGoalsCount > 0) {
+      progress[monthlyGoalId].totalTasks += weeklyGoalsCount;
+      const avgCompletion = Math.round(totalWeeklyCompletion / weeklyGoalsCount);
+      progress[monthlyGoalId].doneTasks += Math.round((avgCompletion / 100) * weeklyGoalsCount);
+    }
   });
 
   return finalizeProgress(progress);
