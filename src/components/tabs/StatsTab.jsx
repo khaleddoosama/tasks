@@ -117,11 +117,14 @@ export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [
     if (weeklyGoals.length > 0) {
       const totalCompletion = weeklyGoals.reduce((s, g) => s + (g.completionRate || 0), 0);
       const avgCompletion = Math.round(totalCompletion / weeklyGoals.length);
+      const doneTasks = Math.round((avgCompletion / 100) * weeklyGoals.length);
+      const totalTasks = weeklyGoals.length;
+      const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
       return {
         ...calculateWeekStats(days),
-        completionRate: avgCompletion,
-        doneTasks: Math.round((avgCompletion / 100) * weeklyGoals.length),
-        totalTasks: weeklyGoals.length,
+        completionRate,
+        doneTasks,
+        totalTasks,
       };
     }
     return calculateWeekStats(days);
