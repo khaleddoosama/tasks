@@ -42,6 +42,7 @@ function normalizeWeeklyGoalEntry(goalId, goalValue) {
       monthlyGoalId: value.monthlyGoalId || "",
       status: value.status || "active",
       createdAt: value.createdAt || "",
+      completionRate: value.completionRate ?? 0,
     };
   }
 
@@ -51,6 +52,7 @@ function normalizeWeeklyGoalEntry(goalId, goalValue) {
     monthlyGoalId: "",
     status: "active",
     createdAt: "",
+    completionRate: 0,
   };
 }
 
