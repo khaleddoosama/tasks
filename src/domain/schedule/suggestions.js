@@ -10,14 +10,19 @@
 
 /**
  * @param {Object<string, Array>} weekSchedules - Map of weekKey -> days array.
- * @returns {{ list: Array<{task: string, cat: string, count: number}>, catByName: Object<string, string> }}
+ * @param {string} currentWeekKey - Current week key to track current-week task goals.
+ * @returns {{ list: Array<{task: string, cat: string, count: number}>, catByName: Object<string, string>, goalByName: Object<string, {type: string, id: string}> }}
  *   `list` is sorted by descending usage count. `catByName` maps a task name to
- *   its most-frequent category for quick auto-fill lookups.
+ *   its most-frequent category. `goalByName` maps task names in the current week
+ *   to their linked goal (type + id) for auto-linking.
  */
-export function buildTaskSuggestions(weekSchedules) {
+export function buildTaskSuggestions(weekSchedules, currentWeekKey) {
   const stats = new Map(); // name -> { count, cats: Map<cat, count> }
+  const goalByName = {}; // name -> { type, id } for current week only
 
-  for (const days of Object.values(weekSchedules || {})) {
+  for (const [weekKey, days] of Object.entries(weekSchedules || {})) {
+    const isCurrentWeek = weekKey === currentWeekKey;
+
     for (const day of days || []) {
       for (const task of day?.tasks || []) {
         const name = (task?.task || "").trim();
@@ -33,6 +38,15 @@ export function buildTaskSuggestions(weekSchedules) {
         const cat = task?.cat || "";
         if (cat) {
           entry.cats.set(cat, (entry.cats.get(cat) || 0) + 1);
+        }
+
+        // Track goal link for current week tasks only
+        if (isCurrentWeek && !goalByName[name]) {
+          const linkedGoalType = task?.linkedGoalType || "";
+          const linkedGoalId = task?.linkedGoalId || "";
+          if (linkedGoalType && linkedGoalId) {
+            goalByName[name] = { type: linkedGoalType, id: linkedGoalId };
+          }
         }
       }
     }
@@ -57,5 +71,5 @@ export function buildTaskSuggestions(weekSchedules) {
     catByName[item.task] = item.cat;
   }
 
-  return { list, catByName };
+  return { list, catByName, goalByName };
 }

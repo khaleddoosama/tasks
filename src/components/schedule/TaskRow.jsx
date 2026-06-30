@@ -31,12 +31,24 @@ export default function TaskRow({
 
   const updateTaskName = (value) => {
     const patch = { task: value };
+    const trimmedValue = value.trim();
+
     // Auto-fill the category from past usage of this exact task name, but only
     // when no category is set yet — never override a manual choice.
-    const suggestedCat = taskSuggestions?.catByName?.[value.trim()];
+    const suggestedCat = taskSuggestions?.catByName?.[trimmedValue];
     if (suggestedCat && !task.cat) {
       patch.cat = suggestedCat;
     }
+
+    // Auto-link the goal if this task exists in the current week with a goal
+    const currentWeekGoal = taskSuggestions?.goalByName?.[trimmedValue];
+    if (currentWeekGoal && !task.linkedGoalId) {
+      patch.linkedGoalType = currentWeekGoal.type;
+      patch.linkedGoalId = currentWeekGoal.id;
+      patch.linkedWeeklyGoalId = currentWeekGoal.type === "weekly" ? currentWeekGoal.id : "";
+      patch.linkedMonthlyGoalId = currentWeekGoal.type === "monthly" ? currentWeekGoal.id : "";
+    }
+
     onUpdate(patch);
   };
 

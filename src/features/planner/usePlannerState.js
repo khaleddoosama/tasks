@@ -336,8 +336,8 @@ export function usePlannerState() {
   );
 
   const taskSuggestions = useMemo(
-    () => buildTaskSuggestions(effectiveWeekSchedules),
-    [effectiveWeekSchedules],
+    () => buildTaskSuggestions(effectiveWeekSchedules, weekKey),
+    [effectiveWeekSchedules, weekKey],
   );
 
   const enhancedTaskGoalOptions = useMemo(() => ({
