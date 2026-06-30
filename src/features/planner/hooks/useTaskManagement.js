@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { cloneTasksForNewWeek } from "../../../domain/schedule/ids.js";
 
 /**
  * Hook for managing task operations within the planner
@@ -99,6 +100,8 @@ export function useTaskManagement({
   /**
    * Copy entire previous week (all 7 days + tasks + weekly goals)
    * Updates dates to current week, generates new task IDs, clones weekly goals
+   * Clears day-specific data: sleep hours, phone hours, day rating
+   * Resets all task done status to false
    */
   const copyPreviousWeek = useCallback(() => {
     if (selectedWeek === 1) return;
@@ -109,41 +112,31 @@ export function useTaskManagement({
     if (!prevWeekData) return;
 
     const nextWeekDates = getWeekDates(selectedWeek, currentYear);
-    const clonedDays = prevWeekData.map((day) => ({
-      ...day,
-      التاريخ: nextWeekDates[day.id - 1],
-      tasks: cloneTasksWithNewIds(day.tasks, createTaskId),
-    }));
+    const clonedDays = prevWeekData.map((day) => {
+      const dayIndex = day.id - 1;
+      const correctDate = nextWeekDates[dayIndex] || "";
+      return {
+        id: day.id,
+        name: day.name,
+        type: day.type,
+        notes: day.notes,
+        التاريخ: correctDate,
+        تقييم_اليوم: "",
+        عدد_ساعات_النوم: "",
+        عدد_ساعات_الهاتف: "",
+        enabled: day.enabled,
+        tasks: cloneTasksForNewWeek(day.tasks, createTaskId),
+      };
+    });
 
     replace(clonedDays);
-
-    const prevWeekGoals = weeklyGoalsStore[prevWeekKey] || {};
-    if (Object.keys(prevWeekGoals).length > 0) {
-      const clonedGoals = {};
-      Object.entries(prevWeekGoals).forEach(([, goal]) => {
-        const newGoalId = createGoalId("weekly-goal");
-        clonedGoals[newGoalId] = {
-          ...goal,
-          id: newGoalId,
-          createdAt: new Date().toISOString(),
-        };
-      });
-      setWeeklyGoalsStore((prev) => ({
-        ...prev,
-        [weekKey]: clonedGoals,
-      }));
-    }
   }, [
     selectedWeek,
     currentYear,
     weekSchedulesRef,
-    weeklyGoalsStore,
-    weekKey,
     replace,
     createTaskId,
-    setWeeklyGoalsStore,
-    cloneTasksWithNewIds,
-    createGoalId,
+    cloneTasksForNewWeek,
     getWeekDates,
     getWeekKey,
   ]);

@@ -27,3 +27,11 @@ export function cloneTasksWithNewIds(tasks, createTaskId) {
     id: createTaskId(),
   }));
 }
+
+export function cloneTasksForNewWeek(tasks, createTaskId) {
+  return tasks.map((task) => ({
+    ...task,
+    id: createTaskId(),
+    done: false,
+  }));
+}
