@@ -203,9 +203,19 @@ export function useSupabaseSync(syncData, onDataMerged) {
     return () => subscription.unsubscribe();
   }, [pullFromCloud]);
 
-  // Warn before unload while a push is in flight
+  // Flush pending debounced push before unload to prevent data loss
   useEffect(() => {
     const handler = (e) => {
+      // If there's a pending debounced push, execute it immediately
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+        // Fire push synchronously if possible, or warn user
+        if (userRef.current && syncDataRef.current) {
+          pushToCloud(syncDataRef.current);
+        }
+      }
+      // Warn if a push is currently in flight
       if (isRequestInFlightRef.current) {
         e.preventDefault();
         e.returnValue = "";
@@ -213,7 +223,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, []);
+  }, [pushToCloud]);
 
   // Debounced auto-push on data change
   useEffect(() => {
