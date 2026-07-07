@@ -24,6 +24,9 @@ export function useSupabaseSync(syncData, onDataMerged) {
   const syncDataRef = useRef(syncData);
   const onDataMergedRef = useRef(onDataMerged);
   const userRef = useRef(null);
+  // Tracks the exact daysArray reference last pushed per week — lets pushToCloud
+  // skip re-uploading weeks that haven't changed since the previous push.
+  const lastPushedWeeksRef = useRef({});
 
   useEffect(() => {
     syncDataRef.current = syncData;
@@ -92,7 +95,14 @@ export function useSupabaseSync(syncData, onDataMerged) {
     setSyncError(null);
 
     try {
-      const weekOps = Object.entries(data.weekSchedules || {}).map(([weekKey, daysArray]) =>
+      // Only push weeks whose daysArray reference actually changed since the
+      // last successful push — avoids re-uploading every week in history on
+      // every small edit (updateDay/copyDay/etc. only ever replace the array
+      // for the week being edited; untouched weeks keep the same reference).
+      const changedWeekEntries = Object.entries(data.weekSchedules || {}).filter(
+        ([weekKey, daysArray]) => lastPushedWeeksRef.current[weekKey] !== daysArray,
+      );
+      const weekOps = changedWeekEntries.map(([weekKey, daysArray]) =>
         upsertWeek(uid, weekKey, daysArray),
       );
 
@@ -110,6 +120,10 @@ export function useSupabaseSync(syncData, onDataMerged) {
       isRequestInFlightRef.current = false;
       const failed = results.find((r) => r.error);
       if (failed) throw failed.error;
+
+      for (const [weekKey, daysArray] of changedWeekEntries) {
+        lastPushedWeeksRef.current[weekKey] = daysArray;
+      }
 
       setSyncStatus("synced");
       setLastSyncTime(new Date());
@@ -135,6 +149,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
     userRef.current = null;
     setNeedsMigration(false);
     setSyncStatus("idle");
+    lastPushedWeeksRef.current = {};
   }, []);
 
   // Import all data from localStorage into Supabase (one-time migration)
