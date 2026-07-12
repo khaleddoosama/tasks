@@ -44,7 +44,6 @@ import {
 } from "../../domain/schedule/week";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { useLocalStorageState } from "../../hooks/useLocalStorageState";
-import { usePrintStyle } from "../../hooks/usePrintStyle";
 import { useSchedulePersistence } from "../../hooks/useSchedulePersistence";
 import { useUndoRedo } from "../../hooks/useUndoRedo";
 import { exportScheduleBackup, importScheduleFromFile } from "../../services/scheduleTransfer";
@@ -112,7 +111,6 @@ export function usePlannerState() {
   );
   const [colors, setColors] = useState(DEFAULT_COLORS);
   const [tab, setTab] = useState("editor");
-  const [printZoom, setPrintZoom] = useState(100);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [darkMode, setDarkMode] = useLocalStorageState(DARK_MODE_KEY, false);
   const [monthlyGoalsStore, setMonthlyGoalsStore] = useLocalStorageState(MONTHLY_GOALS_KEY, {});
@@ -291,7 +289,6 @@ export function usePlannerState() {
     [currentYear, days, replace, selectedWeek, updateWeekSchedules, weekKey],
   );
 
-  usePrintStyle(colors, days);
   useKeyboardShortcuts({ undo, redo, lastSaved });
 
   const {
@@ -524,13 +521,10 @@ export function usePlannerState() {
     replace(nextDays);
     updateWeekSchedules((currentSchedules) => ({ ...currentSchedules, [weekKey]: nextDays }));
     setTab("editor");
-    setPrintZoom(100);
   }, [replace, selectedWeek, updateWeekSchedules, weekKey, normalizeDaysCategories, createInitialDays]);
 
   const incrementWeek = useCallback(() => changeSelectedWeek(Math.min(52, selectedWeek + 1)), [changeSelectedWeek, selectedWeek]);
   const decrementWeek = useCallback(() => changeSelectedWeek(Math.max(1, selectedWeek - 1)), [changeSelectedWeek, selectedWeek]);
-  const zoomIn = useCallback(() => setPrintZoom((value) => Math.min(150, value + 10)), []);
-  const zoomOut = useCallback(() => setPrintZoom((value) => Math.max(50, value - 10)), []);
 
   const addGeneralNote = useCallback(
     (text) => {
@@ -602,9 +596,6 @@ export function usePlannerState() {
       setTab,
       darkMode,
       setDarkMode,
-      printZoom,
-      zoomIn,
-      zoomOut,
       showAuthModal,
       setShowAuthModal,
     },

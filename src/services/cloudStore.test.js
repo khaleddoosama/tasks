@@ -50,7 +50,6 @@ const sampleDay = {
       task: "قراءة",
       cat: "education",
       done: true,
-      recurring: false,
       carryCount: 2,
       notes: "",
       linkedWeeklyGoalId: "wg1",
@@ -181,7 +180,6 @@ describe("fetchAllWeeks", () => {
       task: "قراءة",
       cat: "education",
       done: false,
-      recurring: true,
       carry_count: 3,
       notes: "ملاحظة",
       linked_weekly_goal_id: null,
@@ -213,7 +211,6 @@ describe("fetchAllWeeks", () => {
       id: 101,
       task: "قراءة",
       carryCount: 3,
-      recurring: true,
       linkedMonthlyGoalId: "mg1",
       linkedGoalType: "monthly",
     });

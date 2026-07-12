@@ -38,7 +38,7 @@ export default function TemplateEditModal({ isOpen, templateName, template, onCl
   const addTask = () => {
     setTasks((prev) => [
       ...prev,
-      { id: Date.now(), time: "", task: "", cat: "", done: false, recurring: false },
+      { id: Date.now(), time: "", task: "", cat: "", done: false },
     ]);
   };
 
