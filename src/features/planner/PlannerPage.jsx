@@ -4,7 +4,6 @@ import DayCard from "../../components/schedule/DayCard";
 import GeneralNotesReadonly from "../../components/schedule/GeneralNotesReadonly";
 import ColorsTab from "../../components/tabs/ColorsTab";
 import GoalsTab from "../../components/tabs/GoalsTab";
-import JSONEditorTab from "../../components/tabs/JSONEditorTab";
 import GeneralNotesTab from "../../components/tabs/GeneralNotesTab";
 import StatsTab from "../../components/tabs/StatsTab";
 import GoalStatsTab from "../../components/tabs/GoalStatsTab";
@@ -361,15 +360,6 @@ export default function PlannerPage() {
             onUpdateNote={notes.updateGeneralNote}
             onToggleActive={notes.toggleGeneralNoteActive}
             onDeleteNote={notes.deleteGeneralNote}
-          />
-        )}
-
-        {ui.tab === "json" && (
-          <JSONEditorTab
-            schedule={persistence.getScheduleData()}
-            onScheduleUpdate={persistence.updateScheduleFromJSON}
-            colors={colors}
-            darkMode={darkMode}
           />
         )}
 

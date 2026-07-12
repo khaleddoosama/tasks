@@ -20,7 +20,6 @@ import {
   clearGoalLinksFromDays,
   clearGoalLinksFromSchedules,
   createGoalId,
-  createMissingGoalsForImportedData,
   getMonthGoalsForMonth,
   getTaskGoalOptions,
   getWeekGoalsForWeek,
@@ -517,28 +516,18 @@ export function usePlannerState() {
   });
 
   // Persistence and color management: delegated to usePersistenceAndColorManagement hook
-  const { changeColor, exportSchedule, exportArchive, importSchedule, getScheduleData, updateScheduleFromJSON } = usePersistenceAndColorManagement({
+  const { changeColor, exportSchedule, exportArchive, importSchedule } = usePersistenceAndColorManagement({
     days,
     colors,
     effectiveWeekSchedules,
     monthlyGoalsStore,
     weeklyGoalsStore,
     selectedWeek,
-    currentYear,
     setColors,
-    setMonthlyGoalsStore,
-    setWeeklyGoalsStore,
-    replace,
-    updateWeekSchedules,
     applyPlannerData,
-    normalizeDaysCategories,
-    normalizeColors,
-    createMissingGoalsForImportedData,
-    createInitialDays,
     exportScheduleBackup,
     exportArchiveRange,
     importScheduleFromFile,
-    weekKey,
   });
 
   const resetPlanner = useCallback(() => {
@@ -716,8 +705,6 @@ export function usePlannerState() {
       exportSchedule,
       exportArchive,
       importSchedule,
-      getScheduleData,
-      updateScheduleFromJSON,
       resetPlanner,
     },
   };

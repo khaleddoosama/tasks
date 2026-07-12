@@ -16,29 +16,17 @@ import { useCallback } from "react";
  * @param {Object} params.monthlyGoalsStore - All monthly goals
  * @param {Object} params.weeklyGoalsStore - All weekly goals
  * @param {number} params.selectedWeek - Current week number (1-52)
- * @param {number} params.currentYear - Current year
  * @param {Function} params.setColors - setState for colors
- * @param {Function} params.setMonthlyGoalsStore - setState for monthly goals
- * @param {Function} params.setWeeklyGoalsStore - setState for weekly goals
- * @param {Function} params.replace - Replace days from useUndoRedo
- * @param {Function} params.updateWeekSchedules - setState for week schedules
  * @param {Function} params.applyPlannerData - Apply imported data to state
- * @param {Function} params.normalizeDaysCategories - Normalize day data
- * @param {Function} params.normalizeColors - Normalize color data
- * @param {Function} params.createMissingGoalsForImportedData - Create missing goals
- * @param {Function} params.createInitialDays - Scaffold default week
  * @param {Function} params.exportScheduleBackup - Export to file service
  * @param {Function} params.exportArchiveRange - Export archive service
  * @param {Function} params.importScheduleFromFile - Import from file service
- * @param {Function} params.weekKey - Current week key "YYYY-WNN"
  *
  * @returns {Object} Persistence and color management methods
  * @returns {Function} returns.changeColor - Update color palette
  * @returns {Function} returns.exportSchedule - Export current week backup
  * @returns {Function} returns.exportArchive - Export historical archive
  * @returns {Function} returns.importSchedule - Import schedule from file
- * @returns {Function} returns.getScheduleData - Get current schedule JSON
- * @returns {Function} returns.updateScheduleFromJSON - Update from imported JSON
  */
 export function usePersistenceAndColorManagement({
   // Data state
@@ -48,25 +36,15 @@ export function usePersistenceAndColorManagement({
   monthlyGoalsStore,
   weeklyGoalsStore,
   selectedWeek,
-  currentYear,
 
   // State setters
   setColors,
-  setMonthlyGoalsStore,
-  setWeeklyGoalsStore,
-  replace,
-  updateWeekSchedules,
 
   // Utilities
   applyPlannerData,
-  normalizeDaysCategories,
-  normalizeColors,
-  createMissingGoalsForImportedData,
-  createInitialDays,
   exportScheduleBackup,
   exportArchiveRange,
   importScheduleFromFile,
-  weekKey,
 }) {
   /**
    * Update a color in the task category palette
@@ -128,82 +106,10 @@ export function usePersistenceAndColorManagement({
     [applyPlannerData, selectedWeek, importScheduleFromFile],
   );
 
-  /**
-   * Get current schedule data as JSON object
-   * @returns {Object} Schedule data object
-   */
-  const getScheduleData = useCallback(() => {
-    return {
-      days: days,
-      colors: colors,
-      weekKey: weekKey,
-    };
-  }, [days, colors, weekKey]);
-
-  /**
-   * Update schedule from imported JSON data
-   * Validates, normalizes, creates missing goals, updates state
-   * @param {Object} newData - Imported schedule data
-   */
-  const updateScheduleFromJSON = useCallback(
-    (newData) => {
-      if (!newData.days || !Array.isArray(newData.days)) {
-        throw new Error("Invalid format: missing 'days' array");
-      }
-
-      const normalizedDays = normalizeDaysCategories(newData.days);
-
-      // Create missing goals for all weeks/months in the imported data
-      const {
-        monthlyGoalsStore: updatedMonthlyStore,
-        weeklyGoalsStore: updatedWeeklyStore,
-        hasChanges,
-      } = createMissingGoalsForImportedData(
-        normalizedDays,
-        monthlyGoalsStore,
-        weeklyGoalsStore,
-        currentYear,
-      );
-
-      // Update goal stores only if there are new goals
-      if (hasChanges) {
-        setMonthlyGoalsStore(updatedMonthlyStore);
-        setWeeklyGoalsStore(updatedWeeklyStore);
-      }
-
-      replace(normalizedDays);
-      updateWeekSchedules((currentSchedules) => ({
-        ...currentSchedules,
-        [weekKey]: normalizedDays,
-      }));
-
-      if (newData.colors) {
-        const normalizedColors = normalizeColors(newData.colors);
-        setColors(normalizedColors);
-      }
-    },
-    [
-      replace,
-      setColors,
-      updateWeekSchedules,
-      weekKey,
-      currentYear,
-      monthlyGoalsStore,
-      weeklyGoalsStore,
-      setMonthlyGoalsStore,
-      setWeeklyGoalsStore,
-      normalizeDaysCategories,
-      normalizeColors,
-      createMissingGoalsForImportedData,
-    ],
-  );
-
   return {
     changeColor,
     exportSchedule,
     exportArchive,
     importSchedule,
-    getScheduleData,
-    updateScheduleFromJSON,
   };
 }
