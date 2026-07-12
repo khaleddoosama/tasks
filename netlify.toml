@@ -9,12 +9,6 @@
 # [functions.keep_alive]
 #   schedule = "0 12 */5 * *"
 
-# JSON API endpoint — must come before the SPA catch-all
-[[redirects]]
-  from = "/archive_json"
-  to = "/.netlify/functions/archive_json"
-  status = 200
-
 # SPA catch-all — serves index.html for all client-side routes
 [[redirects]]
   from = "/*"

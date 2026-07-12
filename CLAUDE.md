@@ -54,7 +54,6 @@ src/
 │   ├── time.js               # Time parsing, duration calculation, conflict detection
 │   ├── stats.js              # calculateWeekStats, parseHoursLoose
 │   ├── suggestions.js        # buildTaskSuggestions — frequency-ranked autocomplete
-│   ├── print.js              # Print HTML generation
 │   ├── ids.js                # Task ID generation helpers
 │   └── seedData.js           # createInitialDays — default week scaffold
 ├── theme/
@@ -64,8 +63,7 @@ src/
 │   ├── useLocalStorageState.js  # useState synced to localStorage
 │   ├── useSchedulePersistence.js  # Debounced auto-save + restore from localStorage
 │   ├── useSupabaseSync.js       # Supabase auth + cloud push/pull + unload keepalive flush
-│   ├── usePrintStyle.js         # Injects/removes <style id="__print_style__"> + hidden print DOM
-│   └── useKeyboardShortcuts.js  # Ctrl+Z/Y/P/S handlers
+│   └── useKeyboardShortcuts.js  # Ctrl+Z/Y handlers (buttons removed — shortcuts only)
 ├── components/
 │   ├── schedule/DayCard.jsx     # Collapsible day section with task table
 │   ├── schedule/TaskRow.jsx     # Inline-editable task row (autocomplete, smart time, carry-over button)
@@ -74,7 +72,7 @@ src/
 │   ├── schedule/TimePickerField.jsx
 │   ├── AuthModal.jsx            # Email+password login / sign-up modal
 │   ├── TemplateManager.jsx / TemplateEditModal.jsx / TemplateSelectionModal.jsx
-│   └── tabs/                   # ColorsTab, GoalsTab, GoalStatsTab, GeneralNotesTab, PreviewTab,
+│   └── tabs/                   # ColorsTab, GoalsTab, GoalStatsTab, GeneralNotesTab,
 │                               # JSONEditorTab, StatsTab (+ WeekTrends 4-week trend charts)
 ├── services/
 │   ├── supabaseClient.js     # createClient — also exports supabaseUrl/supabaseAnonKey for keepalive flush
@@ -110,7 +108,7 @@ CREATE TABLE tasks (
   user_id uuid, day_id bigint REFERENCES days(id),
   app_id integer, task_order integer,
   time text, task text, cat text, notes text,
-  done boolean DEFAULT false, recurring boolean DEFAULT false,
+  done boolean DEFAULT false,
   carry_count integer DEFAULT 0,         -- how many times the task was carried to the next day
   linked_weekly_goal_id text, linked_monthly_goal_id text,
   linked_goal_type text, linked_goal_id text,
@@ -141,7 +139,7 @@ All application state lives in `usePlannerState`. It owns:
 - **`weekSchedules`** — all weeks keyed by `"YYYY-WNN"` (e.g. `"2026-W24"`); stored in a `useRef` to avoid stale closures when switching weeks
 - **`monthlyGoalsStore` / `weeklyGoalsStore`** — keyed by month/week key, persisted via `useLocalStorageState`
 - **`generalNotes`** — array, persisted via `useLocalStorageState` and synced to Supabase
-- **`colors`**, **`tab`**, **`darkMode`**, **`printZoom`**, **`selectedWeek`**
+- **`colors`**, **`tab`**, **`darkMode`**, **`selectedWeek`**
 
 Persistence: `useSchedulePersistence` debounces saves (500ms) to `localStorage` key `weekScheduleV2`. Supabase sync (`useSupabaseSync`) pulls all data on login and auto-pushes (1.5s debounce) whenever `supabasePayload` changes.
 
@@ -152,7 +150,7 @@ Persistence: `useSchedulePersistence` debounces saves (500ms) to `localStorage` 
 | Namespace | Contents |
 |-----------|----------|
 | `undoRedo` | `undo`, `redo`, `replace`, `canUndo`, `canRedo` |
-| `ui` | `tab`/`setTab`, `darkMode`/`setDarkMode`, `printZoom`/`zoomIn`/`zoomOut`, `showAuthModal`/`setShowAuthModal` |
+| `ui` | `tab`/`setTab`, `darkMode`/`setDarkMode`, `showAuthModal`/`setShowAuthModal` |
 | `theme` | `colors`, `changeColor` |
 | `week` | `selectedWeek`/`setSelectedWeek`, `incrementWeek`/`decrementWeek`, `weekKey`, `monthKey`, `monthLabel`, `weekRangeLabel` |
 | `tasks` | `days`, `weekSchedules`, `updateDay`, `copyDay`, `copyPreviousWeek`, `carryTaskToNextDay`, `saveAsTemplate`, `applyTemplate`, `deleteTemplate`, `updateTemplate`, `templates`, `createTaskId`, `goalOptions`, `taskSuggestions` |
@@ -187,7 +185,6 @@ Persistence: `useSchedulePersistence` debounces saves (500ms) to `localStorage` 
       linkedMonthlyGoalId: string,
       linkedGoalType: string,     // "weekly" | "monthly" | ""
       linkedGoalId: string,
-      recurring: boolean,
       notes: string,
       carryCount: number          // times carried to the next day via "رحّل لبكرة"
     }
@@ -231,15 +228,10 @@ Weeks start on **Saturday** (`WEEK_START_DAY = 6`). Week 1 starts on the first S
 - `WeekTrends` (`components/tabs/WeekTrends.jsx`) renders 4-week trend tiles (completion %, avg energy, avg sleep) computed from `weekSchedules`
 - StatsTab is theme-aware: it takes a `darkMode` prop and reads all colors from `getTheme()` in `theme/tokens.js` — new UI should do the same instead of hardcoding hex values
 
-### Print
-
-`usePrintStyle` dynamically injects a `<style id="__print_style__">` tag and a hidden `#__print_root__` div with A4 HTML. Printing is triggered via `window.print()`.
-
 ### Netlify Functions
 
 | Function | Purpose |
 |----------|---------|
-| `archive_json.js` | `GET /archive_json?from=YYYY-MM-DD&to=YYYY-MM-DD` — reads from Supabase (service role key), returns denormalized JSON for archiving/AI |
 | `keep_alive.js` | Scheduled every 5 days (`0 12 */5 * *`) — pings Supabase to prevent free-tier project pausing |
 
 ## Testing
