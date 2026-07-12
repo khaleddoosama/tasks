@@ -72,12 +72,13 @@ src/
 │   ├── schedule/TimePickerField.jsx
 │   ├── AuthModal.jsx            # Email+password login / sign-up modal
 │   ├── TemplateManager.jsx / TemplateEditModal.jsx / TemplateSelectionModal.jsx
-│   └── tabs/                   # ColorsTab, GoalsTab, GoalStatsTab, GeneralNotesTab,
-│                               # JSONEditorTab, StatsTab (+ WeekTrends 4-week trend charts)
+│   └── tabs/                   # ColorsTab, GoalsTab, GoalStatsTab, GeneralNotesTab, JSONEditorTab,
+│                               # StatsTab (+ WeekTrends 4-week trends, FeatureUsagePanel usage review)
 ├── services/
 │   ├── supabaseClient.js     # createClient — also exports supabaseUrl/supabaseAnonKey for keepalive flush
 │   ├── cloudStore.js         # CRUD for `days`/`tasks`/`user_data` tables + flushPushKeepalive
 │   ├── archiveExport.js      # exportArchiveRange — ID-less JSON for archive/AI
+│   ├── featureUsage.js       # Feature usage log (featureUsageV1) — counts + lastUsedAt per feature
 │   ├── scheduleTransfer.js   # exportScheduleBackup, importScheduleFromFile
 │   └── dayTemplates.js       # Day-template storage (dayTemplatesV1) read/write
 └── SyncStatusIndicator.jsx
@@ -125,6 +126,7 @@ CREATE TABLE user_data (
   weekly_goals  jsonb DEFAULT '{}',
   templates     jsonb DEFAULT '{}',
   general_notes jsonb DEFAULT '[]',
+  feature_usage jsonb DEFAULT '{}',   -- { featureKey: { count, lastUsedAt } }
   updated_at    timestamptz DEFAULT now()
 );
 ```
@@ -155,6 +157,7 @@ Persistence: `useSchedulePersistence` debounces saves (500ms) to `localStorage` 
 | `week` | `selectedWeek`/`setSelectedWeek`, `incrementWeek`/`decrementWeek`, `weekKey`, `monthKey`, `monthLabel`, `weekRangeLabel` |
 | `tasks` | `days`, `weekSchedules`, `updateDay`, `copyDay`, `copyPreviousWeek`, `carryTaskToNextDay`, `saveAsTemplate`, `applyTemplate`, `deleteTemplate`, `updateTemplate`, `templates`, `createTaskId`, `goalOptions`, `taskSuggestions` |
 | `goals` | `currentMonthGoals`, `currentWeekGoals`, `monthlySummary`, and all goal CRUD (`addMonthlyGoal`, `updateMonthlyGoalTitle`, `addWeeklyGoal`, `updateWeeklyGoalTitle`, `deleteMonthlyGoal`, `deleteWeeklyGoal`) |
+| `usage` | `featureUsage`, `trackFeature(key)` — feature usage log; keys registered in `FEATURE_LABELS` (`services/featureUsage.js`). New user-facing features should call `trackFeature` and add a label |
 | `notes` | `generalNotes`, `activeGeneralNotes`, `addGeneralNote`, `updateGeneralNote`, `toggleGeneralNoteActive`, `deleteGeneralNote` |
 | `sync` | `syncStatus`, `lastSyncTime`, `syncError`, `pullFromCloud`, `pushToCloud`, `signOut`, `user`, `isAuthenticated`, `needsMigration`, `importFromLocal` |
 | `persistence` | `saveIndicator`, `saveColor`, `exportSchedule`, `exportArchive`, `importSchedule`, `getScheduleData`, `updateScheduleFromJSON`, `resetPlanner` |
@@ -249,6 +252,7 @@ Covered modules (91 tests):
 - `stats.test.js` — `parseHoursLoose` + `calculateWeekStats`
 - `suggestions.test.js` — `buildTaskSuggestions`
 - `cloudStore.test.js` — field mapping app↔DB, task-deletion reconciliation, error propagation, keepalive flush
+- `featureUsage.test.js` — usage recording, multi-device merge, staleness calculation
 - `useSupabaseSync.test.jsx` — login/pull, changed-weeks-only push, unload flush, signOut (jsdom + @testing-library/react)
 
 ## Key implementation notes
