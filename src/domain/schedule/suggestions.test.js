@@ -5,8 +5,8 @@ const makeSchedule = (weeks) => weeks;
 
 describe("buildTaskSuggestions", () => {
   it("returns empty list and map for empty schedules", () => {
-    expect(buildTaskSuggestions({})).toEqual({ list: [], catByName: {} });
-    expect(buildTaskSuggestions(null)).toEqual({ list: [], catByName: {} });
+    expect(buildTaskSuggestions({})).toEqual({ list: [], catByName: {}, goalByName: {} });
+    expect(buildTaskSuggestions(null)).toEqual({ list: [], catByName: {}, goalByName: {} });
   });
 
   it("collects a single task name", () => {

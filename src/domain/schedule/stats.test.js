@@ -116,8 +116,8 @@ describe("calculateWeekStats", () => {
 
   it("averages energy and rating from filled days", () => {
     const days = [
-      makeDay({ مستوى_الطاقة: "4", تقييم_اليوم: "5" }),
-      makeDay({ مستوى_الطاقة: "2", تقييم_اليوم: "3" }),
+      makeDay({ energyLog: [{ time: "10:00", level: "4" }], تقييم_اليوم: "5" }),
+      makeDay({ energyLog: [{ time: "10:00", level: "2" }], تقييم_اليوم: "3" }),
     ];
     const stats = calculateWeekStats(days);
     expect(stats.avgEnergy).toBeCloseTo(3);

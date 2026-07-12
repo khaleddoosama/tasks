@@ -197,6 +197,7 @@ export function usePlannerState() {
         };
       }
 
+      let appliedWeekSchedules = null;
       if (Object.keys(restoredWeekSchedules).length > 0) {
         const nextWeekKey = getWeekKey(nextSelectedWeek, currentYear);
         const nextDays =
@@ -205,6 +206,7 @@ export function usePlannerState() {
         updateWeekSchedules(restoredWeekSchedules);
         setSelectedWeekValue(nextSelectedWeek);
         replace(nextDays);
+        appliedWeekSchedules = restoredWeekSchedules;
       }
 
       if (data?.colors) {
@@ -230,6 +232,11 @@ export function usePlannerState() {
       if (typeof data?.darkMode === "boolean") {
         setDarkMode(data.darkMode);
       }
+
+      // Lets useSupabaseSync seed its lastPushedWeeksRef with the exact array
+      // references now living in state — so the next push only uploads weeks
+      // whose reference has actually changed since this restore.
+      return { appliedWeekSchedules };
     },
     [
       currentYear,
@@ -299,8 +306,8 @@ export function usePlannerState() {
     needsMigration,
     importFromLocal,
   } = useSupabaseSync(supabasePayload, (remoteData) => {
-    if (!remoteData) return;
-    applyPlannerData(remoteData, selectedWeek);
+    if (!remoteData) return undefined;
+    return applyPlannerData(remoteData, selectedWeek);
   });
 
   const normalizedMonthlyGoals = useMemo(
@@ -378,7 +385,7 @@ export function usePlannerState() {
   );
 
   // Task management: delegated to useTaskManagement hook
-  const { updateDay, copyDay, copyPreviousWeek } = useTaskManagement({
+  const { updateDay, copyDay, copyPreviousWeek, carryTaskToNextDay } = useTaskManagement({
     days,
     setDays,
     weekSchedulesRef,
@@ -623,9 +630,11 @@ export function usePlannerState() {
     // The current week's days plus all task/day mutations.
     tasks: {
       days,
+      weekSchedules: effectiveWeekSchedules,
       updateDay,
       copyDay,
       copyPreviousWeek,
+      carryTaskToNextDay,
       saveAsTemplate,
       applyTemplate,
       deleteTemplate,

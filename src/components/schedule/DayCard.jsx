@@ -6,7 +6,7 @@ import TaskRow from "./TaskRow";
 import TemplateSelectionModal from "../TemplateSelectionModal";
 import EnergyLog from "./EnergyLog";
 
-export default function DayCard({ day, colors, goalOptions, taskSuggestions, onChange, onCopyDay, onSaveAsTemplate, onApplyTemplate, createTaskId, isCurrentDay, darkMode, onToast }) {
+export default function DayCard({ day, colors, goalOptions, taskSuggestions, onChange, onCopyDay, onSaveAsTemplate, onApplyTemplate, onCarryTask, createTaskId, isCurrentDay, darkMode, onToast }) {
   const [collapsed, setCollapsed] = useState(() => !isCurrentDay);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [availableTemplates, setAvailableTemplates] = useState({});
@@ -353,6 +353,7 @@ export default function DayCard({ day, colors, goalOptions, taskSuggestions, onC
                     taskSuggestions={taskSuggestions}
                     onUpdate={(patch) => updateTask(task.id, patch)}
                     onDelete={() => deleteTask(task.id)}
+                    onCarry={onCarryTask ? () => onCarryTask(day.id, task.id) : undefined}
                     onMoveUp={() => moveTask(task.id, -1)}
                     onMoveDown={() => moveTask(task.id, 1)}
                     isFirst={index === 0}

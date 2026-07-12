@@ -319,6 +319,7 @@ export default function PlannerPage() {
                 onCopyDay={tasks.copyDay}
                 onSaveAsTemplate={tasks.saveAsTemplate}
                 onApplyTemplate={tasks.applyTemplate}
+                onCarryTask={tasks.carryTaskToNextDay}
                 createTaskId={tasks.createTaskId}
                 isCurrentDay={day.التاريخ === todayDate}
                 darkMode={darkMode}
@@ -367,7 +368,15 @@ export default function PlannerPage() {
               onUpdateWeeklyGoalCompletion={goals.updateWeeklyGoalCompletion}
             />
             <div style={{ marginTop: 16 }}>
-              <StatsTab colors={colors} days={tasks.days} weekRangeLabel={week.weekRangeLabel} weeklyGoals={goals.weeklyGoalsForStats} />
+              <StatsTab
+                colors={colors}
+                days={tasks.days}
+                weekRangeLabel={week.weekRangeLabel}
+                weeklyGoals={goals.weeklyGoalsForStats}
+                darkMode={darkMode}
+                weekSchedules={tasks.weekSchedules}
+                weekKey={week.weekKey}
+              />
             </div>
           </>
         )}
