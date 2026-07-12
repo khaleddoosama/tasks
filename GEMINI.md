@@ -48,7 +48,6 @@ The project follows standard React and JavaScript development conventions. Key c
 *   **`src/useGistSync.js`**: A custom hook that provides functionality for syncing the schedule with a Gist.
 *   **`src/GistSettingsModal.jsx`**: A component that displays a modal for configuring the Gist sync settings.
 *   **`src/SyncStatusIndicator.jsx`**: A component that displays the status of the Gist sync.
-*   **`src/schedule_editor.jsx`**: A component that provides a UI for editing the schedule.
 *   **`convert-times.js`**: A script that converts times in the schedule from 12-hour format to 24-hour format.
 *   **`index.html`**: The main HTML file of the application.
 

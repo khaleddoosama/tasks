@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { calculateWeekStats } from "../../domain/schedule/stats";
 import { FONT, RADIUS, SPACING, getTheme } from "../../theme/tokens";
 import WeekTrends from "./WeekTrends";
+import FeatureUsagePanel from "./FeatureUsagePanel";
 
 const ENERGY_EMOJI = { 1: "😴", 2: "😐", 3: "🙂", 4: "😄", 5: "🔥" };
 const RATING_EMOJI = { 1: "😞", 2: "😕", 3: "😐", 4: "😊", 5: "🌟" };
@@ -113,7 +114,7 @@ function CategoryTasksPanel({ category, days, colors, onClose, theme }) {
   );
 }
 
-export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [], darkMode = false, weekSchedules, weekKey }) {
+export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [], darkMode = false, weekSchedules, weekKey, featureUsage }) {
   const theme = getTheme(darkMode);
   const stats = useMemo(() => {
     // If weekly goals exist, calculate from them; otherwise from tasks
@@ -293,6 +294,9 @@ export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [
           </div>
         )}
       </div>
+
+      {/* Feature usage — monthly cleanup review */}
+      {featureUsage && <FeatureUsagePanel featureUsage={featureUsage} theme={theme} />}
     </div>
   );
 }

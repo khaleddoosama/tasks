@@ -20,7 +20,6 @@ import {
   clearGoalLinksFromDays,
   clearGoalLinksFromSchedules,
   createGoalId,
-  createMissingGoalsForImportedData,
   getMonthGoalsForMonth,
   getTaskGoalOptions,
   getWeekGoalsForWeek,
@@ -47,6 +46,12 @@ import { useLocalStorageState } from "../../hooks/useLocalStorageState";
 import { useSchedulePersistence } from "../../hooks/useSchedulePersistence";
 import { useUndoRedo } from "../../hooks/useUndoRedo";
 import { exportScheduleBackup, importScheduleFromFile } from "../../services/scheduleTransfer";
+import {
+  mergeFeatureUsage,
+  readFeatureUsage,
+  recordFeatureUse,
+  writeFeatureUsage,
+} from "../../services/featureUsage";
 import { exportArchiveRange } from "../../services/archiveExport";
 import { mergeTemplates, readTemplates, writeTemplates } from "../../services/dayTemplates";
 
@@ -116,6 +121,7 @@ export function usePlannerState() {
   const [monthlyGoalsStore, setMonthlyGoalsStore] = useLocalStorageState(MONTHLY_GOALS_KEY, {});
   const [weeklyGoalsStore, setWeeklyGoalsStore] = useLocalStorageState(WEEKLY_GOALS_KEY, {});
   const [generalNotes, setGeneralNotes] = useLocalStorageState(GENERAL_NOTES_KEY, []);
+  const [featureUsage, setFeatureUsage] = useState(() => readFeatureUsage());
   const [templates, setTemplatesState] = useState(() => readTemplates());
   const [weekSchedules, setWeekSchedulesState] = useState({});
   const weekSchedulesRef = useRef({});
@@ -165,9 +171,16 @@ export function usePlannerState() {
       templates,
       generalNotes,
       darkMode,
+      featureUsage,
     }),
-    [colors, effectiveWeekSchedules, monthlyGoalsStore, selectedWeek, weeklyGoalsStore, templates, generalNotes, darkMode],
+    [colors, effectiveWeekSchedules, monthlyGoalsStore, selectedWeek, weeklyGoalsStore, templates, generalNotes, darkMode, featureUsage],
   );
+
+  // Best-effort usage counter — see services/featureUsage.js. Flows into
+  // supabasePayload so it syncs like any other user data.
+  const trackFeature = useCallback((key) => {
+    setFeatureUsage(recordFeatureUse(key));
+  }, []);
 
   useEffect(() => {
     nextTaskIdRef.current = Math.max(nextTaskIdRef.current, getNextTaskIdSeed(days));
@@ -231,6 +244,12 @@ export function usePlannerState() {
         setDarkMode(data.darkMode);
       }
 
+      if (data?.featureUsage && typeof data.featureUsage === "object") {
+        const mergedUsage = mergeFeatureUsage(readFeatureUsage(), data.featureUsage);
+        writeFeatureUsage(mergedUsage);
+        setFeatureUsage(mergedUsage);
+      }
+
       // Lets useSupabaseSync seed its lastPushedWeeksRef with the exact array
       // references now living in state — so the next push only uploads weeks
       // whose reference has actually changed since this restore.
@@ -289,7 +308,15 @@ export function usePlannerState() {
     [currentYear, days, replace, selectedWeek, updateWeekSchedules, weekKey],
   );
 
-  useKeyboardShortcuts({ undo, redo, lastSaved });
+  const undoWithTracking = useCallback(() => {
+    trackFeature("shortcut:undo");
+    undo();
+  }, [trackFeature, undo]);
+  const redoWithTracking = useCallback(() => {
+    trackFeature("shortcut:redo");
+    redo();
+  }, [trackFeature, redo]);
+  useKeyboardShortcuts({ undo: undoWithTracking, redo: redoWithTracking, lastSaved });
 
   const {
     syncStatus,
@@ -489,28 +516,18 @@ export function usePlannerState() {
   });
 
   // Persistence and color management: delegated to usePersistenceAndColorManagement hook
-  const { changeColor, exportSchedule, exportArchive, importSchedule, getScheduleData, updateScheduleFromJSON } = usePersistenceAndColorManagement({
+  const { changeColor, exportSchedule, exportArchive, importSchedule } = usePersistenceAndColorManagement({
     days,
     colors,
     effectiveWeekSchedules,
     monthlyGoalsStore,
     weeklyGoalsStore,
     selectedWeek,
-    currentYear,
     setColors,
-    setMonthlyGoalsStore,
-    setWeeklyGoalsStore,
-    replace,
-    updateWeekSchedules,
     applyPlannerData,
-    normalizeDaysCategories,
-    normalizeColors,
-    createMissingGoalsForImportedData,
-    createInitialDays,
     exportScheduleBackup,
     exportArchiveRange,
     importScheduleFromFile,
-    weekKey,
   });
 
   const resetPlanner = useCallback(() => {
@@ -651,6 +668,12 @@ export function usePlannerState() {
       updateWeeklyGoalCompletion,
     },
 
+    // Feature usage log (monthly cleanup review).
+    usage: {
+      featureUsage,
+      trackFeature,
+    },
+
     // Free-form general notes.
     notes: {
       generalNotes,
@@ -682,8 +705,6 @@ export function usePlannerState() {
       exportSchedule,
       exportArchive,
       importSchedule,
-      getScheduleData,
-      updateScheduleFromJSON,
       resetPlanner,
     },
   };
