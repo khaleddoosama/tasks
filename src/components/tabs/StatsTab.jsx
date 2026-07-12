@@ -159,6 +159,12 @@ export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [
         <StatCard theme={theme} label="إجمالي الوقت المجدوَل" value={formatMinutes(stats.totalMinutes)} />
         <StatCard
           theme={theme}
+          label="🧠 عمل عميق"
+          value={formatMinutes(stats.deepWorkMinutes)}
+          sub={stats.totalMinutes > 0 ? `${stats.deepWorkRate}% من الوقت المجدوَل` : "من المهام المكتملة"}
+        />
+        <StatCard
+          theme={theme}
           label="متوسط الطاقة"
           value={stats.avgEnergy ? `${stats.avgEnergy.toFixed(1)} ${ENERGY_EMOJI[Math.round(stats.avgEnergy)] || ""}` : "—"}
           sub="من 5"
