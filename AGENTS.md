@@ -133,7 +133,6 @@ Located in App.jsx (lines 4–87):
 
 ## Notes
 
-- `schedule_editor.jsx` is a legacy simpler version — focus on `App.jsx`
 - No tests currently exist — test manually with `npm run dev`
 - Undo/Redo is implemented but not exposed in UI (no buttons)
 - App is fully Arabic/RTL — maintain right-to-left layouts

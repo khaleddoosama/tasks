@@ -172,6 +172,7 @@ export async function upsertUserData(userId, payload) {
     weekly_goals:  payload.weeklyGoals   ?? payload.weekly_goals   ?? {},
     templates:     payload.templates     ?? {},
     general_notes: payload.generalNotes  ?? payload.general_notes  ?? [],
+    feature_usage: payload.featureUsage  ?? payload.feature_usage  ?? {},
     updated_at:    new Date().toISOString(),
   });
 }
@@ -252,6 +253,7 @@ export function flushPushKeepalive({ userId, accessToken, weekSchedules, changed
       weekly_goals:  userData.weeklyGoals ?? {},
       templates:     userData.templates ?? {},
       general_notes: userData.generalNotes ?? [],
+      feature_usage: userData.featureUsage ?? {},
       updated_at:    new Date().toISOString(),
     });
   }

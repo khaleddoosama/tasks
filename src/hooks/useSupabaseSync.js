@@ -65,6 +65,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
         templates: ud?.templates || {},
         generalNotes: ud?.general_notes || [],
         darkMode: ud?.dark_mode ?? false,
+        featureUsage: ud?.feature_usage || {},
       };
 
       if (onDataMergedRef.current) {
@@ -121,6 +122,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
         weeklyGoals: data.weeklyGoals,
         templates: data.templates,
         generalNotes: data.generalNotes,
+        featureUsage: data.featureUsage,
       });
 
       const results = await Promise.all([...weekOps, userDataOp]);
@@ -178,6 +180,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
       const templates = safeParseJSON(localStorage.getItem("dayTemplatesV1")) || {};
       const generalNotes = safeParseJSON(localStorage.getItem("generalNotes")) || [];
       const darkMode = safeParseJSON(localStorage.getItem("darkMode")) || false;
+      const featureUsage = safeParseJSON(localStorage.getItem("featureUsageV1")) || {};
 
       const weekOps = Object.entries(weekSchedules).map(([weekKey, daysArray]) =>
         upsertWeek(uid, weekKey, daysArray),
@@ -191,6 +194,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
         weeklyGoals,
         templates,
         generalNotes,
+        featureUsage,
       });
 
       const results = await Promise.all([...weekOps, userDataOp]);

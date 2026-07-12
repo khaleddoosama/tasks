@@ -66,7 +66,8 @@ const TAB_LABELS = {
 };
 
 export default function PlannerPage() {
-  const { ui, theme, week, tasks, goals, notes, sync, persistence } = usePlannerState();
+  const { ui, theme, week, tasks, goals, notes, sync, persistence, usage } = usePlannerState();
+  const { trackFeature } = usage;
   const { colors } = theme;
   const headerColor = colors.header;
   const { darkMode } = ui;
@@ -87,6 +88,7 @@ export default function PlannerPage() {
       showToast("❌ تاريخ البداية يجب أن يكون قبل تاريخ النهاية", "error");
       return;
     }
+    trackFeature("export:archive");
     const result = persistence.exportArchive(archiveFrom, archiveTo);
     if (result?.totalDays === 0) {
       showToast("⚠️ لا توجد أيام محفوظة في هذا النطاق الزمني", "warn");
@@ -98,6 +100,7 @@ export default function PlannerPage() {
     if (!file) return;
     try {
       await persistence.importSchedule(file);
+      trackFeature("import:schedule");
       showToast("✅ تم استيراد البيانات بنجاح!");
     } catch (error) {
       showToast(`❌ خطأ في قراءة الملف: ${error.message}`, "error");
@@ -150,7 +153,10 @@ export default function PlannerPage() {
           />
         </div>
         <button
-          onClick={() => ui.setDarkMode((value) => !value)}
+          onClick={() => {
+            trackFeature("darkMode:toggle");
+            ui.setDarkMode((value) => !value);
+          }}
           title="Dark Mode"
           style={{
             background: darkMode ? "#2a2a3e" : "#e0e0e0",
@@ -219,14 +225,20 @@ export default function PlannerPage() {
 
         <div style={{ display: "flex", gap: 12, marginBottom: 24, justifyContent: "center", flexWrap: "wrap" }}>
           <button
-            onClick={tasks.copyPreviousWeek}
+            onClick={() => {
+              trackFeature("week:copyPrevious");
+              tasks.copyPreviousWeek();
+            }}
             disabled={week.selectedWeek === 1}
             style={{ background: "#e8f5e9", color: "#388e3c", border: "1px solid #c8e6c9", borderRadius: 6, padding: "8px 12px", cursor: week.selectedWeek === 1 ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600, opacity: week.selectedWeek === 1 ? 0.5 : 1 }}
           >
             📋 نسخ من الأسبوع السابق
           </button>
           <button
-            onClick={() => setShowTemplateModal(true)}
+            onClick={() => {
+              trackFeature("template:manage");
+              setShowTemplateModal(true);
+            }}
             style={{ background: "#f4efff", color: "#5f3bb3", border: "1px solid #e9d9f5", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
           >
             ⚙️ إدارة قوالب الأيام
@@ -237,7 +249,10 @@ export default function PlannerPage() {
           {Object.entries(TAB_LABELS).map(([tabKey, label]) => (
             <button
               key={tabKey}
-              onClick={() => ui.setTab(tabKey)}
+              onClick={() => {
+                if (tabKey !== "editor") trackFeature(`tab:${tabKey}`);
+                ui.setTab(tabKey);
+              }}
               style={{
                 background: ui.tab === tabKey ? headerColor.bg : "transparent",
                 color: ui.tab === tabKey ? headerColor.text : "#666",
@@ -255,7 +270,12 @@ export default function PlannerPage() {
 
           <div style={{ marginRight: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <button onClick={() => ui.setShowAuthModal(true)} title="حساب Supabase" style={{ background: sync.isAuthenticated ? "#6366f1" : "#bdc3c7", color: "#fff", border: "none", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>☁️ {sync.isAuthenticated ? "حساب" : "دخول"}</button>
-            <button onClick={persistence.exportSchedule} title="Export as JSON" style={{ background: "#e8f5e9", color: "#388e3c", border: "1px solid #81c784", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>⬇️ تصدير</button>
+            <button
+              onClick={() => {
+                trackFeature("export:schedule");
+                persistence.exportSchedule();
+              }}
+              title="Export as JSON" style={{ background: "#e8f5e9", color: "#388e3c", border: "1px solid #81c784", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>⬇️ تصدير</button>
             <label title="Import JSON" style={{ background: "#fce4ec", color: "#c2185b", border: "1px solid #f48fb1", borderRadius: 6, padding: "8px 12px", cursor: "pointer", fontSize: 13, fontWeight: 600, display: "inline-block" }}>
               ⬆️ استيراد
               <input type="file" accept=".json" onChange={handleImportChange} style={{ display: "none" }} />
@@ -311,9 +331,18 @@ export default function PlannerPage() {
                 taskSuggestions={tasks.taskSuggestions}
                 onChange={(patch) => tasks.updateDay(day.id, patch)}
                 onCopyDay={tasks.copyDay}
-                onSaveAsTemplate={tasks.saveAsTemplate}
-                onApplyTemplate={tasks.applyTemplate}
-                onCarryTask={tasks.carryTaskToNextDay}
+                onSaveAsTemplate={(...args) => {
+                  trackFeature("template:save");
+                  tasks.saveAsTemplate(...args);
+                }}
+                onApplyTemplate={(...args) => {
+                  trackFeature("template:apply");
+                  tasks.applyTemplate(...args);
+                }}
+                onCarryTask={(...args) => {
+                  trackFeature("task:carry");
+                  tasks.carryTaskToNextDay(...args);
+                }}
                 createTaskId={tasks.createTaskId}
                 isCurrentDay={day.التاريخ === todayDate}
                 darkMode={darkMode}
@@ -353,9 +382,15 @@ export default function PlannerPage() {
               currentMonthGoals={goals.currentMonthGoals}
               currentWeekGoals={goals.currentWeekGoals}
               monthlySummary={goals.monthlySummary}
-              onAddMonthlyGoal={goals.addMonthlyGoal}
+              onAddMonthlyGoal={(...args) => {
+                trackFeature("goal:addMonthly");
+                goals.addMonthlyGoal(...args);
+              }}
               onUpdateMonthlyGoalTitle={goals.updateMonthlyGoalTitle}
-              onAddWeeklyGoal={goals.addWeeklyGoal}
+              onAddWeeklyGoal={(...args) => {
+                trackFeature("goal:addWeekly");
+                goals.addWeeklyGoal(...args);
+              }}
               onUpdateWeeklyGoalTitle={goals.updateWeeklyGoalTitle}
               onDeleteMonthlyGoal={goals.deleteMonthlyGoal}
               onDeleteWeeklyGoal={goals.deleteWeeklyGoal}
@@ -370,6 +405,7 @@ export default function PlannerPage() {
                 darkMode={darkMode}
                 weekSchedules={tasks.weekSchedules}
                 weekKey={week.weekKey}
+                featureUsage={usage.featureUsage}
               />
             </div>
           </>
