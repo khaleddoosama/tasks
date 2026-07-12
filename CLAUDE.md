@@ -44,7 +44,7 @@ src/
 │   │   └── hooks/
 │   │       ├── useTaskManagement.js             # updateDay, copyDay, copyPreviousWeek, carryTaskToNextDay
 │   │       ├── useGoalManagement.js             # Monthly/weekly goal CRUD
-│   │       └── usePersistenceAndColorManagement.js  # changeColor, import/export, JSON editor plumbing
+│   │       └── usePersistenceAndColorManagement.js  # changeColor, import/export
 │   └── archive/ArchivePage.jsx   # Read-only archive view
 ├── domain/schedule/
 │   ├── constants.js          # CATEGORY_META, DEFAULT_COLORS, LS_KEY
@@ -72,7 +72,7 @@ src/
 │   ├── schedule/TimePickerField.jsx
 │   ├── AuthModal.jsx            # Email+password login / sign-up modal
 │   ├── TemplateManager.jsx / TemplateEditModal.jsx / TemplateSelectionModal.jsx
-│   └── tabs/                   # ColorsTab, GoalsTab, GoalStatsTab, GeneralNotesTab, JSONEditorTab,
+│   └── tabs/                   # ColorsTab, GoalsTab, GoalStatsTab, GeneralNotesTab,
 │                               # StatsTab (+ WeekTrends 4-week trends, FeatureUsagePanel usage review)
 ├── services/
 │   ├── supabaseClient.js     # createClient — also exports supabaseUrl/supabaseAnonKey for keepalive flush
@@ -160,7 +160,7 @@ Persistence: `useSchedulePersistence` debounces saves (500ms) to `localStorage` 
 | `usage` | `featureUsage`, `trackFeature(key)` — feature usage log; keys registered in `FEATURE_LABELS` (`services/featureUsage.js`). New user-facing features should call `trackFeature` and add a label |
 | `notes` | `generalNotes`, `activeGeneralNotes`, `addGeneralNote`, `updateGeneralNote`, `toggleGeneralNoteActive`, `deleteGeneralNote` |
 | `sync` | `syncStatus`, `lastSyncTime`, `syncError`, `pullFromCloud`, `pushToCloud`, `signOut`, `user`, `isAuthenticated`, `needsMigration`, `importFromLocal` |
-| `persistence` | `saveIndicator`, `saveColor`, `exportSchedule`, `exportArchive`, `importSchedule`, `getScheduleData`, `updateScheduleFromJSON`, `resetPlanner` |
+| `persistence` | `saveIndicator`, `saveColor`, `exportSchedule`, `exportArchive`, `importSchedule`, `resetPlanner` |
 
 ### Data model
 
