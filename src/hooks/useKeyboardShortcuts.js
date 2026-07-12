@@ -15,11 +15,6 @@ export function useKeyboardShortcuts({ undo, redo, lastSaved }) {
         redo();
       }
 
-      if (event.key === "p") {
-        event.preventDefault();
-        window.print();
-      }
-
       if (event.key === "s") {
         event.preventDefault();
         // save indicator in UI already shows the last saved time

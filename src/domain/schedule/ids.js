@@ -12,7 +12,6 @@ export function createEmptyTask(id) {
     task: "",
     cat: "",
     done: false,
-    recurring: false,
     notes: "",
     linkedWeeklyGoalId: "",
     linkedMonthlyGoalId: "",
