@@ -37,11 +37,17 @@ The app is organized into layers:
 
 ```
 src/
-├── features/planner/
-│   ├── PlannerPage.jsx       # Root UI component — renders tabs and toolbar
-│   └── usePlannerState.js    # Central state orchestrator (see below)
+├── features/
+│   ├── planner/
+│   │   ├── PlannerPage.jsx       # Root UI component — renders tabs and toolbar
+│   │   ├── usePlannerState.js    # Central state orchestrator (see below)
+│   │   └── hooks/
+│   │       ├── useTaskManagement.js             # updateDay, copyDay, copyPreviousWeek, carryTaskToNextDay
+│   │       ├── useGoalManagement.js             # Monthly/weekly goal CRUD
+│   │       └── usePersistenceAndColorManagement.js  # changeColor, import/export, JSON editor plumbing
+│   └── archive/ArchivePage.jsx   # Read-only archive view
 ├── domain/schedule/
-│   ├── constants.js          # CATEGORY_META, DEFAULT_COLORS, GOAL_KEYWORDS, LS_KEY
+│   ├── constants.js          # CATEGORY_META, DEFAULT_COLORS, LS_KEY
 │   ├── categories.js         # normalizeColors, normalizeDaysCategories
 │   ├── goals.js              # Goal progress calculation, goal store normalization
 │   ├── week.js               # Week/date arithmetic (week keys, date formatting)
@@ -51,38 +57,64 @@ src/
 │   ├── print.js              # Print HTML generation
 │   ├── ids.js                # Task ID generation helpers
 │   └── seedData.js           # createInitialDays — default week scaffold
+├── theme/
+│   └── tokens.js             # Design tokens: SPACING, RADIUS, FONT, getTheme(darkMode) light/dark palettes
 ├── hooks/
 │   ├── useUndoRedo.js           # Wraps useState with 30-state undo/redo history
 │   ├── useLocalStorageState.js  # useState synced to localStorage
 │   ├── useSchedulePersistence.js  # Debounced auto-save + restore from localStorage
-│   ├── useSupabaseSync.js       # Supabase auth + cloud push/pull (replaces useGistSync)
+│   ├── useSupabaseSync.js       # Supabase auth + cloud push/pull + unload keepalive flush
 │   ├── usePrintStyle.js         # Injects/removes <style id="__print_style__"> + hidden print DOM
 │   └── useKeyboardShortcuts.js  # Ctrl+Z/Y/P/S handlers
 ├── components/
 │   ├── schedule/DayCard.jsx     # Collapsible day section with task table
-│   ├── schedule/TaskRow.jsx     # Inline-editable task row (with autocomplete + smart time)
+│   ├── schedule/TaskRow.jsx     # Inline-editable task row (autocomplete, smart time, carry-over button)
 │   ├── schedule/GoalSelector.jsx  # Per-task goal-link dropdown (grouped + memoized)
+│   ├── schedule/EnergyLog.jsx   # Intraday energy entries (day.energyLog)
 │   ├── schedule/TimePickerField.jsx
-│   ├── AuthModal.jsx            # Email+password login / sign-up modal (replaces GistSettingsModal)
-│   └── tabs/                   # ColorsTab, GoalsTab, PreviewTab, JSONEditorTab, StatsTab
+│   ├── AuthModal.jsx            # Email+password login / sign-up modal
+│   ├── TemplateManager.jsx / TemplateEditModal.jsx / TemplateSelectionModal.jsx
+│   └── tabs/                   # ColorsTab, GoalsTab, GoalStatsTab, GeneralNotesTab, PreviewTab,
+│                               # JSONEditorTab, StatsTab (+ WeekTrends 4-week trend charts)
 ├── services/
-│   ├── supabaseClient.js     # createClient — VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
-│   ├── cloudStore.js         # CRUD for `weeks` and `user_data` Supabase tables
+│   ├── supabaseClient.js     # createClient — also exports supabaseUrl/supabaseAnonKey for keepalive flush
+│   ├── cloudStore.js         # CRUD for `days`/`tasks`/`user_data` tables + flushPushKeepalive
+│   ├── archiveExport.js      # exportArchiveRange — ID-less JSON for archive/AI
 │   ├── scheduleTransfer.js   # exportScheduleBackup, importScheduleFromFile
 │   └── dayTemplates.js       # Day-template storage (dayTemplatesV1) read/write
 └── SyncStatusIndicator.jsx
 ```
 
-### Supabase schema (2 tables)
+### Supabase schema (normalized: days + tasks + user_data)
+
+Schedule data lives in **normalized `days` and `tasks` tables** (migrated June 2026 from the old jsonb `weeks` table, which still exists but is legacy/stale — do not write to it).
 
 ```sql
--- One row per user per week — concurrent edits to different weeks never conflict
-CREATE TABLE weeks (
-  user_id    uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-  week_key   text NOT NULL,   -- "YYYY-WNN"
-  data       jsonb NOT NULL,  -- days[] array
-  updated_at timestamptz DEFAULT now(),
-  PRIMARY KEY (user_id, week_key)
+-- One row per user per day. UNIQUE (user_id, week_key, day_index) drives upserts.
+CREATE TABLE days (
+  id          bigint PRIMARY KEY,        -- sequence
+  user_id     uuid REFERENCES auth.users(id),
+  week_key    text NOT NULL,             -- "YYYY-WNN"
+  day_index   integer NOT NULL,          -- 0–6 within the week
+  name        text, date text, type text, notes text,
+  enabled     boolean DEFAULT true,
+  energy      text, rating text, sleep_hours text, phone_hours text,
+  energy_log  jsonb DEFAULT '[]',        -- intraday entries [{time, level}]
+  updated_at  timestamptz DEFAULT now()
+);
+
+-- One row per task. (day_id, app_id) is the stable upsert key — app_id is the
+-- task id generated client-side, so notes/edits survive re-pushes.
+CREATE TABLE tasks (
+  id bigint PRIMARY KEY,
+  user_id uuid, day_id bigint REFERENCES days(id),
+  app_id integer, task_order integer,
+  time text, task text, cat text, notes text,
+  done boolean DEFAULT false, recurring boolean DEFAULT false,
+  carry_count integer DEFAULT 0,         -- how many times the task was carried to the next day
+  linked_weekly_goal_id text, linked_monthly_goal_id text,
+  linked_goal_type text, linked_goal_id text,
+  updated_at timestamptz DEFAULT now()
 );
 
 -- All other user data in a single row
@@ -99,7 +131,7 @@ CREATE TABLE user_data (
 );
 ```
 
-Both tables have RLS enabled — users can only access their own rows.
+All tables have RLS enabled — users can only access their own rows. `cloudStore.js` is the only module that talks to these tables; it converts between the app's Arabic-keyed day objects and the snake_case columns (see `buildDayRow`/`buildTaskRow`).
 
 ### `usePlannerState` — the core
 
@@ -123,7 +155,7 @@ Persistence: `useSchedulePersistence` debounces saves (500ms) to `localStorage` 
 | `ui` | `tab`/`setTab`, `darkMode`/`setDarkMode`, `printZoom`/`zoomIn`/`zoomOut`, `showAuthModal`/`setShowAuthModal` |
 | `theme` | `colors`, `changeColor` |
 | `week` | `selectedWeek`/`setSelectedWeek`, `incrementWeek`/`decrementWeek`, `weekKey`, `monthKey`, `monthLabel`, `weekRangeLabel` |
-| `tasks` | `days`, `updateDay`, `copyDay`, `copyPreviousWeek`, `saveAsTemplate`, `applyTemplate`, `createTaskId`, `goalOptions`, `taskSuggestions` |
+| `tasks` | `days`, `weekSchedules`, `updateDay`, `copyDay`, `copyPreviousWeek`, `carryTaskToNextDay`, `saveAsTemplate`, `applyTemplate`, `deleteTemplate`, `updateTemplate`, `templates`, `createTaskId`, `goalOptions`, `taskSuggestions` |
 | `goals` | `currentMonthGoals`, `currentWeekGoals`, `monthlySummary`, and all goal CRUD (`addMonthlyGoal`, `updateMonthlyGoalTitle`, `addWeeklyGoal`, `updateWeeklyGoalTitle`, `deleteMonthlyGoal`, `deleteWeeklyGoal`) |
 | `notes` | `generalNotes`, `activeGeneralNotes`, `addGeneralNote`, `updateGeneralNote`, `toggleGeneralNoteActive`, `deleteGeneralNote` |
 | `sync` | `syncStatus`, `lastSyncTime`, `syncError`, `pullFromCloud`, `pushToCloud`, `signOut`, `user`, `isAuthenticated`, `needsMigration`, `importFromLocal` |
@@ -140,7 +172,7 @@ Persistence: `useSchedulePersistence` debounces saves (500ms) to `localStorage` 
   type: string,           // e.g. "أوفيس" | "بيت" | "إجازة"
   notes: string,
   enabled: boolean,
-  مستوى_الطاقة: string,   // "1"–"5" energy level
+  energyLog: [{ time: string, level: string }],  // intraday energy entries (replaced مستوى_الطاقة)
   تقييم_اليوم: string,    // "1"–"5" day rating
   عدد_ساعات_النوم: string, // free-text sleep hours (parsed by parseHoursLoose)
   عدد_ساعات_الهاتف: string,// free-text phone hours
@@ -155,7 +187,9 @@ Persistence: `useSchedulePersistence` debounces saves (500ms) to `localStorage` 
       linkedMonthlyGoalId: string,
       linkedGoalType: string,     // "weekly" | "monthly" | ""
       linkedGoalId: string,
-      recurring: boolean
+      recurring: boolean,
+      notes: string,
+      carryCount: number          // times carried to the next day via "رحّل لبكرة"
     }
   ]
 }
@@ -175,16 +209,16 @@ Weeks start on **Saturday** (`WEEK_START_DAY = 6`). Week 1 starts on the first S
 
 ### Supabase sync
 
-`useSupabaseSync(syncData, onDataMerged)` mirrors the interface of the old `useGistSync`:
-- On mount: `supabase.auth.onAuthStateChange` listener — on login, fetches all data and calls `onDataMerged`
-- `needsMigration = true` when user just logged in and `weeks` table is empty → `AuthModal` shows a one-time import button
-- `importFromLocal()` reads all localStorage keys and upserts to Supabase (one-time migration)
-- Auto-push: debounced 1.5s after `syncData` changes; pushes each week as a separate row + `user_data` row
-- `supabasePayload` in `usePlannerState` adds `generalNotes` and `darkMode` (not in old Gist payload)
+`useSupabaseSync(syncData, onDataMerged)`:
+- On mount: `supabase.auth.onAuthStateChange` listener — on login, fetches all data (`fetchAllWeeks` + `fetchUserData`) and calls `onDataMerged`
+- `onDataMerged` **returns `{ appliedWeekSchedules }`** — the exact post-normalization array references stored in state. The hook seeds `lastPushedWeeksRef` with them so subsequent pushes only upload weeks whose array reference actually changed (without this, the first push after login re-uploads every week in history).
+- Auto-push: debounced 1.5s after `syncData` changes; only changed weeks + the `user_data` row
+- **Unload flush**: on `beforeunload`/`pagehide`, a pending debounced push is flushed via `flushPushKeepalive` in `cloudStore.js` — raw `fetch(..., { keepalive: true })` PostgREST upserts that the browser completes after the tab closes (supabase-js requests would be aborted). Task rows are only flushed for days whose DB id is in `dayIdCache` (filled by `upsertWeek`/`fetchAllWeeks`); task deletions are not replayed at unload — the next normal push reconciles.
+- `needsMigration = true` when user just logged in and the `days` table is empty → `AuthModal` shows a one-time import button; `importFromLocal()` reads all localStorage keys and upserts to Supabase
 
 ### Autocomplete & smart time defaults
 
-- `buildTaskSuggestions(weekSchedules)` in `suggestions.js` scans all saved weeks, returns `{ list, catByName }` sorted by frequency
+- `buildTaskSuggestions(weekSchedules, weekKey)` in `suggestions.js` scans all saved weeks, returns `{ list, catByName, goalByName }` sorted by frequency (`goalByName` auto-links goals for task names already linked in the current week)
 - Task name input renders `<datalist id="task-suggestions">` for native browser autocomplete
 - On task name selection, `catByName[name]` auto-fills the category if the task has none set yet
 - `getNextStartTime(tasks)` in `time.js` scans the task list bottom-up and returns the last valid end time — used as the default time when adding a new task row
@@ -192,8 +226,10 @@ Weeks start on **Saturday** (`WEEK_START_DAY = 6`). Week 1 starts on the first S
 ### Stats tab
 
 `StatsTab` component (`components/tabs/StatsTab.jsx`) uses `calculateWeekStats(days)` from `stats.js`:
-- Returns: `totalTasks`, `doneTasks`, `completionRate`, `totalMinutes`, `categories[]` (sorted by minutes), `avgEnergy`, `avgRating`, `avgSleepHours`, `avgPhoneHours`, `perDay[]`
+- Returns: `totalTasks`, `doneTasks`, `completionRate`, `totalMinutes`, `categories[]` (sorted by minutes), `avgEnergy` (from `energyLog` entries), `avgRating`, `avgSleepHours`, `avgPhoneHours`, `perDay[]`
 - `parseHoursLoose(value)` handles messy free-text formats like `"7:30 + 1:30"`, `"5:15 + 1:30= 6:45"`, `"8"`, `"9:30"`
+- `WeekTrends` (`components/tabs/WeekTrends.jsx`) renders 4-week trend tiles (completion %, avg energy, avg sleep) computed from `weekSchedules`
+- StatsTab is theme-aware: it takes a `darkMode` prop and reads all colors from `getTheme()` in `theme/tokens.js` — new UI should do the same instead of hardcoding hex values
 
 ### Print
 
@@ -215,11 +251,13 @@ npm test             # one-shot run
 npm run test:watch   # watch mode
 ```
 
-Covered modules (69 tests):
+Covered modules (91 tests):
 - `time.test.js` — all time parsing and manipulation functions
 - `week.test.js` — all date/week arithmetic functions
 - `stats.test.js` — `parseHoursLoose` + `calculateWeekStats`
 - `suggestions.test.js` — `buildTaskSuggestions`
+- `cloudStore.test.js` — field mapping app↔DB, task-deletion reconciliation, error propagation, keepalive flush
+- `useSupabaseSync.test.jsx` — login/pull, changed-weeks-only push, unload flush, signOut (jsdom + @testing-library/react)
 
 ## Key implementation notes
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../services/supabaseClient";
-import { fetchAllWeeks, fetchUserData, hasAnyData, upsertUserData, upsertWeek } from "../services/cloudStore";
+import { fetchAllWeeks, fetchUserData, flushPushKeepalive, hasAnyData, upsertUserData, upsertWeek } from "../services/cloudStore";
 
 function safeParseJSON(value) {
   try {
@@ -24,6 +24,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
   const syncDataRef = useRef(syncData);
   const onDataMergedRef = useRef(onDataMerged);
   const userRef = useRef(null);
+  const accessTokenRef = useRef(null);
   // Tracks the exact daysArray reference last pushed per week — lets pushToCloud
   // skip re-uploading weeks that haven't changed since the previous push.
   const lastPushedWeeksRef = useRef({});
@@ -67,7 +68,13 @@ export function useSupabaseSync(syncData, onDataMerged) {
       };
 
       if (onDataMergedRef.current) {
-        onDataMergedRef.current(merged);
+        // The merge callback returns the week arrays actually stored in state
+        // (post-normalization). Seed lastPushedWeeksRef with those references
+        // so the next push/flush only uploads weeks the user really edited.
+        const applied = onDataMergedRef.current(merged);
+        if (applied?.appliedWeekSchedules) {
+          lastPushedWeeksRef.current = { ...applied.appliedWeekSchedules };
+        }
       }
 
       setSyncStatus("synced");
@@ -147,6 +154,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
     await supabase.auth.signOut();
     setUser(null);
     userRef.current = null;
+    accessTokenRef.current = null;
     setNeedsMigration(false);
     setSyncStatus("idle");
     lastPushedWeeksRef.current = {};
@@ -205,6 +213,7 @@ export function useSupabaseSync(syncData, onDataMerged) {
       const currentUser = session?.user || null;
       setUser(currentUser);
       userRef.current = currentUser;
+      accessTokenRef.current = session?.access_token || null;
 
       if (currentUser && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
         isInitialLoadRef.current = true;
@@ -218,27 +227,49 @@ export function useSupabaseSync(syncData, onDataMerged) {
     return () => subscription.unsubscribe();
   }, [pullFromCloud]);
 
-  // Flush pending debounced push before unload to prevent data loss
+  // Flush pending debounced push before the tab closes. A normal pushToCloud
+  // would be aborted mid-flight with the page, so this fires keepalive fetch
+  // requests instead — the browser completes those after unload.
   useEffect(() => {
-    const handler = (e) => {
-      // If there's a pending debounced push, execute it immediately
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-        // Fire push synchronously if possible, or warn user
-        if (userRef.current && syncDataRef.current) {
-          pushToCloud(syncDataRef.current);
-        }
-      }
+    const flushPending = () => {
+      if (!debounceTimerRef.current) return;
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+
+      const uid = userRef.current?.id;
+      const data = syncDataRef.current;
+      if (!uid || !accessTokenRef.current || !data) return;
+
+      const changedWeekKeys = Object.entries(data.weekSchedules || {})
+        .filter(([weekKey, daysArray]) => lastPushedWeeksRef.current[weekKey] !== daysArray)
+        .map(([weekKey]) => weekKey);
+
+      flushPushKeepalive({
+        userId: uid,
+        accessToken: accessTokenRef.current,
+        weekSchedules: data.weekSchedules,
+        changedWeekKeys,
+        userData: data,
+      });
+    };
+
+    const beforeUnloadHandler = (e) => {
+      flushPending();
       // Warn if a push is currently in flight
       if (isRequestInFlightRef.current) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [pushToCloud]);
+
+    // pagehide also covers mobile Safari/Chrome, where beforeunload is unreliable
+    window.addEventListener("beforeunload", beforeUnloadHandler);
+    window.addEventListener("pagehide", flushPending);
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnloadHandler);
+      window.removeEventListener("pagehide", flushPending);
+    };
+  }, []);
 
   // Debounced auto-push on data change
   useEffect(() => {
@@ -249,6 +280,9 @@ export function useSupabaseSync(syncData, onDataMerged) {
     }
 
     debounceTimerRef.current = setTimeout(() => {
+      // Clear the ref before pushing so the unload flush doesn't treat an
+      // already-fired debounce as still pending.
+      debounceTimerRef.current = null;
       pushToCloud(syncDataRef.current);
     }, 1500);
 

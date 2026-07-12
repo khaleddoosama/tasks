@@ -12,6 +12,7 @@ export default function TaskRow({
   taskSuggestions,
   onUpdate,
   onDelete,
+  onCarry,
   onMoveUp,
   onMoveDown,
   isFirst,
@@ -105,6 +106,24 @@ export default function TaskRow({
         {conflict && (
           <span title="تعارض في الوقت" style={{ color: "#e74c3c", marginLeft: 4, fontSize: 14 }}>
             &#9888;
+          </span>
+        )}
+        {Number(task.carryCount) > 0 && (
+          <span
+            title={`اترحّلت ${task.carryCount} ${task.carryCount === 1 ? "مرة" : "مرات"}`}
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: "#b45309",
+              background: "#fef3c7",
+              borderRadius: 99,
+              padding: "1px 6px",
+              marginLeft: 4,
+              whiteSpace: "nowrap",
+              verticalAlign: "middle",
+            }}
+          >
+            🔁 ×{task.carryCount}
           </span>
         )}
         <input
@@ -224,6 +243,15 @@ export default function TaskRow({
         >
           &#9660;
         </button>
+        {onCarry && !task.done && (
+          <button
+            onClick={onCarry}
+            title="رحّل لبكرة"
+            style={{ border: "none", background: "none", cursor: "pointer", color: "#0ea5e9", fontSize: 14 }}
+          >
+            ⏭
+          </button>
+        )}
         <button
           onClick={onDelete}
           title="حذف"

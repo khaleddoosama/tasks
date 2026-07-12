@@ -141,9 +141,89 @@ export function useTaskManagement({
     getWeekKey,
   ]);
 
+  /**
+   * Carry an unfinished task to the next enabled day ("رحّل لبكرة").
+   * The task moves (not copies): removed from its day, appended to the next
+   * enabled day with done reset and carryCount incremented. From the last
+   * enabled day of the week it moves into the first day of the next week.
+   */
+  const carryTaskToNextDay = useCallback(
+    (dayId, taskId) => {
+      const sourceDay = days.find((day) => day.id === dayId);
+      const task = sourceDay?.tasks.find((t) => t.id === taskId);
+      if (!task) return;
+
+      const carriedTask = {
+        ...task,
+        done: false,
+        carryCount: (Number(task.carryCount) || 0) + 1,
+      };
+
+      const targetDay = days.find((day) => day.id > dayId && day.enabled);
+
+      if (targetDay) {
+        setDays((currentDays) =>
+          currentDays.map((day) => {
+            if (day.id === dayId) {
+              return { ...day, tasks: day.tasks.filter((t) => t.id !== taskId) };
+            }
+            if (day.id === targetDay.id) {
+              return { ...day, tasks: [...day.tasks, carriedTask] };
+            }
+            return day;
+          }),
+        );
+        return;
+      }
+
+      // Last enabled day of the week → move into the first day of next week.
+      if (selectedWeek >= 52) return;
+      const nextWeekKey = getWeekKey(selectedWeek + 1, currentYear);
+      const nextWeekDays =
+        weekSchedulesRef.current[nextWeekKey] ||
+        normalizeDaysCategories(createInitialDays(selectedWeek + 1));
+      const nextWeekTask = {
+        ...carriedTask,
+        id: createTaskId(),
+        // Weekly goals are scoped per week — the link would point at a goal
+        // that doesn't exist next week. Monthly links stay valid.
+        linkedWeeklyGoalId: "",
+        ...(carriedTask.linkedGoalType === "weekly"
+          ? { linkedGoalType: "", linkedGoalId: "" }
+          : {}),
+      };
+      const patchedNextWeek = nextWeekDays.map((day, index) =>
+        index === 0 ? { ...day, tasks: [...day.tasks, nextWeekTask] } : day,
+      );
+
+      updateWeekSchedules((currentSchedules) => ({
+        ...currentSchedules,
+        [nextWeekKey]: patchedNextWeek,
+      }));
+      setDays((currentDays) =>
+        currentDays.map((day) =>
+          day.id === dayId ? { ...day, tasks: day.tasks.filter((t) => t.id !== taskId) } : day,
+        ),
+      );
+    },
+    [
+      days,
+      setDays,
+      selectedWeek,
+      currentYear,
+      weekSchedulesRef,
+      updateWeekSchedules,
+      createTaskId,
+      getWeekKey,
+      createInitialDays,
+      normalizeDaysCategories,
+    ],
+  );
+
   return {
     updateDay,
     copyDay,
     copyPreviousWeek,
+    carryTaskToNextDay,
   };
 }

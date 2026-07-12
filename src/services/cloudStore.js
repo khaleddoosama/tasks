@@ -1,6 +1,59 @@
-import { supabase } from "./supabaseClient";
+import { supabase, supabaseAnonKey, supabaseUrl } from "./supabaseClient";
+
+// Cache of days.id per (userId, weekKey, dayIndex), filled by upsertWeek and
+// fetchAllWeeks. Needed by flushPushKeepalive: at page-unload time we can't
+// await the day upsert response to learn the id, so tasks are only flushed
+// for days whose id is already known.
+const dayIdCache = new Map();
+
+function dayIdCacheKey(userId, weekKey, dayIndex) {
+  return `${userId}|${weekKey}|${dayIndex}`;
+}
+
+export function clearDayIdCache() {
+  dayIdCache.clear();
+}
 
 // ── Weeks (reads/writes days + tasks tables) ───────────────────────────────
+
+function buildDayRow(userId, weekKey, dayIndex, day) {
+  return {
+    user_id:     userId,
+    week_key:    weekKey,
+    day_index:   dayIndex,
+    name:        day.name                    ?? null,
+    date:        day["التاريخ"]             ?? null,
+    type:        day.type                    ?? null,
+    notes:       day.notes                   ?? null,
+    enabled:     day.enabled                 ?? true,
+    energy_log:  Array.isArray(day.energyLog) ? day.energyLog : [],
+    rating:      day["تقييم_اليوم"]          ?? null,
+    sleep_hours: day["عدد_ساعات_النوم"]      ?? null,
+    phone_hours: day["عدد_ساعات_الهاتف"]     ?? null,
+    updated_at:  new Date().toISOString(),
+  };
+}
+
+function buildTaskRow(userId, dayId, task, index) {
+  return {
+    user_id:                userId,
+    day_id:                 dayId,
+    app_id:                 task.id,
+    task_order:             index * 10,
+    time:                   task.time                ?? null,
+    task:                   task.task                ?? null,
+    cat:                    task.cat                 ?? null,
+    done:                   task.done                ?? false,
+    recurring:              task.recurring           ?? false,
+    carry_count:            Number(task.carryCount)  || 0,
+    notes:                  task.notes               ?? null,
+    linked_weekly_goal_id:  task.linkedWeeklyGoalId  ?? null,
+    linked_monthly_goal_id: task.linkedMonthlyGoalId ?? null,
+    linked_goal_type:       task.linkedGoalType      ?? null,
+    linked_goal_id:         task.linkedGoalId        ?? null,
+    updated_at:             new Date().toISOString(),
+  };
+}
 
 export async function upsertWeek(userId, weekKey, daysArray) {
   for (let dayIndex = 0; dayIndex < daysArray.length; dayIndex++) {
@@ -9,48 +62,19 @@ export async function upsertWeek(userId, weekKey, daysArray) {
     // Upsert day row
     const { data: dayRows, error: dayErr } = await supabase
       .from("days")
-      .upsert({
-        user_id:     userId,
-        week_key:    weekKey,
-        day_index:   dayIndex,
-        name:        day.name                    ?? null,
-        date:        day["التاريخ"]             ?? null,
-        type:        day.type                    ?? null,
-        notes:       day.notes                   ?? null,
-        enabled:     day.enabled                 ?? true,
-        energy_log:  Array.isArray(day.energyLog) ? day.energyLog : [],
-        rating:      day["تقييم_اليوم"]          ?? null,
-        sleep_hours: day["عدد_ساعات_النوم"]      ?? null,
-        phone_hours: day["عدد_ساعات_الهاتف"]     ?? null,
-        updated_at:  new Date().toISOString(),
-      }, { onConflict: "user_id,week_key,day_index" })
+      .upsert(buildDayRow(userId, weekKey, dayIndex, day), { onConflict: "user_id,week_key,day_index" })
       .select("id")
       .single();
 
     if (dayErr) return { error: dayErr };
 
     const dayId = dayRows.id;
+    dayIdCache.set(dayIdCacheKey(userId, weekKey, dayIndex), dayId);
     const tasks = Array.isArray(day.tasks) ? day.tasks : [];
 
     // Upsert tasks using (day_id, app_id) as stable key — preserves notes across pushes
     if (tasks.length > 0) {
-      const taskPayloads = tasks.map((t, i) => ({
-        user_id:                userId,
-        day_id:                 dayId,
-        app_id:                 t.id,
-        task_order:             i * 10,
-        time:                   t.time                ?? null,
-        task:                   t.task                ?? null,
-        cat:                    t.cat                 ?? null,
-        done:                   t.done                ?? false,
-        recurring:              t.recurring           ?? false,
-        notes:                  t.notes               ?? null,
-        linked_weekly_goal_id:  t.linkedWeeklyGoalId  ?? null,
-        linked_monthly_goal_id: t.linkedMonthlyGoalId ?? null,
-        linked_goal_type:       t.linkedGoalType      ?? null,
-        linked_goal_id:         t.linkedGoalId        ?? null,
-        updated_at:             new Date().toISOString(),
-      }));
+      const taskPayloads = tasks.map((t, i) => buildTaskRow(userId, dayId, t, i));
 
       const { error: taskErr } = await supabase
         .from("tasks")
@@ -105,6 +129,7 @@ export async function fetchAllWeeks(userId) {
       cat:                  t.cat                    ?? "",
       done:                 t.done                   ?? false,
       recurring:            t.recurring              ?? false,
+      carryCount:           t.carry_count            ?? 0,
       notes:                t.notes                  ?? "",
       linkedWeeklyGoalId:   t.linked_weekly_goal_id  ?? "",
       linkedMonthlyGoalId:  t.linked_monthly_goal_id ?? "",
@@ -116,6 +141,7 @@ export async function fetchAllWeeks(userId) {
   // Reconstruct weekSchedules in the original shape the app expects
   const weekSchedules = {};
   for (const d of daysRows) {
+    dayIdCache.set(dayIdCacheKey(userId, d.week_key, d.day_index), d.id);
     if (!weekSchedules[d.week_key]) weekSchedules[d.week_key] = [];
     const energyLog = Array.isArray(d.energy_log) ? d.energy_log : [];
     weekSchedules[d.week_key].push({
@@ -169,4 +195,66 @@ export async function hasAnyData(userId) {
     .eq("user_id", userId)
     .limit(1);
   return (data || []).length > 0;
+}
+
+// ── Keepalive flush (page unload) ──────────────────────────────────────────
+//
+// On beforeunload/pagehide the supabase-js client's requests get aborted with
+// the tab, so pending changes would be lost. This path fires raw fetch calls
+// with `keepalive: true`, which the browser completes after the page closes.
+// Fire-and-forget: responses can't be read at unload time, so
+//  - task rows are only sent for days whose DB id is already in dayIdCache
+//    (a normal push will reconcile anything skipped on the next session), and
+//  - task deletions are NOT replayed here for the same reason.
+
+function keepaliveRequest(path, method, accessToken, body) {
+  return fetch(`${supabaseUrl}/rest/v1/${path}`, {
+    method,
+    keepalive: true,
+    headers: {
+      apikey: supabaseAnonKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify(body),
+  }).catch(() => {});
+}
+
+export function flushPushKeepalive({ userId, accessToken, weekSchedules, changedWeekKeys, userData }) {
+  if (!userId || !accessToken) return;
+
+  for (const weekKey of changedWeekKeys || []) {
+    const daysArray = weekSchedules?.[weekKey];
+    if (!Array.isArray(daysArray)) continue;
+
+    const dayRows = daysArray.map((day, dayIndex) => buildDayRow(userId, weekKey, dayIndex, day));
+    keepaliveRequest("days?on_conflict=user_id,week_key,day_index", "POST", accessToken, dayRows);
+
+    const taskRows = [];
+    daysArray.forEach((day, dayIndex) => {
+      const dayId = dayIdCache.get(dayIdCacheKey(userId, weekKey, dayIndex));
+      if (!dayId) return;
+      (day.tasks || []).forEach((task, i) => {
+        taskRows.push(buildTaskRow(userId, dayId, task, i));
+      });
+    });
+    if (taskRows.length > 0) {
+      keepaliveRequest("tasks?on_conflict=day_id,app_id", "POST", accessToken, taskRows);
+    }
+  }
+
+  if (userData) {
+    keepaliveRequest("user_data?on_conflict=user_id", "POST", accessToken, {
+      user_id:       userId,
+      colors:        userData.colors ?? null,
+      dark_mode:     userData.darkMode ?? false,
+      selected_week: userData.selectedWeek ?? null,
+      monthly_goals: userData.monthlyGoals ?? {},
+      weekly_goals:  userData.weeklyGoals ?? {},
+      templates:     userData.templates ?? {},
+      general_notes: userData.generalNotes ?? [],
+      updated_at:    new Date().toISOString(),
+    });
+  }
 }

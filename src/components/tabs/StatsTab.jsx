@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { calculateWeekStats } from "../../domain/schedule/stats";
+import { FONT, RADIUS, SPACING, getTheme } from "../../theme/tokens";
+import WeekTrends from "./WeekTrends";
 
 const ENERGY_EMOJI = { 1: "😴", 2: "😐", 3: "🙂", 4: "😄", 5: "🔥" };
 const RATING_EMOJI = { 1: "😞", 2: "😕", 3: "😐", 4: "😊", 5: "🌟" };
@@ -20,27 +22,27 @@ function formatHours(value) {
   return `${hours} س ${minutes} د`;
 }
 
-function StatCard({ label, value, sub, accent }) {
+function StatCard({ label, value, sub, accent, theme }) {
   return (
     <div
       style={{
-        background: "#fff",
-        border: "1px solid #e5e7eb",
-        borderRadius: 12,
+        background: theme.surface,
+        border: `1px solid ${theme.border}`,
+        borderRadius: RADIUS.lg,
         padding: "14px 16px",
         flex: "1 1 140px",
         minWidth: 140,
-        boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+        boxShadow: theme.shadow,
       }}
     >
-      <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 600, marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 900, color: accent || "#111827" }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{sub}</div>}
+      <div style={{ fontSize: FONT.sm, color: theme.textMuted, fontWeight: 600, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: FONT.stat, fontWeight: 900, color: accent || theme.text }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: theme.textFaint, marginTop: 4 }}>{sub}</div>}
     </div>
   );
 }
 
-function CategoryTasksPanel({ category, days, colors, onClose }) {
+function CategoryTasksPanel({ category, days, colors, onClose, theme }) {
   const tasks = useMemo(() => {
     const result = [];
     days.forEach((day) => {
@@ -54,26 +56,26 @@ function CategoryTasksPanel({ category, days, colors, onClose }) {
     return result;
   }, [category.key, days]);
 
-  const barColor = colors[category.key]?.text || "#6366f1";
+  const barColor = colors[category.key]?.text || theme.accent;
   const done = tasks.filter((t) => t.done).length;
 
   return (
-    <div style={{ flex: 1, minWidth: 0, background: "#f8fafc", borderRadius: 10, padding: 14, border: "1px solid #e5e7eb" }}>
+    <div style={{ flex: 1, minWidth: 0, background: theme.surfaceAlt, borderRadius: 10, padding: 14, border: `1px solid ${theme.border}` }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ fontWeight: 700, fontSize: 14 }}>
+        <span style={{ fontWeight: 700, fontSize: 14, color: theme.text }}>
           {category.icon} {category.label}
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 12, color: "#6b7280" }}>{done}/{tasks.length} مكتملة</span>
+          <span style={{ fontSize: FONT.sm, color: theme.textMuted }}>{done}/{tasks.length} مكتملة</span>
           <button
             onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#9ca3af", lineHeight: 1, padding: 0 }}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, color: theme.textFaint, lineHeight: 1, padding: 0 }}
             aria-label="إغلاق"
           >✕</button>
         </div>
       </div>
       {tasks.length === 0 ? (
-        <p style={{ color: "#9ca3af", fontSize: 13, margin: 0 }}>لا توجد مهام في هذا التصنيف.</p>
+        <p style={{ color: theme.textFaint, fontSize: FONT.md, margin: 0 }}>لا توجد مهام في هذا التصنيف.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {tasks.map((task) => (
@@ -84,21 +86,21 @@ function CategoryTasksPanel({ category, days, colors, onClose }) {
                 alignItems: "center",
                 gap: 8,
                 padding: "6px 10px",
-                borderRadius: 8,
-                background: "#fff",
-                border: "1px solid #e5e7eb",
-                fontSize: 12,
+                borderRadius: RADIUS.md,
+                background: theme.surface,
+                border: `1px solid ${theme.border}`,
+                fontSize: FONT.sm,
               }}
             >
-              <span style={{ fontSize: 14, color: task.done ? "#16a34a" : "#d1d5db" }}>{task.done ? "✔" : "○"}</span>
-              <span style={{ flex: 1, color: task.done ? "#374151" : "#9ca3af", textDecoration: task.done ? "none" : "none" }}>
+              <span style={{ fontSize: 14, color: task.done ? theme.success : theme.textFaint }}>{task.done ? "✔" : "○"}</span>
+              <span style={{ flex: 1, color: task.done ? theme.textBody : theme.textFaint }}>
                 {task.task}
               </span>
-              {task.time && <span style={{ color: "#9ca3af", flexShrink: 0 }}>{task.time}</span>}
+              {task.time && <span style={{ color: theme.textFaint, flexShrink: 0 }}>{task.time}</span>}
               <span style={{
-                fontSize: 10,
+                fontSize: FONT.xs,
                 padding: "1px 6px",
-                borderRadius: 99,
+                borderRadius: RADIUS.pill,
                 background: barColor + "22",
                 color: barColor,
                 flexShrink: 0,
@@ -111,7 +113,8 @@ function CategoryTasksPanel({ category, days, colors, onClose }) {
   );
 }
 
-export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [] }) {
+export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [], darkMode = false, weekSchedules, weekKey }) {
+  const theme = getTheme(darkMode);
   const stats = useMemo(() => {
     // If weekly goals exist, calculate from them; otherwise from tasks
     if (weeklyGoals.length > 0) {
@@ -132,52 +135,65 @@ export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [
 
   const [selectedCategoryKey, setSelectedCategoryKey] = useState(null);
   const completionColor =
-    stats.completionRate >= 80 ? "#16a34a" : stats.completionRate >= 40 ? "#f59e0b" : "#ef4444";
+    stats.completionRate >= 80 ? theme.success : stats.completionRate >= 40 ? theme.warning : theme.danger;
   const maxCategoryMinutes = stats.categories[0]?.minutes || 1;
   const selectedCategory = stats.categories.find((c) => c.key === selectedCategoryKey) || null;
 
   return (
-    <div style={{ padding: 20, background: "#f9fafb", borderRadius: 12, direction: "rtl" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>📊 إحصائيات الأسبوع</h2>
-        <span style={{ fontSize: 12, color: "#6b7280" }}>{weekRangeLabel}</span>
+    <div style={{ padding: SPACING.xl, background: theme.pageBg, borderRadius: RADIUS.lg, direction: "rtl", color: theme.text }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACING.lg, flexWrap: "wrap", gap: SPACING.sm }}>
+        <h2 style={{ margin: 0, fontSize: FONT.xl, fontWeight: 800, color: theme.text }}>📊 إحصائيات الأسبوع</h2>
+        <span style={{ fontSize: FONT.sm, color: theme.textMuted }}>{weekRangeLabel}</span>
       </div>
 
       {/* Summary cards */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
+      <div style={{ display: "flex", gap: SPACING.md, flexWrap: "wrap", marginBottom: SPACING.xxl }}>
         <StatCard
+          theme={theme}
           label="نسبة الإنجاز"
           value={`${stats.completionRate}%`}
           sub={`${stats.doneTasks} من ${stats.totalTasks} مهمة`}
           accent={completionColor}
         />
-        <StatCard label="إجمالي الوقت المجدوَل" value={formatMinutes(stats.totalMinutes)} />
+        <StatCard theme={theme} label="إجمالي الوقت المجدوَل" value={formatMinutes(stats.totalMinutes)} />
         <StatCard
+          theme={theme}
           label="متوسط الطاقة"
           value={stats.avgEnergy ? `${stats.avgEnergy.toFixed(1)} ${ENERGY_EMOJI[Math.round(stats.avgEnergy)] || ""}` : "—"}
           sub="من 5"
         />
         <StatCard
+          theme={theme}
           label="متوسط تقييم اليوم"
           value={stats.avgRating ? `${stats.avgRating.toFixed(1)} ${RATING_EMOJI[Math.round(stats.avgRating)] || ""}` : "—"}
           sub="من 5"
         />
-        <StatCard label="متوسط النوم" value={formatHours(stats.avgSleepHours)} sub="في اليوم" />
-        <StatCard label="متوسط الهاتف" value={formatHours(stats.avgPhoneHours)} sub="في اليوم" />
+        <StatCard theme={theme} label="متوسط النوم" value={formatHours(stats.avgSleepHours)} sub="في اليوم" />
+        <StatCard theme={theme} label="متوسط الهاتف" value={formatHours(stats.avgPhoneHours)} sub="في اليوم" />
       </div>
 
+      {/* Last-4-weeks trends */}
+      {weekSchedules && weekKey && (
+        <WeekTrends
+          weekSchedules={weekSchedules}
+          weekKey={weekKey}
+          currentWeekStats={stats}
+          theme={theme}
+        />
+      )}
+
       {/* Time per category */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, marginBottom: 24 }}>
-        <h3 style={{ margin: "0 0 14px 0", fontSize: 15, fontWeight: 700 }}>⏱️ الوقت حسب التصنيف</h3>
+      <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: RADIUS.lg, padding: SPACING.lg, marginBottom: SPACING.xxl }}>
+        <h3 style={{ margin: "0 0 14px 0", fontSize: FONT.lg, fontWeight: 700, color: theme.text }}>⏱️ الوقت حسب التصنيف</h3>
         {stats.categories.length === 0 ? (
-          <p style={{ color: "#9ca3af", fontSize: 13, margin: 0 }}>لا توجد مهام لها أوقات بعد.</p>
+          <p style={{ color: theme.textFaint, fontSize: FONT.md, margin: 0 }}>لا توجد مهام لها أوقات بعد.</p>
         ) : (
           <div style={{ display: "flex", gap: 14 }}>
             {/* Category list */}
             <div style={{ display: "flex", flexDirection: "column", gap: 6, width: selectedCategory ? 200 : "100%", flexShrink: 0, transition: "width 0.2s" }}>
               {stats.categories.map((category) => {
                 const categoryColor = colors[category.key];
-                const barColor = categoryColor?.text || "#6366f1";
+                const barColor = categoryColor?.text || theme.accent;
                 const widthPct = Math.round((category.minutes / maxCategoryMinutes) * 100);
                 const sharePct = stats.totalMinutes > 0 ? Math.round((category.minutes / stats.totalMinutes) * 100) : 0;
                 const isSelected = selectedCategoryKey === category.key;
@@ -189,31 +205,31 @@ export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [
                     style={{
                       cursor: "pointer",
                       padding: "8px 10px",
-                      borderRadius: 8,
-                      border: `1px solid ${isSelected ? barColor : "#e5e7eb"}`,
+                      borderRadius: RADIUS.md,
+                      border: `1px solid ${isSelected ? barColor : theme.border}`,
                       background: isSelected ? barColor + "11" : "transparent",
                       transition: "background 0.15s, border 0.15s",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: selectedCategory ? 0 : 4 }}>
-                      <span style={{ fontWeight: 600 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: FONT.md, marginBottom: selectedCategory ? 0 : 4 }}>
+                      <span style={{ fontWeight: 600, color: theme.text }}>
                         {category.icon} {category.label}
                         <span style={{
                           marginRight: 6,
-                          fontSize: 10,
+                          fontSize: FONT.xs,
                           padding: "1px 6px",
-                          borderRadius: 99,
-                          background: "#f1f5f9",
-                          color: "#6b7280",
+                          borderRadius: RADIUS.pill,
+                          background: theme.track,
+                          color: theme.textMuted,
                         }}>{taskCount}</span>
                       </span>
-                      <span style={{ color: "#6b7280", fontSize: 12 }}>
+                      <span style={{ color: theme.textMuted, fontSize: FONT.sm }}>
                         {formatMinutes(category.minutes)} · {sharePct}%
                       </span>
                     </div>
                     {!selectedCategory && (
-                      <div style={{ background: "#f1f5f9", borderRadius: 999, height: 8, overflow: "hidden", marginTop: 4 }}>
-                        <div style={{ width: `${widthPct}%`, height: "100%", background: barColor, borderRadius: 999, transition: "width 0.3s" }} />
+                      <div style={{ background: theme.track, borderRadius: RADIUS.pill, height: 8, overflow: "hidden", marginTop: 4 }}>
+                        <div style={{ width: `${widthPct}%`, height: "100%", background: barColor, borderRadius: RADIUS.pill, transition: "width 0.3s" }} />
                       </div>
                     )}
                   </div>
@@ -227,6 +243,7 @@ export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [
                 category={selectedCategory}
                 days={days}
                 colors={colors}
+                theme={theme}
                 onClose={() => setSelectedCategoryKey(null)}
               />
             )}
@@ -235,13 +252,13 @@ export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [
       </div>
 
       {/* Per-day breakdown */}
-      <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 16 }}>
-        <h3 style={{ margin: "0 0 14px 0", fontSize: 15, fontWeight: 700 }}>📅 تفصيل الأيام</h3>
+      <div style={{ background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: RADIUS.lg, padding: SPACING.lg }}>
+        <h3 style={{ margin: "0 0 14px 0", fontSize: FONT.lg, fontWeight: 700, color: theme.text }}>📅 تفصيل الأيام</h3>
         {stats.perDay.length === 0 ? (
-          <p style={{ color: "#9ca3af", fontSize: 13, margin: 0 }}>لا توجد بيانات أيام بعد.</p>
+          <p style={{ color: theme.textFaint, fontSize: FONT.md, margin: 0 }}>لا توجد بيانات أيام بعد.</p>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: FONT.md }}>
               <thead>
                 <tr style={{ background: colors.header.bg, color: colors.header.text }}>
                   <th style={{ padding: "8px 10px", textAlign: "right" }}>اليوم</th>
@@ -254,9 +271,9 @@ export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [
               </thead>
               <tbody>
                 {stats.perDay.map((day, index) => (
-                  <tr key={day.id} style={{ background: index % 2 ? "#f8fafc" : "#fff", borderBottom: "1px solid #eef2f7" }}>
+                  <tr key={day.id} style={{ background: index % 2 ? theme.surfaceAlt : theme.surface, borderBottom: `1px solid ${theme.borderSoft}`, color: theme.text }}>
                     <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 600 }}>
-                      {day.name} <span style={{ color: "#9ca3af", fontWeight: 400 }}>· {day.type}</span>
+                      {day.name} <span style={{ color: theme.textFaint, fontWeight: 400 }}>· {day.type}</span>
                     </td>
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
                       {day.total > 0 ? `${day.done}/${day.total} · ${day.completionRate}%` : "—"}
@@ -267,8 +284,8 @@ export default function StatsTab({ colors, days, weekRangeLabel, weeklyGoals = [
                     <td style={{ padding: "8px 10px", textAlign: "center" }}>
                       {day.rating ? `${RATING_EMOJI[day.rating] || ""} ${day.rating}` : "—"}
                     </td>
-                    <td style={{ padding: "8px 10px", textAlign: "center", color: "#6b7280" }}>{day.sleep || "—"}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "center", color: "#6b7280" }}>{day.phone || "—"}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "center", color: theme.textMuted }}>{day.sleep || "—"}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "center", color: theme.textMuted }}>{day.phone || "—"}</td>
                   </tr>
                 ))}
               </tbody>
