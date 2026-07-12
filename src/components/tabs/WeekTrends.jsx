@@ -102,6 +102,7 @@ export default function WeekTrends({ weekSchedules, weekKey, currentWeekStats, t
         completion: stats && stats.totalTasks > 0 ? stats.completionRate : null,
         energy: stats?.avgEnergy ?? null,
         sleep: stats?.avgSleepHours ?? null,
+        deepWork: stats && stats.totalTasks > 0 ? stats.deepWorkMinutes / 60 : null,
       };
     });
   }, [currentWeekStats, weekKey, weekSchedules]);
@@ -137,6 +138,14 @@ export default function WeekTrends({ weekSchedules, weekKey, currentWeekStats, t
           maxValue={10}
           formatValue={(v) => v.toFixed(1)}
           points={points.map((p) => ({ key: p.key, label: p.label, value: p.sleep }))}
+        />
+        <TrendTile
+          title="🧠 عمل عميق"
+          unit="ساعات"
+          theme={theme}
+          maxValue={Math.max(...points.map((p) => p.deepWork ?? 0), 1)}
+          formatValue={(v) => v.toFixed(1)}
+          points={points.map((p) => ({ key: p.key, label: p.label, value: p.deepWork }))}
         />
       </div>
     </div>

@@ -5,7 +5,7 @@
  * StatsTab component handles all formatting/rendering.
  */
 
-import { CATEGORY_META } from "./constants";
+import { CATEGORY_META, DEEP_WORK_CATEGORIES } from "./constants";
 import { calculateDurationMin } from "./time";
 
 /**
@@ -58,6 +58,7 @@ export function calculateWeekStats(days = []) {
   let totalTasks = 0;
   let doneTasks = 0;
   let totalMinutes = 0;
+  let deepWorkMinutes = 0;
   const categoryMinutes = {};
   const categoryCounts = {};
 
@@ -68,6 +69,11 @@ export function calculateWeekStats(days = []) {
 
       const minutes = calculateDurationMin(task.time);
       totalMinutes += minutes;
+
+      // Deep work counts what actually happened, not what was planned.
+      if (task.done && DEEP_WORK_CATEGORIES.has(task.cat)) {
+        deepWorkMinutes += minutes;
+      }
 
       const key = task.cat || "";
       categoryMinutes[key] = (categoryMinutes[key] || 0) + minutes;
@@ -132,6 +138,8 @@ export function calculateWeekStats(days = []) {
     doneTasks,
     completionRate: totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0,
     totalMinutes,
+    deepWorkMinutes,
+    deepWorkRate: totalMinutes > 0 ? Math.round((deepWorkMinutes / totalMinutes) * 100) : 0,
     categories,
     avgEnergy: average(energyValues),
     avgRating: average(ratingValues),

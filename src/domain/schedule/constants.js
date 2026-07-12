@@ -21,6 +21,16 @@ export const CATEGORY_META = {
 
 export const CATEGORY_KEYS = Object.keys(CATEGORY_META);
 
+// Categories whose tasks count as "deep work" (🧠) in the stats. Deep work
+// hours are inferred from these — no per-task input needed. Completed tasks
+// only; see calculateWeekStats.
+export const DEEP_WORK_CATEGORIES = new Set([
+  "tech_projects",
+  "education",
+  "quran_study",
+  "personal_projects",
+]);
+
 export const DEFAULT_COLORS = {
   header: { bg: "#1a1a2e", text: "#ffffff" },
   worship: { bg: "#eefaf1", text: "#1e6e45" },

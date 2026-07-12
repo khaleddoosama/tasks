@@ -47,7 +47,7 @@ src/
 │   │       └── usePersistenceAndColorManagement.js  # changeColor, import/export
 │   └── archive/ArchivePage.jsx   # Read-only archive view
 ├── domain/schedule/
-│   ├── constants.js          # CATEGORY_META, DEFAULT_COLORS, LS_KEY
+│   ├── constants.js          # CATEGORY_META, DEFAULT_COLORS, DEEP_WORK_CATEGORIES, LS_KEY
 │   ├── categories.js         # normalizeColors, normalizeDaysCategories
 │   ├── goals.js              # Goal progress calculation, goal store normalization
 │   ├── week.js               # Week/date arithmetic (week keys, date formatting)
@@ -226,7 +226,7 @@ Weeks start on **Saturday** (`WEEK_START_DAY = 6`). Week 1 starts on the first S
 ### Stats tab
 
 `StatsTab` component (`components/tabs/StatsTab.jsx`) uses `calculateWeekStats(days)` from `stats.js`:
-- Returns: `totalTasks`, `doneTasks`, `completionRate`, `totalMinutes`, `categories[]` (sorted by minutes), `avgEnergy` (from `energyLog` entries), `avgRating`, `avgSleepHours`, `avgPhoneHours`, `perDay[]`
+- Returns: `totalTasks`, `doneTasks`, `completionRate`, `totalMinutes`, `deepWorkMinutes`/`deepWorkRate` (completed tasks in `DEEP_WORK_CATEGORIES` from `constants.js`), `categories[]` (sorted by minutes), `avgEnergy` (from `energyLog` entries), `avgRating`, `avgSleepHours`, `avgPhoneHours`, `perDay[]`
 - `parseHoursLoose(value)` handles messy free-text formats like `"7:30 + 1:30"`, `"5:15 + 1:30= 6:45"`, `"8"`, `"9:30"`
 - `WeekTrends` (`components/tabs/WeekTrends.jsx`) renders 4-week trend tiles (completion %, avg energy, avg sleep) computed from `weekSchedules`
 - StatsTab is theme-aware: it takes a `darkMode` prop and reads all colors from `getTheme()` in `theme/tokens.js` — new UI should do the same instead of hardcoding hex values

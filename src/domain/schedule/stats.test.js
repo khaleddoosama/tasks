@@ -107,6 +107,27 @@ describe("calculateWeekStats", () => {
     expect(categories[1].minutes).toBe(30);
   });
 
+  it("counts deep work minutes from completed deep-category tasks only", () => {
+    const day = makeDay({
+      tasks: [
+        { id: 1, time: "09:00 - 11:00", cat: "tech_projects", done: true },      // 120 min — counts
+        { id: 2, time: "11:00 - 12:00", cat: "education", done: false },         // not done — excluded
+        { id: 3, time: "12:00 - 13:00", cat: "rest_nutrition", done: true },     // shallow cat — excluded
+        { id: 4, time: "13:00 - 13:30", cat: "quran_study", done: true },        //  30 min — counts
+      ],
+    });
+    const stats = calculateWeekStats([day]);
+    expect(stats.deepWorkMinutes).toBe(150);
+    // 150 of 270 total scheduled minutes
+    expect(stats.deepWorkRate).toBe(56);
+  });
+
+  it("returns zero deep work for an empty week", () => {
+    const stats = calculateWeekStats([]);
+    expect(stats.deepWorkMinutes).toBe(0);
+    expect(stats.deepWorkRate).toBe(0);
+  });
+
   it("excludes disabled days", () => {
     const active   = makeDay({ tasks: [{ id: 1, time: "09:00 - 10:00", cat: "education", done: true }] });
     const disabled = makeDay({ enabled: false, tasks: [{ id: 2, time: "08:00 - 09:00", cat: "worship", done: true }] });
